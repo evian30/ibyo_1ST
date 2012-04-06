@@ -1,0 +1,824 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : PjdInfoMng.xml
+    Description : 개발프로젝트관리
+-->
+<sqlMap namespace="PjdInfo">
+
+	<!-- 프로젝트정보관리 목록조회 -->
+	<select id="selectPjdInfo" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag                                               /*조회상태*/            
+					    ,PI.pjt_id                                                /* 프로젝트ID            */  
+					    ,PI.pjt_type_code                                        /* 프로젝트구분코드            */
+					    ,PI.pjt_name                                            /* 프로젝트명                */
+					    ,PI.pjt_reg_date                                        /* 등록일자                    */
+					    ,TO_CHAR(TO_DATE(PI.pjt_date_from , 'YYYY-MM-DD'),'YYYY-MM-DD') AS pjt_date_from                                        /* 프로젝트기간 FROM        */
+					    ,TO_CHAR(TO_DATE(PI.pjt_date_to , 'YYYY-MM-DD'),'YYYY-MM-DD') AS pjt_date_to                                            /* 프로젝트기간 TO            */
+					    ,PI.pjt_own_dept_code                                    /* 프로젝트담당자부서코드    */
+					    ,PI.pjt_own_emp_num                                        /* 프로젝트담당자사번        */
+					    ,PI.pjt_reg_dept_code                                    /* 프로젝트등록자부서코드    */
+					    ,PI.pjt_reg_emp_num                                        /* 프로젝트등록자사번        */
+					    ,PI.roll_type_code                                        /* 업무구분코드                */
+					    ,PI.order_possble                                        /* 수주가능성                */
+					    ,PI.pay_free_code                                        /* 유/무상구분코드            */
+					    ,PI.order_exp_date                                        /* 수주예정일                */
+					    ,PI.bid_dday                                            /* 제안(입찰)마감일            */
+					    ,PI.proc_status_code                                    /* 진행상태코드                */
+					    ,PI.pjt_summary                                            /* 개요및특이사항            */
+					    ,PI.exp_sal_total_amt                                    /* 예상매출총액                */
+					    ,PI.exp_sal_total_tax                                    /* 예상매출총세액            */
+					    ,PI.note                                                /* 비고                        */
+					    ,PI.final_mod_id                                        /* 최종변경자ID                */
+					    ,(
+					         SELECT C.kor_name
+					         FROM com_emp_info C
+					         WHERE C.emp_num = PI.final_mod_id 
+					     ) final_mod_name	 										/* 최종변경자명                */		
+					    ,TO_CHAR(PI.final_mod_date,'YYYY-MM-DD') final_mod_date    /* 최종변경일시                */
+					    ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'PJT_TYPE_CODE' AND A.com_code = PI.pjt_type_code
+					          AND A.use_yn ='Y'
+					     ) pjt_type_code_name                                             /*프로젝트구분명*/    
+					    ,(
+					        SELECT B.dept_name
+					         FROM com_dept B
+					         WHERE B.dept_code = PI.pjt_own_dept_code
+					     ) pjt_own_dept_name                                                /*프로젝트담당자부서명*/
+					    ,(
+					         SELECT C.kor_name
+					         FROM com_emp_info C
+					         WHERE C.emp_num = PI.pjt_own_emp_num
+					     ) pjt_own_emp_name                                                /*프로젝트담당자명*/
+					    ,(                                                                                 
+					        SELECT B.dept_name                                                             
+					          FROM com_dept B                                                               
+					          WHERE B.dept_code = PI.pjt_reg_dept_code                                      
+					     ) pjt_reg_dept_name                                                /*프로젝트등록자부서코드*/
+					    ,(                                                                                 
+					         SELECT C.kor_name                                                              
+					          FROM com_emp_info C                                                           
+					          WHERE C.emp_num = PI.pjt_reg_emp_num                                          
+					     ) pjt_reg_emp_name                                                /*프로젝트등록자명*/ 
+					    ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'PAY_FREE_CODE' AND A.com_code = PI.pay_free_code
+					          AND A.use_yn ='Y'
+					     ) pay_free_name                                             /*유/무상구분명*/    
+					    ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'FLOW_STATUS_CODE' AND A.com_code = PI.proc_status_code
+					          AND A.use_yn ='Y'
+					     )proc_status_name                                             /*진행상태명*/   
+					   ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'ROLL_TYPE_CODE' AND A.com_code = PI.roll_type_code
+					          AND A.use_yn ='Y'
+					     )roll_type_name                                             /*업무구분명*/   
+					  ,PI.reg_id                                    				/* 최초등록자 ID                */
+					  ,TO_CHAR(PI.reg_date,'YYYY-MM-DD') reg_date    				/* 최초등록일               */      
+					FROM pjt_info PI                                               /*프로젝트정보관리*/
+					WHERE 
+					PI.use_yn ='Y'  
+					<isNotEmpty property="pjt_type_code">
+						and PI.pjt_type_code = #pjt_type_code#
+					</isNotEmpty>
+					<isNotEmpty property="src_pjt_id">
+		   				and PI.pjt_id  LIKE '%'||#src_pjt_id#||'%'
+		 			</isNotEmpty>
+					<isNotEmpty property="src_pjt_name">
+		   				and PI.pjt_name  LIKE '%'||#src_pjt_name#||'%'
+		 			</isNotEmpty>			
+					<isNotEmpty property="src_pjt_date_from">
+						AND PI.pjt_date_from  <![CDATA[>=]]>  #src_pjt_date_from#
+					</isNotEmpty>
+					<isNotEmpty property="src_pjt_date_to">
+						AND PI.pjt_date_from  <![CDATA[<=]]>  #src_pjt_date_to#
+					</isNotEmpty>	
+			        <isNotEmpty property="session_dept_code">
+			            AND PI.pjt_reg_emp_num in( select emp_num from com_emp_info where dept_code = #session_dept_code# )
+			        </isNotEmpty> 
+			        <isNotEmpty property="reg_id">
+						AND PI.pjt_reg_emp_num  = #reg_id#
+					</isNotEmpty>   
+				 	 			
+					order by PI.final_mod_date desc	 						
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 프로젝트정보관리 총갯수 -->
+	<select id="selectPjdInfoCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(pjt_id)	
+		FROM pjt_info                                                /*프로젝트정보관리*/
+		WHERE 
+		use_yn ='Y'  
+		<isNotEmpty property="pjt_type_code">
+			and pjt_type_code = #pjt_type_code#
+		</isNotEmpty>
+		<isNotEmpty property="src_pjt_id">
+			and pjt_id  LIKE '%'||#src_pjt_id#||'%'
+		</isNotEmpty>
+		<isNotEmpty property="src_pjt_name">
+			and pjt_name  LIKE '%'||#src_pjt_name#||'%'
+		</isNotEmpty>				
+		<isNotEmpty property="src_pjt_date_from">
+			AND PJT_DATE_FROM  <![CDATA[>=]]>  #src_pjt_date_from#
+		</isNotEmpty>
+		<isNotEmpty property="src_pjt_date_to">
+			AND PJT_DATE_FROM  <![CDATA[<=]]>  #src_pjt_date_to#
+		</isNotEmpty>
+		<isNotEmpty property="session_dept_code">
+			 AND pjt_reg_emp_num in( select emp_num from com_emp_info where dept_code = #session_dept_code# ) 
+		</isNotEmpty>	
+		<isNotEmpty property="reg_id">
+			AND pjt_reg_emp_num  = #reg_id#
+		</isNotEmpty>  
+	</select>
+
+  	<!-- 프로젝트정보관리 등록 -->
+	<insert id="insertPjdInfo" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO pjt_info (
+						pjt_id					/*프로젝트ID				*/		
+						,pjt_type_code			/*프로젝트구분코드		    */
+						,pjt_name				/*프로젝트명				*/
+						,pjt_reg_date			/*등록일자				    */
+						,pjt_date_from			/*프로젝트기간 FROM		    */
+						,pjt_date_to			/*프로젝트기간 TO			*/
+						,pjt_own_dept_code		/*프로젝트담당자부서코드	*/
+						,pjt_own_emp_num		/*프로젝트담당자사번		*/
+						,pjt_reg_dept_code		/*프로젝트등록자부서코드	*/
+						,pjt_reg_emp_num		/*프로젝트등록자사번		*/
+						,roll_type_code			/*업무구분코드			    */
+						,order_possble			/*수주가능성				*/
+						,pay_free_code			/*유/무상구분코드			*/
+						,order_exp_date			/*수주예정일				*/
+						,bid_dday				/*제안(입찰)마감일		    */
+						,proc_status_code		/*진행상태코드	    	    */
+						,pjt_summary			/*개요및특이사항			*/
+						,exp_sal_total_amt		/*예상매출총액	    	    */
+						,exp_sal_total_tax		/*예상매출총세액			*/
+						,note					/*비고					    */
+						,final_mod_id			/*최종변경자ID			    */
+						,final_mod_date			/*최종변경일시			    */
+						,reg_id					/*최초등록자			    */
+						,reg_date				/*최초등록일			    */
+						,use_yn  				/*사용유무	          */
+					)
+					VALUES(	#pjt_id#					
+							,#pjt_type_code#			
+							,#pjt_name#				
+							,#pjt_reg_date#			
+							,#pjt_date_from#			
+							,#pjt_date_to#			
+							,#pjt_own_dept_code#		
+							,#pjt_own_emp_num#		
+							,#pjt_reg_dept_code#		
+							,#pjt_reg_emp_num#		
+							,#roll_type_code#			
+							,#order_possble#			
+							,#pay_free_code#			
+							,#order_exp_date#			
+							,#bid_dday#				
+							,#proc_status_code#		
+							,#pjt_summary#			
+							,#exp_sal_total_amt#		
+							,#exp_sal_total_tax#		
+							,#note#					
+							,#final_mod_id#			
+							,SYSDATE	
+							,#final_mod_id#			
+							,SYSDATE
+							, 'Y'
+					)
+	]]>
+	</insert>
+	
+	<!-- 프로젝트정보관리   수정 -->
+	<update id="updatePjdInfo" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE pjt_info
+		   SET   pjt_name			=#pjt_name#						/*프로젝트명				*/  
+				,pjt_reg_date		=#pjt_reg_date#	                /*등록일자				    */  
+				,pjt_date_from		=#pjt_date_from#	            /*프로젝트기간 FROM		    */  
+				,pjt_date_to		=#pjt_date_to#	                /*프로젝트기간 TO			*/  
+				,pjt_own_dept_code	=#pjt_own_dept_code#	        /*프로젝트담당자부서코드	*/  
+				,pjt_own_emp_num	=#pjt_own_emp_num#	            /*프로젝트담당자사번		*/  
+				,pjt_reg_dept_code	=#pjt_reg_dept_code#	        /*프로젝트등록자부서코드	*/  
+				,pjt_reg_emp_num	=#pjt_reg_emp_num#	            /*프로젝트등록자사번		*/  
+				,roll_type_code		=#roll_type_code#	            /*업무구분코드			    */  
+				,order_possble		=#order_possble#	            /*수주가능성				*/  
+				,pay_free_code		=#pay_free_code#	            /*유/무상구분코드			*/  
+				,order_exp_date		=#order_exp_date#	            /*수주예정일				*/  
+				,bid_dday			=#bid_dday#	                    /*제안(입찰)마감일		    */  
+				,proc_status_code	=#proc_status_code#	            /*진행상태코드		*/
+				,pjt_summary		=#pjt_summary#	                /*개요및특이사항			*/  
+				,exp_sal_total_amt	=#exp_sal_total_amt#	        /*예상매출총액	    	    */  
+				,exp_sal_total_tax	=#exp_sal_total_tax#	        /*예상매출총세액			*/  
+				,note				=#note#	                        /*비고					    */  
+			 	,final_mod_id   	= #final_mod_id#                /*최종변경자ID			    */  
+			 	,final_mod_date = SYSDATE                           /*최종변경일시			    */  
+		 WHERE 
+	        pjt_id  = #pjt_id#				 						/* 프로젝트ID  */           
+	        AND pjt_type_code = #pjt_type_code#	      
+	]]>
+	</update>
+
+
+	<!-- 업무요청정보  사용유무 N  -->
+	<update id="updatePjdInfoYn" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE pjt_info
+		   SET use_yn = #pjdInfoYn#           /*사용유무*/
+			 , proc_status_code   = #proc_status_code#   /*진행상태코드*/
+			 , final_mod_id   = #final_mod_id#           /*최종변경자ID*/
+			 , final_mod_date = SYSDATE                  /*최종변경일시*/
+		  WHERE 
+	        pjt_id  = #pjt_id#				 						/* 프로젝트ID  */           
+	        AND pjt_type_code = #pjt_type_code#	      
+	]]>
+	</update>	
+
+	<!-- 프로젝트정보관리   삭제 -->
+    <delete id="deletePjdInfo" parameterClass="HashMap">
+        DELETE FROM pjt_info 
+        WHERE 
+        pjt_id  = #pjt_id#				 		/* 프로젝트ID            */
+        AND pjt_type_code = #pjt_type_code#	                    
+    </delete> 
+
+
+	
+	<!-- 개발프로젝트관리 조회 -->
+	<select id="selectPjdDevInfo" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag                      	/*조회상태*/            
+							,PDI.pjt_id                  	/* 프로젝트ID            */  
+							,PDI.pjt_info_seq			 	/*순번					*/
+							,PDI.csr_type_code	         	/*업무요청유형코드	    */
+							,PDI.csr_id			         	/*업무요청ID			*/
+							,PDI.csr_info_seq	         	/*업무요청순번		    */
+							,PDI.sal_pjt_id	         		/*영업 프로젝트		    */
+							,PDI.final_mod_id	         	/*최종변경자ID		    */
+							,TO_CHAR(PDI.final_mod_date,'YYYY-MM-DD') final_mod_date     	/*최종변경일시		    */
+							,(
+							    SELECT com_code_name
+							    FROM com_code 
+							    WHERE group_code = 'SR_TYPE_CODE' AND com_code = PDI.csr_type_code
+							    AND use_yn ='Y'
+							  ) csr_type_name                  /*업무요청구분명*/
+					FROM pjt_dev_info PDI
+					WHERE PDI.pjt_id =#pjt_id#
+					AND PDI.pjt_info_seq =#pjt_info_seq#
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 개발프로젝트관리 상세 총갯수 -->
+	<select id="selectPjdDevInfoCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+			COUNT(pjt_id)	   		
+        FROM pjt_dev_info 
+		WHERE pjt_id =#pjt_id#
+		AND pjt_info_seq =#pjt_info_seq#
+	</select>
+
+
+  	<!-- 개발프로젝트관리 등록 -->
+	<insert id="insertPjdDevInfo" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO pjt_dev_info(   
+									pjt_id							/* 프로젝트ID        */
+									,pjt_info_seq					/*순번				*/
+									,csr_type_code	                /*업무요청유형코드          */
+									,csr_id			                /*업무요청ID		     */
+									,csr_info_seq	                /*업무요청순번	     */
+									,sal_pjt_id	                	/*영업 프로젝트	     */
+									,item_code	                	/*품목코드	     */
+									,final_mod_id	                /*최종변경자ID	     */
+									,final_mod_date                 /*최종변경일시	     */
+									,reg_id     			/*등록일시	          */   	
+								    ,reg_date  				/*등록자ID	          */     
+							  )
+					   VALUES ( 
+					   			#pjt_id#						
+					            ,(SELECT NVL(max(TO_NUMBER(pjt_info_seq)), 0) + 1  FROM pjt_dev_info )
+					   			,#csr_type_code#	            
+					   			,#csr_id#			        
+					   			,#csr_info_seq#		
+					   			,#sal_pjt_id#	
+					   			,#item_code#		            
+							    ,#final_mod_id#                 
+							    ,SYSDATE      
+							    ,#final_mod_id#		
+								,SYSDATE                  
+						      )
+	]]>
+	</insert>
+	
+	<!-- 개발프로젝트관리 수정 -->
+	<update id="updatePjdDevInfo" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE pjt_dev_info
+			   SET csr_type_code 	= #csr_type_code#           	/*업무요청유형코드*/
+				 , csr_id       	= #csr_id#               		/*업무요청ID*/    
+				 , csr_info_seq  	= #csr_info_seq#          		/*업무요청순번*/  
+				 , sal_pjt_id  		= #sal_pjt_id#          		/*영업 프로젝트ID*/  
+				 , final_mod_id   	= #final_mod_id#           		/*최종변경자ID*/
+				 , final_mod_date 	= SYSDATE                  		/*최종변경일시*/
+				WHERE pjt_id 		= #pjt_id#
+			    AND pjt_info_seq 	= #pjt_info_seq#
+	]]>				
+			
+	</update>	
+	
+	<!-- 개발프로젝트관리 삭제 -->
+    <delete id="deletePjdDevInfo" parameterClass="HashMap">
+        DELETE FROM pjt_dev_info 
+        WHERE pjt_id =#pjt_id#
+ 		<isNotEmpty property="pjt_info_seq">
+	   		AND pjt_info_seq 	= #pjt_info_seq# 
+	 	</isNotEmpty>   
+ 		<isNotEmpty property="item_code">
+	   		AND item_code 	= #item_code# 
+	 	</isNotEmpty>	 	     
+	    
+    </delete> 	
+    
+
+
+	<!-- 개발프로젝트(제품)  조회 -->
+	<select id="selectPjdDevInfoNitem" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag                          /*조회상태*/            
+                            ,PDI.pjt_id                      /* 프로젝트ID            */  
+                            ,PDI.pjt_info_seq                /*개발프로젝트순번                    */
+                            ,PDI.csr_type_code               /*업무요청유형코드        */
+                            ,PDI.csr_id                      /*업무요청ID            */
+                            ,PDI.csr_info_seq                /*업무요청순번            */
+                            ,PDI.sal_pjt_id                  /*영업 프로젝트ID       */
+                            ,PDI.final_mod_id                /*최종변경자ID            */
+                            ,TO_CHAR(PDI.final_mod_date,'YYYY-MM-DD') final_mod_date              /*최종변경일시            */
+                            ,(
+                                SELECT com_code_name
+                                FROM com_code 
+                                WHERE group_code = 'SR_TYPE_CODE' AND com_code = PDI.csr_type_code
+                                AND use_yn ='Y'
+                              ) csr_type_name                  /*업무요청구분명*/
+                            ,CPI.item_code                  /*제품코드*/
+                            ,CC.item_name                   /*제품명*/
+                            ,(
+                               select  pjt_name from  pjt_info where pjt_id = PDI.sal_pjt_id 
+                              ) sal_pjt_name  				/*영업 프로젝트명*/
+                    FROM pjt_dev_info PDI, csr_pattern_item CPI, com_item CC
+                    WHERE
+                    CPI.csr_status_code ='10'
+                    AND	PDI.pjt_id = #pjt_id# 
+                    AND PDI.csr_id = CPI.csr_id
+                    AND PDI.csr_info_seq = CPI.csr_info_seq                
+                    AND CPI.item_code  = CC.item_code(+) 
+                    
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 개발프로젝트(제품) 총갯수 -->
+	<select id="selectPjdDevInfoNitemCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+			COUNT(PDI.pjt_info_seq)	   		
+        FROM pjt_dev_info PDI, csr_pattern_item CPI, com_item CC
+        WHERE
+         CPI.csr_status_code ='10'
+        AND	PDI.pjt_id = #pjt_id# 
+        AND PDI.csr_id = CPI.csr_id
+        AND PDI.csr_info_seq = CPI.csr_info_seq                
+        AND CPI.item_code  = CC.item_code(+) 
+	</select>
+
+
+    
+	<!-- 개발프로젝트장비관리 조회 -->
+	<select id="selectPjdEquipInfo" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag                      								/*조회상태*/            
+							,PQI.pjt_id                  								/* 프로젝트ID            */  
+							,PQI.pjt_info_seq											/*순번					*/
+							,PQI.equip_type_code	         							/*장비구분코드	    */
+							,PQI.equip_detail			         						/*장비상세내역			*/
+							,PQI.item_code	         									/*품목코드		    */
+							,PQI.note	         										/*비고		    */
+							,PI.pjt_name
+							,(
+							    SELECT com_code_name
+							    FROM com_code 
+							    WHERE group_code = 'EQUIP_TYPE_CODE' AND com_code = PQI.equip_type_code
+							    AND use_yn ='Y'
+							  ) equip_type_name                                    			/*업무요청구분명*/
+							, (
+                               SELECT item_name
+                                 FROM com_item 
+                                WHERE item_code = PQI.item_code
+                           	   ) item_name                                              	/*품목코드명*/							  
+							,PQI.final_mod_id	         								/*최종변경자ID		    */
+							,TO_CHAR(PQI.final_mod_date,'YYYY-MM-DD') final_mod_date 	         								/*최종변경일시		    */
+					FROM pjt_equip_info PQI, pjt_info PI
+					WHERE PQI.pjt_id = PI.pjt_id
+                    AND PI.pjt_type_code = #pjt_type_code#
+                    AND	PQI.pjt_id = #pjt_id#
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 개발프로젝트장비관리 총갯수 -->
+	<select id="selectPjdEquipInfoCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+			COUNT(PQI.pjt_info_seq)	   		
+       FROM pjt_equip_info PQI, pjt_info PI
+	   WHERE 
+		   PQI.pjt_id = PI.pjt_id
+       AND PI.pjt_type_code = #pjt_type_code#
+       AND PQI.pjt_id = #pjt_id#
+	</select>
+
+
+  	<!-- 개발프로젝트장비관리 등록 -->
+	<insert id="insertPjdEquipInfo" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO pjt_equip_info(   
+									pjt_id							/* 프로젝트ID        */
+									,pjt_info_seq					/*순번				*/
+									,equip_type_code	            /*장비구분코드          */
+									,equip_detail			       	/*장비상세내역		     */
+									,item_code	                	/*품목코드	     */
+									,note	                		/*비고	     */
+									,final_mod_id	                /*최종변경자ID	     */
+									,final_mod_date                 /*최종변경일시	     */
+									,reg_id     			/*등록일시	          */   	
+								    ,reg_date  				/*등록자ID	          */    
+							  )
+					   VALUES ( 
+					   			#pjt_id#						
+					            ,(SELECT NVL(max(TO_NUMBER(pjt_info_seq)), 0) + 1  FROM pjt_equip_info )
+					   			,#equip_type_code#	            
+					   			,#equip_detail#			        
+					   			,#item_code#		
+					   			,#note#		            
+							    ,#final_mod_id#                 
+							    ,SYSDATE  
+							    ,#final_mod_id#                 
+							    ,SYSDATE                      
+						      )
+	]]>
+	</insert>
+	
+	<!--개발프로젝트장비관리  수정 -->
+	<update id="updatePjdEquipInfo" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE pjt_equip_info
+			   SET equip_type_code = #equip_type_code#          /*장비구분코드*/
+				 , equip_detail    = #equip_detail#             /*장비상세내역*/    
+				 , item_code  	= #item_code#          			/*품목코드*/  
+				 , note  		= #note#          				/*비고*/  
+				 , final_mod_id = #final_mod_id#           		/*최종변경자ID*/
+				 , final_mod_date = SYSDATE                  	/*최종변경일시*/
+				WHERE pjt_id = #pjt_id#
+				AND pjt_info_seq = #pjt_info_seq#
+	]]>
+	</update>	
+	
+	<!-- 개발프로젝트장비관리  삭제 -->
+    <delete id="deletePjdEquipInfo" parameterClass="HashMap">
+        DELETE FROM pjt_equip_info 
+        WHERE pjt_id =#pjt_id#
+		AND pjt_info_seq =#pjt_info_seq#          
+    </delete>     
+  
+  
+	<!-- 개발프로젝트정보팝업 목록조회 -->
+	<select id="selectPjdInfoPop" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag                                               /*조회상태*/            
+					    ,PI.pjt_id                                                /* 프로젝트ID            */  
+					    ,PI.pjt_type_code                                        /* 프로젝트구분코드            */
+					    ,PI.pjt_name                                            /* 프로젝트명                */
+					    ,PI.pjt_reg_date                                        /* 등록일자                    */
+					    ,PI.pjt_date_from                                        /* 프로젝트기간 FROM        */
+					    ,PI.pjt_date_to                                            /* 프로젝트기간 TO            */
+					    ,PI.pjt_own_dept_code                                    /* 프로젝트담당자부서코드    */
+					    ,PI.pjt_own_emp_num                                        /* 프로젝트담당자사번        */
+					    ,PI.pjt_reg_dept_code                                    /* 프로젝트등록자부서코드    */
+					    ,PI.pjt_reg_emp_num                                        /* 프로젝트등록자사번        */
+					    ,PI.roll_type_code                                        /* 업무구분코드                */
+					    ,PI.order_possble                                        /* 수주가능성                */
+					    ,PI.pay_free_code                                        /* 유/무상구분코드            */
+					    ,PI.order_exp_date                                        /* 수주예정일                */
+					    ,PI.bid_dday                                            /* 제안(입찰)마감일            */
+					    ,PI.proc_status_code                                    /* 진행상태코드                */
+					    ,PI.pjt_summary                                            /* 개요및특이사항            */
+					    ,PI.exp_sal_total_amt                                    /* 예상매출총액                */
+					    ,PI.exp_sal_total_tax                                    /* 예상매출총세액            */
+					    ,PI.note                                                /* 비고                        */
+					    ,PI.final_mod_id                                        /* 최종변경자ID                */
+					    ,TO_CHAR(PI.final_mod_date,'YYYY-MM-DD') final_mod_date    /* 최종변경일시                */
+					    ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'PJT_TYPE_CODE' AND A.com_code = PI.pjt_type_code
+					          AND A.use_yn ='Y'
+					     ) pjt_type_code_name                                             /*프로젝트구분명*/    
+					    ,(
+					        SELECT B.dept_name
+					         FROM com_dept B
+					         WHERE B.dept_code = PI.pjt_own_dept_code
+					     ) pjt_own_dept_name                                                /*프로젝트담당자부서명*/
+					    ,(
+					         SELECT C.kor_name
+					         FROM com_emp_info C
+					         WHERE C.emp_num = PI.pjt_own_emp_num
+					     ) pjt_own_emp_name                                                /*프로젝트담당자명*/
+					    ,(                                                                                 
+					        SELECT B.dept_name                                                             
+					          FROM com_dept B                                                               
+					          WHERE B.dept_code = PI.pjt_reg_dept_code                                      
+					     ) pjt_reg_dept_name                                                /*프로젝트등록자부서코드*/
+					    ,(                                                                                 
+					         SELECT C.kor_name                                                              
+					          FROM com_emp_info C                                                           
+					          WHERE C.emp_num = PI.pjt_reg_emp_num                                          
+					     ) pjt_reg_emp_name                                                /*프로젝트등록자명*/ 
+					    ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'PAY_FREE_CODE' AND A.com_code = PI.pay_free_code
+					          AND A.use_yn ='Y'
+					     ) pay_free_name                                             /*유/무상구분명*/    
+					    ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'FLOW_STATUS_CODE' AND A.com_code = PI.proc_status_code
+					          AND A.use_yn ='Y'
+					     )proc_status_name                                             /*진행상태명*/
+					     ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'ROLL_TYPE_CODE' AND A.com_code = PI.roll_type_code
+					          AND A.use_yn ='Y'
+					     )roll_type_name                                             /*업무구분명*/      
+					FROM pjt_info PI                                              
+					WHERE 1=1 
+					<isNotEmpty property="src_pjt_date_from">
+						AND PJT_DATE_FROM  <![CDATA[>=]]>  #src_pjt_date_from#
+					</isNotEmpty>
+					<isNotEmpty property="src_pjt_date_to">
+						AND PJT_DATE_TO  <![CDATA[<=]]>  #src_pjt_date_to#
+					</isNotEmpty>
+					<isNotEmpty property="src_roll_type_code">
+					   AND PI.troll_type_code = #src_roll_type_code#
+					 </isNotEmpty>
+					 <isNotEmpty property="src_pjt_name">
+					   AND PI.pjt_name LIKE '%'||#src_pjt_name#||'%'
+					 </isNotEmpty>					
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 개발프로젝트정보 팝업 총갯수 -->
+	<select id="selectPjdInfoPopCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(pjt_id)	
+		FROM pjt_info                                                /*프로젝트정보관리*/
+		WHERE 1=1 
+		<isNotEmpty property="src_pjt_date_from">
+			AND PJT_DATE_FROM  <![CDATA[>=]]>  #src_pjt_date_from#
+		</isNotEmpty>
+		<isNotEmpty property="src_pjt_date_to">
+			AND PJT_DATE_TO  <![CDATA[<=]]>  #src_pjt_date_to#
+		</isNotEmpty>					
+		<isNotEmpty property="src_roll_type_code">
+		   AND PI.troll_type_code = #src_roll_type_code#
+		</isNotEmpty>
+		<isNotEmpty property="src_pjt_name">
+		   AND PI.pjt_name LIKE '%'||#src_pjt_name#||'%'
+		</isNotEmpty>	
+	</select>  
+
+
+	<!-- 개발프로젝트 (제품) 팝업 목록조회 -->
+	<select id="selectPjdInfoNitemPop" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag                                     /*조회상태*/            
+					    ,D.item_code									/* 품목코드  */	
+						,D.pjt_id										/* 프로젝트ID  */
+						,D.pjt_name										/* 프로젝트이름  */
+						,D.csr_id										/* 업무요청ID  */
+						,D.csr_info_seq									/* 업무요청순번  */
+						,D.csr_title									/* 요청제목  */			
+						,D.csr_type_code								/*업무요청유형코드*/
+						,(
+						    SELECT com_code_name
+						    FROM com_code 
+						    WHERE group_code = 'SR_TYPE_CODE' AND com_code = D.CSR_TYPE_CODE
+						    AND use_yn ='Y'
+						  ) csr_type_name                                 /*업무요청구분명*/
+						,D.rowcnt										/*rowspan 수*/
+						,D.cnt											/*제품별 시퀀스*/
+						,D.pjt_date_from								/*프로젝트기간 FROM*/
+						,D.pjt_date_to									/*프로젝트기간 TO*/	
+						,E.item_name									/*품목명*/
+						FROM
+						( 
+						    SELECT 
+						        a.item_code
+						        ,ROW_NUMBER() OVER (PARTITION BY a.item_code order by a.item_code) cnt
+						        ,COUNT(*) OVER (PARTITION BY a.item_code order by a.item_code) rowcnt
+						        ,a.pjt_id
+						        ,a.csr_id
+						        ,a.csr_info_seq
+						        ,b.csr_title
+						        ,b.csr_type_code
+						        ,c.pjt_name
+						        ,c.pjt_date_from
+						        ,c.pjt_date_to
+						    FROM csr_pattern_item a, csr_info b, pjt_info c 
+						    WHERE 
+						     	a.csr_status_code ='10'						/*REQUEST_STATUS_CODE 10-수락*/
+						     AND
+						     	a.deal_yn ='10' 							/*SR_FLOW_CODE 10-요청중*/
+						     AND
+						     	a.csr_id = b.csr_id
+						     AND
+						     	b.csr_type_code != 20						/*업무요청구분코드SR_TYPE_CODE: 개발-10, 지원-20, 기타-90*/
+						     AND
+						     	a.pjt_id = c.pjt_id(+) 
+						)D, com_item E 
+						WHERE 
+							D.item_code = E.item_code
+					 <isNotEmpty property="src_pjt_name">
+					   AND D.pjt_name LIKE '%'||#src_pjt_name#||'%'
+					 </isNotEmpty>					
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 개발프로젝트 (제품) 팝업 총갯수 -->
+	<select id="selectPjdInfoNitemPopCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(*)	
+			FROM
+			( 
+					SELECT 'R' flag                                     /*조회상태*/            
+					    ,D.item_code									/* 품목코드  */	
+						,D.pjt_id										/* 프로젝트ID  */
+						,D.pjt_name										/* 프로젝트이름  */
+						,D.csr_id										/* 업무요청ID  */
+						,D.csr_info_seq									/* 업무요청순번  */
+						,D.csr_title									/* 요청제목  */			
+						,D.csr_type_code								/*업무요청유형코드*/
+						,(
+						    SELECT com_code_name
+						    FROM com_code 
+						    WHERE group_code = 'SR_TYPE_CODE' AND com_code = D.CSR_TYPE_CODE
+						    AND use_yn ='Y'
+						  ) csr_type_name                                 /*업무요청구분명*/
+						,D.rowcnt										/*rowspan 수*/
+						,D.cnt											/*제품별 시퀀스*/
+						,D.pjt_date_from								/*프로젝트기간 FROM*/
+						,D.pjt_date_to									/*프로젝트기간 TO*/	
+						,E.item_name									/*품목명*/
+						FROM
+						( 
+						    SELECT 
+						        a.item_code
+						        ,ROW_NUMBER() OVER (PARTITION BY a.item_code order by a.item_code) cnt
+						        ,COUNT(*) OVER (PARTITION BY a.item_code order by a.item_code) rowcnt
+						        ,a.pjt_id
+						        ,a.csr_id
+						        ,a.csr_info_seq
+						        ,b.csr_title
+						        ,b.csr_type_code
+						        ,c.pjt_name
+						        ,c.pjt_date_from
+						        ,c.pjt_date_to
+						    FROM csr_pattern_item a, csr_info b, pjt_info c 
+						    WHERE 
+						     	a.csr_status_code ='10'	/*REQUEST_STATUS_CODE 10-수락*/
+						     AND
+						     	a.deal_yn ='10' 			/*SR_FLOW_CODE 10-요청중*/
+						     AND
+						     	a.csr_id = b.csr_id
+						      AND
+						     	b.csr_type_code != 20						/*업무요청구분코드SR_TYPE_CODE: 개발-10, 지원-20, 기타-90*/ 	
+						     AND
+						     	a.pjt_id = c.pjt_id(+) 
+						)D, com_item E 
+						WHERE 
+							D.item_code = E.item_code
+					 <isNotEmpty property="src_pjt_name">
+					   AND D.pjt_name LIKE '%'||#src_pjt_name#||'%'
+					 </isNotEmpty>	
+			)						
+	</select> 
+
+	<!-- 업무요청유형_제품  수정 -->
+	<update id="updateCsrPatternItemDealYn" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE csr_pattern_item
+		   SET  deal_yn      = #deal_yn#           			/*처리완료여부  50-요청처리중 */
+			 , deal_date   = (select to_char(sysdate,'YYYYMMDD') from dual)           		/*처리일자*/
+			 , final_mod_id   = #final_mod_id#           		/*최종변경자ID*/
+			 , final_mod_date = SYSDATE                  		/*최종변경일시*/
+		 WHERE csr_id       = #csr_id#				 	/*업무요청ID*/
+		 AND csr_info_seq   = #csr_info_seq#				/*업무요청순번*/
+	]]>
+	</update>
+	
+	<!-- 진행상태 history -->
+	<insert id="insertPjtHistory" >
+		INSERT INTO pjt_history ( pjt_info_seq			/*순번*/
+								, pjt_reg_date        	/*등록일자*/            
+								, pjt_id              	/*프로젝트ID*/          
+								, pjt_status_code     	/*프로젝트진행상태코드*/
+								, pjt_proc_name       	/*관련업무명*/          
+								, his_comment         	/*내용*/                
+								, emp_num             	/*사원번호*/            
+								, system_reg_yn       	/*시스템등록여부*/      
+								, final_mod_id        	/*최종변경자ID*/        
+								, final_mod_date      	/*최종변경일시*/        
+								, reg_date            	/*최초등록일*/          
+								, reg_id              	/*최초등록자*/          
+								)
+						 VALUES ( (
+								   SELECT NVL(MAX(pjt_info_seq),0)+1
+								     FROM pjt_history
+								    WHERE pjt_id = #pjt_id#
+								      AND pjt_reg_date = TO_CHAR(SYSDATE,'YYYYMMDD')			 
+						 		  )						/*순번*/
+								, ( 
+								   SELECT TO_CHAR(SYSDATE,'yyyymmdd')
+	 							     FROM DUAL
+								  )        				/*등록일자*/            
+								, #pjt_id#              /*프로젝트ID*/          
+								, #pjt_status_code#     /*프로젝트진행상태코드*/
+								, #pjt_proc_name#       /*관련업무명*/          
+								, #his_comment#         /*내용*/                
+								, #final_mod_id#        /*사원번호*/            
+								, #system_reg_yn#       /*시스템등록여부*/      
+								, #final_mod_id#        /*최종변경자ID*/        
+								, SYSDATE 		        /*최종변경일시*/        
+								, SYSDATE               /*최초등록일*/          
+								, #final_mod_id#        /*최초등록자*/  
+						        )
+	</insert>	
+	
+
+</sqlMap>

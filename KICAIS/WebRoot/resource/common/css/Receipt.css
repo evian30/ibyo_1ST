@@ -1,0 +1,45 @@
+@charset "utf-8";
+tr {
+	font-size: 12px; 
+}
+.hide, .hidden {
+	display: none;
+}
+/* ================================= 20091208 세금계산서추가 ============================== */
+#tax_wrap {	background: url('/resource/images/is_images/print_tax_bg.gif') no-repeat;	height: 1121px;	width: 793px;	position: relative;}
+#tax_wrap .item {	position: absolute;	text-align: center;	width: 240px;}
+#provider1 {	top: 140px;	left: 160px;}
+#provider1 div, #receiver1 div {	color: #000;}
+#provider2 {	top: 658px;	left: 160px;}
+#provider2 div, #receiver2 div, #tax2 div, #tax2 td {	color: #C00;}
+#receiver1 {	top: 140px;	left: 480px;}
+#receiver2 {	top: 658px;	left: 480px;}
+#tax_wrap div {	position: absolute;	font-family: "바탕";	letter-spacing: -1px;	line-height: 120%;}
+#tax_wrap .no {	font-size: 18px;	letter-spacing: 9px;	left: -10px;	top: 0px;	width: 270px;	position: absolute;}
+#tax_wrap .company {	width: 120px;	height: 30px;	top: 32px;	left: 0px;}
+#tax_wrap .name {	width: 90px;	height: 30px;	top: 32px;	left: 140px;}
+#tax_wrap .address {	width: 240px;	height: 30px;	top: 68px;	left: 0px;}
+#tax_wrap .kind1 {	width: 120px;	height: 30px;	top: 104px;	left: 0px;}
+#tax_wrap .kind2 {	width: 100px;	height: 30px;	top: 104px;	left: 140px;}
+#tax_wrap .sign {	z-index: 100;	left: 210px;	top: 15px;}
+#tax_wrap .sign img {	width: 60px;}
+#tax1 {	top: 316px;	left: 72px;	position: relative;}
+#tax2 {	top: 836px;	left: 72px;	position: relative;}
+#tax_wrap .detail div {	text-align: right;}
+#tax_wrap .detail .date {	letter-spacing: 2px;	width: 80px;}
+#tax_wrap .detail .blank {	width: 30px;	left: 90px;	text-align: center;}
+#tax_wrap .detail .money {	width: 220px;	left: 133px;	letter-spacing: 14px;}
+#tax_wrap .detail .tax {	width: 203px;	left: 350px;	letter-spacing: 14px ;}
+*html #tax_wrap .detail .money, *html #tax_wrap .detail .tax  { /* for Stupid IE6 */
+	margin-left: -12px;}
+*+html body #tax_wrap .detail .money, *+html body #tax_wrap .detail .tax  { /* for Stupid IE7 */
+	margin-left: -12px;}
+#tax_wrap .detail .etc {	width: 95px;	left: 550px;	top: -10px;	text-align: center;}
+#tax_wrap .list {	width: 644px;	position: relative;	top: 20px;}
+#tax_wrap table.list td,
+#tax_wrap table.info td {	letter-spacing: 1px;	text-align: center;	height: 27px;}
+#tax_wrap table.list td.num,
+#tax_wrap table.info td.num {	text-align: right;}
+#tax_wrap .detail .list th,
+#tax_wrap .detail .info th {	visibility: hidden;}
+#tax_wrap .detail .info {	position: absolute;	top: 145px;}

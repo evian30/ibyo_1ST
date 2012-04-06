@@ -1,0 +1,150 @@
+@charset "utf-8";
+
+ body, td, p, input, select { 
+	font-family: "돋움", Tahoma;
+	font-size: 11px;  
+}
+   
+.Input_w   { padding:2 3 0 3; border:solid 1; border-color:#C1C2C3; color: #707070; margin:0 0 0 0; background-color:#FFFFFF; height:20;} 
+.Input_r  { padding:2 3 0 3; border:solid 1; border-color:#C1C2C3; color: #474747; margin:0 0 0 0; background-color:#f6f6f6; height:20;}
+
+.Input_txtw   { font-size:11px; COLOR: #707070; FONT-FAMILY: "돋움"; BACKGROUND-COLOR: F6F6F6; text-valign: middle; BORDER:1 solid ;
+	         border-top-color: #D5D2CD; border-right-color:#F6F6F6; border-bottom-color: #DDDAD5; border-left-color: #D5D2CD; HEIGHT: 18px; } 
+.Input_txtr { font-size:11px; COLOR: #707070; FONT-FAMILY: "돋움"; BACKGROUND-COLOR: F6F6F6; text-valign: middle; border:solid 1 #D5D2CD; HEIGHT: 18px; margin:0 0 0 0;}
+
+
+a:link			{color:#6e6e6e; text-decoration:none;}
+a:visited		{color:#6e6e6e; text-decoration:none;}
+a:active		{color:#6e6e6e; text-decoration:none;}
+a:hover			{color:#54a9e4; text-decoration:none;}
+label {	vertical-align: middle;}
+/*legend {	display: none;}*/
+legend {padding-left:10px;}
+a,img,input{	selector-dummy: expression(this.hideFocus=true); /* 클릭시 점선박스 방지 - IE에서만 적용됨 */}
+img {	border: none;}
+hr {
+	clear: both;
+	border-style: none;
+	height: 0px;
+	padding: 0px;
+	border-width: 0px;
+	color: #FFFFFF;
+}
+table caption { display: none; }
+.B { font-weight: bold;}
+.R { text-align: right; }
+.L { text-align: left; }
+.C { text-align: center; }
+.clear { clear: both; }
+
+br.clear {	height: 0px;}
+h1, h2, h3, h4, h5 {	font-weight: bold;	margin: 0px;}
+.trim {
+	overflow: hidden;
+	text-overflow : ellipsis;
+	white-space: nowrap;
+}
+/* 일반 끝 */ 
+body {
+	margin: 0px;
+	scrollbar-face-color: #E3E3E3;
+	scrollbar-shadow-color:#a9a9a9;
+	scrollbar-highlight-color:#CCCCCC;
+	scrollbar-3dlight-color: #FAFAFA;
+	scrollbar-darkshadow-color: #E3E3E3;
+	scrollbar-track-color: #E3E3E3;
+	scrollbar-arrow-color: #a9a9a9;
+	background: #FFFFFF url(/resource/images/bass_1st/body_bg.gif) repeat-x left top;
+}
+
+
+
+ 
+
+/* 그리드스타일 */
+
+.grid{
+    border-top: 2px solid #8eb3d8;
+	border-left:1px solid #c2c2c2;
+    background: #FFFFFF;	
+	font-family:Dotum,돋움,sans-serif; 
+	font-size:11px;
+    text-align:left;    
+	margin:3 0 10 0 ;
+}
+
+.grid td, th {
+    height:22px;
+    padding:3px;
+    color: #666666;
+    border-right:1px solid #cacaca;
+    border-bottom:1px solid #cacaca;
+}
+
+.grid #odd {
+	height:26px;
+	text-align:center;
+	font-weight:bold;
+    color:#436d96;
+    background: #e6eaef;
+}
+
+
+ 
+.gridin{
+    border-top: 1px solid #c2c2c2;
+	border-left:1px solid #c2c2c2;
+    background: #FFFFFF;	
+	font-family:Dotum,돋움,sans-serif; 
+	font-size:11px;
+    text-align:left;    
+	margin:6 6 6 6 ;
+}
+
+.gridin td, th {
+    height:26px;
+    padding:3px;
+    color: #7d7e7e;
+    border-right:1px solid #cacaca;
+    border-bottom:1px solid #cacaca;
+}
+
+.gridin #odd {
+	height:26px;
+	text-align:center;
+	font-weight:bold;
+    color:#f9f9f9;
+    background: #eeeeee;
+}
+
+
+/* 페이징 */
+
+.paging {
+	text-align:center;
+
+}
+.paging_num{font-weight:bold;
+    color:#2593cf;
+}
+/* TAB */
+
+ 
+
+
+
+
+
+/* 버튼 */
+
+.btn {
+    clear:both;
+}
+
+.rightbtn {
+    float:right;
+}
+.leftbtn {
+    float:left;
+}
+

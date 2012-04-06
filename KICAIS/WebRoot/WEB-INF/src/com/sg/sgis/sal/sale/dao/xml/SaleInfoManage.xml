@@ -1,0 +1,819 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : SaleInfoManage.xml
+    Description : 매출정보관리
+-->
+<sqlMap namespace="SaleInfoManage">
+
+	<!-- 매출정보관리_매출정보 상세목록조회 -->
+	<select id="selectSaleInfoManageList" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+                , DECODE(pjt_status_code,'99','N',NVL(modify_yn1,'Y')) modify_yn  
+                , DECODE(pjt_status_code,'99','C00',proc_status_code1) proc_status_code  /*진행상태코드*/  
+    	     FROM (	SELECT 'R' flag 
+						 , oi.sal_id										 			/*매출ID*/
+						 , to_char(to_date(oi.sal_date),'YYYY-MM-DD') sal_date  		/*매출일자*/              
+						 , oi.sal_type_code             								/*매출구분코드*/          
+						 , oi.roll_type_code            								/*업무구문코드*/          
+						 , oi.sal_name                  								/*매출명*/                
+						 , oi.pjt_id                    								/*프로젝트ID*/  
+						 ,( SELECT pjt_name                                                                       
+						      FROM pjt_info pi                                                                     
+						     WHERE pi.pjt_id = oi.pjt_id					                                                 
+						  ) pjt_name           
+						 , oi.est_id                    								/*견적ID*/   
+						 ,( SELECT est_name                                                                       
+						      FROM est_info ei                                                                     
+						     WHERE ei.est_id = oi.est_id	
+						       AND ei.est_version = oi.est_version				                                                 
+						  ) est_name             
+						 , oi.est_version               								/*버전*/                  
+						 , oi.ord_id                    								/*수주ID*/
+						 ,( SELECT ord_name                                                                       
+						      FROM ord_info oo                                                                     
+						     WHERE oo.ord_id = oi.ord_id					                                                 
+						  ) ord_name
+						 , oi.sal_dept_code             								/*매출부서코드*/        
+						 ,( SELECT dept_name                                                                      
+						      FROM com_dept                                                                     
+						     WHERE dept_code = oi.sal_dept_code                                                      
+						  ) sal_dept_name  
+						 , oi.sal_emp_num               								/*매출담당자번호*/    
+						 ,( SELECT kor_name                                                                        
+						      FROM com_emp_info                                                                    
+						     WHERE emp_num = oi.sal_emp_num                                                        
+						  ) sal_emp_name  
+						 , oi.custom_code               								/*거래처코드*/   
+						 ,( SELECT custom_name                                                                     
+						      FROM com_custom                                                                      
+						     WHERE custom_code = oi.custom_code                                              
+						  ) custom_name
+						 , to_char(to_date(oi.inspect_exp_date),'YYYY-MM-DD') inspect_exp_date      /*검수예정일*/            
+						 , to_char(to_date(oi.delivery_exp_date),'YYYY-MM-DD') delivery_exp_date    /*납품예정일*/            
+						 , to_char(to_date(oi.set_exp_date),'YYYY-MM-DD') set_exp_date              /*설치예정일시*/          
+						 , to_char(to_date(oi.sal_exp_date),'YYYY-MM-DD') sal_exp_date              /*매출예정일*/            
+						 , to_char(to_date(oi.account_date),'YYYY-MM-DD') account_date              /*결제일*/                
+						 , oi.sal_total_amt             											/*매출총액*/              
+						 , oi.discnt_total_amt          											/*할인총액*/              
+						 , oi.sal_aply_total_amt        											/*매출적용총액*/          
+						 , oi.sal_aply_total_tax       	 											/*매출적용총세액*/        
+						 , oi.aply_job_desc             											/*적용업무설명*/          
+						 , oi.summary                   											/*특이사항*/              
+						 , oi.pay_free_type_code        											/*유무상구분코드*/        
+						 , to_char(to_date(oi.maintenance_from),'YYYY-MM-DD') maintenance_from      /*유지보수기간_From*/     
+						 , to_char(to_date(oi.maintenance_to),'YYYY-MM-DD') maintenance_to          /*유지보수기간_To*/       
+						 , oi.tax_issue_type_code       											/*세금계산서발행구분*/    
+						 , oi.tax_issue_cnt            	 											/*세금계산서분할발행회수*/
+						 , oi.proc_status_code proc_status_code1          							/*진행상태코드*/          
+						 , oi.final_mod_id              											/*최종변경자ID*/      
+						 , (SELECT admin_nm
+						      FROM tb_admin
+						     WHERE admin_id = oi.final_mod_id
+						  ) final_mod_name     
+						 , to_char(oi.final_mod_date,'YYYY-MM-DD') final_mod_date          			/*최종변경일시*/          
+						 , oi.customer_num              											/*거래처담당자번호*/
+						 ,(SELECT customer_name                                                                  
+						     FROM com_custom_member                                                              
+						    WHERE customer_num = oi.customer_num  
+						      AND custom_code = oi.custom_code                                           
+						   ) customer_name
+						 , ee.modify_yn1 
+					     , (SELECT proc_status_code 
+                              FROM pjt_info
+                             WHERE pjt_id = oi.pjt_id
+                           ) pjt_status_code  
+                         ,'※('||(SELECT COUNT(issue_info_seq) 
+                                    FROM pjt_issue 
+                                   WHERE pjt_id = oi.pjt_id)||')건※' AS reg_issue
+                         , cc.telephone
+                         , oi.reg_id          
+					  FROM sal_info oi
+					  LEFT OUTER JOIN
+              			   com_custom cc        	   /*거래처관리*/
+	            		ON oi.custom_code = cc.custom_code  
+            		  LEFT OUTER JOIN
+                           (
+                            SELECT sal_id
+                                 , 'N' modify_yn1  
+                              FROM sal_info 
+                             WHERE proc_status_code = 'D90'
+                           ) ee 
+                        ON oi.sal_id = ee.sal_id    
+                     WHERE 1=1
+                      <isNotEmpty property="src_sal_date_start">
+					   AND oi.sal_date >= #src_sal_date_start#
+					  </isNotEmpty>
+					  <isNotEmpty property="src_sal_date_end">
+					   AND oi.sal_date &lt;= #src_sal_date_end#
+					  </isNotEmpty>   
+					 ORDER BY oi.reg_date DESC, oi.final_mod_date DESC      	   
+				  ) A
+			WHERE 1=1
+			  AND pjt_id = #pjt_id#
+			<isNotEmpty property="src_pjt_name">
+			  AND pjt_name like #src_pjt_name#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="src_custom_code">
+			  AND custom_code like '%'||#src_custom_code#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="src_custom_name">
+			  AND custom_name like '%'||#src_custom_name#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="src_sal_type_code">
+			  AND sal_type_code = #src_sal_type_code#
+			</isNotEmpty>
+			<isNotEmpty property="src_sal_id">
+			  AND sal_id like #src_sal_id#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="src_sal_name">
+			  AND sal_name like #src_sal_name#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="session_dept_code">
+			  AND sal_dept_code  = #session_dept_code#
+			</isNotEmpty>
+			<isNotEmpty property="reg_id">
+			  AND reg_id  = #reg_id#
+		    </isNotEmpty>	
+	       )
+	 <isNotNull property="start">      
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	 </isNotNull>   	
+	</select>
+	
+	<!-- 매출정보관리_매출정보 상세목록조회  총건수-->
+	<select id="selectSaleInfoManageListCount" resultClass="int">
+	SELECT COUNT(sal_id)
+	  FROM (
+			SELECT oi.pjt_id                    				/*프로젝트ID*/  
+				 ,( SELECT pjt_name                                                                       
+				     FROM pjt_info pi                                                                     
+				    WHERE pi.pjt_id = oi.pjt_id					                                                 
+				   ) pjt_name          
+				 , oi.custom_code               				/*거래처코드*/   
+				 ,( SELECT custom_name                                                                     
+				       FROM com_custom                                                                      
+				      WHERE custom_code = oi.custom_code                                              
+				   ) custom_name 
+				 , oi.sal_type_code             				/*매출구분코드*/      
+				 , oi.sal_id									/*매출ID*/
+				 , oi.sal_date  								/*매출일자*/              
+				 , oi.sal_name                  				/*매출명*/  
+				 , oi.reg_id
+			  FROM sal_info oi
+			  LEFT OUTER JOIN
+				   com_custom cc        	   					/*거래처관리*/
+				ON oi.custom_code = cc.custom_code  
+		 	  LEFT OUTER JOIN
+		           (
+		            SELECT sal_id
+		                 , 'N' modify_yn1  
+		              FROM sal_info 
+		             WHERE proc_status_code = 'D90'
+		           ) ee 
+		        ON oi.sal_id = ee.sal_id
+		     WHERE 1=1
+		     <isNotEmpty property="src_sal_date_end">
+			   AND sal_date &lt;= #src_sal_date_end#
+			 </isNotEmpty>   
+			 <isNotEmpty property="src_proc_status_code">
+			   AND proc_status_code = #src_proc_status_code#
+			 </isNotEmpty>      
+	       )
+	 WHERE 1=1
+	   AND pjt_id = #pjt_id#
+	 <isNotEmpty property="src_pjt_name">
+	   AND pjt_name like #src_pjt_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_custom_code">
+	   AND custom_code like '%'||#src_custom_code#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_custom_name">
+	   AND custom_name like '%'||#src_custom_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_sal_type_code">
+	   AND sal_type_code = #src_sal_type_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_sal_id">
+	   AND sal_id like #src_sal_id#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_sal_name">
+	   AND sal_name like #src_sal_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_sal_date_start">
+	   AND sal_date >= #src_sal_date_start#
+	 </isNotEmpty>
+	 <isNotEmpty property="session_dept_code">
+	   AND sal_dept_code  = #session_dept_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="reg_id">
+	   AND reg_id  = #reg_id#
+	 </isNotEmpty>	
+	</select>
+
+	<!-- 매출정보관리_매출정보 수정-->
+	<update id="updateSaleInfoManage" parameterClass="HashMap">
+	UPDATE sal_info
+	   SET sal_date            = #sal_date#                  			/*매출일자*/              
+		 , sal_type_code       = #sal_type_code#             			/*매출구분코드*/          
+		 , roll_type_code      = #roll_type_code#            			/*업무구문코드*/          
+		 , sal_name            = #sal_name#                  			/*매출명*/                
+		 , pjt_id              = #pjt_id#                    			/*프로젝트ID*/            
+		 , est_id              = #est_id#                    			/*견적ID*/                
+		 , est_version         = #est_version#               			/*버전*/                  
+		 , ord_id              = #ord_id#                    			/*수주ID*/                
+		 , sal_dept_code       = #sal_dept_code#             			/*매출부서코드*/          
+		 , sal_emp_num         = #sal_emp_num#               			/*매출담당자번호*/        
+		 , custom_code         = #custom_code#               			/*거래처코드*/            
+		 , inspect_exp_date    = #inspect_exp_date#          			/*검수예정일*/            
+		 , delivery_exp_date   = #delivery_exp_date#         			/*납품예정일*/            
+		 , set_exp_date        = #set_exp_date#              			/*설치예정일시*/          
+		 , sal_exp_date        = #sal_exp_date#              			/*매출예정일*/            
+		 , account_date        = #account_date#              			/*결제일*/                
+		 , sal_total_amt       = REPLACE(#sal_total_amt#,',','')        /*매출총액*/              
+		 , discnt_total_amt    = REPLACE(#discnt_total_amt#,',','')     /*할인총액*/              
+		 , sal_aply_total_amt  = REPLACE(#sal_aply_total_amt#,',','')   /*매출적용총액*/          
+		 , sal_aply_total_tax  = REPLACE(#sal_aply_total_tax#,',','')   /*매출적용총세액*/        
+		 , aply_job_desc       = #aply_job_desc#             			/*적용업무설명*/          
+		 , summary             = #summary#                   			/*특이사항*/              
+		 , pay_free_type_code  = #pay_free_type_code#        			/*유무상구분코드*/        
+		 , maintenance_from    = #maintenance_from#          			/*유지보수기간_From*/     
+		 , maintenance_to      = #maintenance_to#            			/*유지보수기간_To*/       
+		 , tax_issue_type_code = #tax_issue_type_code#       			/*세금계산서발행구분*/    
+		 , tax_issue_cnt       = #tax_issue_cnt#             			/*세금계산서분할발행회수*/
+		 , proc_status_code    = #proc_status_code#          			/*진행상태코드*/          
+		 , final_mod_id        = #final_mod_id#              			/*최종변경자ID*/          
+		 , final_mod_date      = SYSDATE				              	/*최종변경일시*/    
+		 , customer_num        = #customer_num#              			/*거래처담당자번호*/ 
+     WHERE sal_id = #sal_id#
+	</update>
+	
+	<!-- 매출정보관리_매출정보  입력-->
+	<insert id="insertSaleInfoManage" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO sal_info( sal_id					/*매출ID*/									
+						, sal_date                  /*매출일자*/               
+						, sal_type_code             /*매출구분코드*/           
+						, roll_type_code            /*업무구문코드*/           
+						, sal_name                  /*매출명*/                 
+						, pjt_id                    /*프로젝트ID*/             
+						, est_id                    /*견적ID*/                 
+						, est_version               /*버전*/                   
+						, ord_id                    /*수주ID*/                 
+						, sal_dept_code             /*매출부서코드*/           
+						, sal_emp_num               /*매출담당자번호*/         
+						, custom_code               /*거래처코드*/             
+						, inspect_exp_date          /*검수예정일*/             
+						, delivery_exp_date         /*납품예정일*/             
+						, set_exp_date              /*설치예정일시*/           
+						, sal_exp_date              /*입금예정일*/             
+						, account_date              /*결제일*/                 
+						, sal_total_amt             /*매출총액*/               
+						, discnt_total_amt          /*할인총액*/               
+						, sal_aply_total_amt        /*매출적용총액*/           
+						, sal_aply_total_tax        /*매출적용총세액*/         
+						, aply_job_desc             /*적용업무설명*/           
+						, summary                   /*특이사항*/               
+						, pay_free_type_code        /*유무상구분코드*/         
+						, maintenance_from          /*유지보수기간_From*/      
+						, maintenance_to            /*유지보수기간_To*/        
+						, tax_issue_type_code       /*세금계산서발행구분*/     
+						, tax_issue_cnt             /*세금계산서분할발행회수*/ 
+						, proc_status_code          /*진행상태코드*/           
+						, final_mod_id              /*최종변경자ID*/           
+						, final_mod_date            /*최종변경일시*/           
+						, reg_date                  /*최초등록일*/             
+						, reg_id                    /*최초등록자*/             
+						, customer_num              /*거래처담당자번호*/       
+            			)	                                                                              
+	   SELECT #sal_id#                         /*매출ID*/                 
+			, REPLACE(#prepare_date#,'-','')   /*매출일자*/               
+			, ord_type_code                    /*수주구분코드*/           
+			, roll_type_code                   /*업무구분코드*/           
+			, #item_name#                                                 
+			, pjt_id                           /*프로젝트id*/             
+			, est_id                           /*견적id*/                 
+			, est_version                      /*버전*/                   
+			, #ord_id#                                                    
+			, ord_dept_code                    /*수주부서코드*/           
+			, ord_emp_num                      /*수주담당자번호*/         
+			, ord_custom_code                  /*수주처코드*/             
+			, inspect_exp_date                 /*검수예정일*/             
+			, delivery_exp_date                /*납품예정일*/             
+			, set_exp_date                     /*설치예정일시*/           
+			, REPLACE(#sal_exp_date# ,'-','')                                               
+			, account_date                     /*결제일*/                 
+			, ''                    		   /*수주총액*/               
+			, ''                 			   /*할인총액*/               
+			, REPLACE(#amt# ,',','')           /*수주적용총액*/           
+			, REPLACE(#tax# ,',','')		   /*수주적용총세액*/         
+			, aply_job_descript                /*적용업무설명*/           
+			, summary                          /*특이사항*/               
+			, pay_free_code                    /*유무상구분코드*/         
+			, maintenance_from                 /*유지보수기간from*/       
+			, maintenance_to                   /*유지보수기간to*/         
+			, tax_issue_type                   /*세금계산서발행구분*/     
+			, tax_mod_issue_cnt                /*세금계산서분할발행회수*/ 
+			, 'D90'                                                       
+			, #final_mod_id#                                              
+			, SYSDATE                                                     
+			, SYSDATE                                                     
+			, #final_mod_id#                                              
+			, ord_customer_num                 /*수주처담당자번호*/       
+	     FROM ord_info                                                                         
+	    WHERE ord_id = #ord_id# 
+	]]>                      
+	</insert>
+	<!-- ******************************************* SAL_ITEM_INFO ***************************************** -->
+	
+	<!-- 매출정보관리(매출 품목정보) 목록	-->
+	<select id="selectSalItemInfo" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (SELECT 'R' flag
+    	                , sal_info_seq	    			/*순번*/        
+						, sal_id            			/*견적ID*/      
+						, item_code         			/*품목코드*/    
+						, (SELECT ci.item_name
+						     FROM com_item ci
+						    WHERE ci.item_code = oi.item_code
+						  ) item_name         			/*품목명*/     
+						,(SELECT ci.standard
+						     FROM com_item ci
+						    WHERE ci.item_code = oi.item_code
+						  ) standard         			/*규격*/
+						, (SELECT ci.unit
+						     FROM com_item ci
+						    WHERE ci.item_code = oi.item_code
+						  ) unit         				/*단위*/       
+						, cnt               			/*수량*/        
+						, unit_price        			/*단가*/        
+						, amt               			/*금액*/        
+						, discount_ratio    			/*할인율*/      
+						, pay_free_code     			/*유무상구분*/  
+						, aply_unit_price   			/*적용단가*/    
+						, aply_amt          			/*적용금액*/    
+						, aply_tax          			/*적용세액*/    
+						, note              			/*비고*/        
+						, final_mod_id      			/*최종변경자ID*/
+						, final_mod_date    			/*최종변경일시*/
+						, reg_date          			/*최초등록일*/  
+						, reg_id            			/*최초등록자*/  
+    	             FROM sal_item_info oi
+    	            WHERE sal_id = #sal_id#      		/*수주ID*/
+					ORDER BY sal_info_seq
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#  
+	</select>
+	
+	<!-- 매출정보관리(매출 품목정보) 목록	총건수 -->
+	<select id="selectSalItemInfoCount" resultClass="int">
+	SELECT COUNT(sal_info_seq)        
+      FROM sal_item_info
+     WHERE sal_id      = #sal_id#      	 /*수주ID*/
+	</select>
+	
+	<!-- 매출정보관리(매출 품목정보) 저장  -->
+	<insert id="insertSalItemInfo" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO sal_item_info ( sal_info_seq			  	/*순번*/        
+							  , sal_id            			/*수주ID*/      
+							  , item_code         			/*품목코드*/    
+							  , standard					/*규격*/
+							  , unit						/*단위*/
+							  , cnt               			/*수량*/        
+							  , unit_price        			/*단가*/        
+							  , amt               			/*금액*/        
+							  , discount_ratio    			/*할인율*/      
+							  , pay_free_code     			/*유무상구분*/  
+							  , aply_unit_price   			/*적용단가*/    
+							  , aply_amt          			/*적용금액*/    
+							  , aply_tax          			/*적용세액*/    
+							  , note              			/*비고*/        
+							  , final_mod_id      			/*최종변경자ID*/
+							  , final_mod_date    			/*최종변경일시*/
+							  , reg_date          			/*최초등록일*/  
+							  , reg_id            			/*최초등록자*/ 
+							 ) 
+					  VALUES (  
+					  			#SAL_INFO_SEQ#				/*순번*/        
+							  , #SAL_ID#            		/*수주ID*/      
+							  , #ITEM_CODE#         		/*품목코드*/    
+							  , #STANDARD#					/*규격*/
+							  , #UNIT#						/*단위*/
+							  , TO_NUMBER(#CNT#)            /*수량*/        
+							  , TO_NUMBER(#UNIT_PRICE#)     /*단가*/        
+							  , TO_NUMBER(#AMT#)            /*금액*/        
+							  , TO_NUMBER(#DISCOUNT_RATIO#) /*할인율*/      
+							  , #PAY_FREE_CODE#     		/*유무상구분*/  
+							  , TO_NUMBER(#APLY_UNIT_PRICE#)/*적용단가*/    
+							  , TO_NUMBER(#APLY_AMT#)       /*적용금액*/    
+							  , TO_NUMBER(#APLY_TAX#)       /*적용세액*/    
+							  , #NOTE#              		/*비고*/        
+							  , #FINAL_MOD_ID#      		/*최종변경자ID*/
+							  , SYSDATE    					/*최종변경일시*/
+							  , SYSDATE          			/*최초등록일*/  
+							  , #FINAL_MOD_ID#         		/*최초등록자*/ 
+					  		 )
+	]]>
+	</insert>
+	
+	<!-- 매출정보관리(매출 품목정보) 수정 -->
+	<update id="updateSalItemInfo" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE sal_item_info 
+	   SET item_code       = #item_code#         			/*품목코드*/   
+	     , standard        = #standard#						/*규격*/
+		 , unit            = #unit#							/*단위*/ 
+		 , cnt             = TO_NUMBER(#cnt#)               /*수량*/        
+		 , unit_price      = TO_NUMBER(#unit_price#)        /*단가*/        
+		 , amt             = TO_NUMBER(#amt#)               /*금액*/        
+		 , discount_ratio  = TO_NUMBER(#discount_ratio#)    /*할인율*/      
+		 , pay_free_code   = #pay_free_code#     			/*유무상구분*/  
+		 , aply_unit_price = TO_NUMBER(#aply_unit_price#)   /*적용단가*/    
+		 , aply_amt        = TO_NUMBER(#aply_amt#)          /*적용금액*/    
+		 , aply_tax        = TO_NUMBER(#aply_tax#)          /*적용세액*/    
+		 , note            = #note#              			/*비고*/        
+		 , final_mod_id    = #final_mod_id#      			/*최종변경자ID*/
+		 , final_mod_date  = SYSDATE	    				/*최종변경일시*/
+   WHERE sal_info_seq	   = #sal_info_seq#					/*순번*/        
+	 AND sal_id            = #sal_id#            			/*매출ID*/ 
+	]]>
+	</update>
+	<!-- ******************************************** SAL_SPEC_INFO **************************************** -->
+	
+	<!-- 매출정보관리(매출처 시스템사양 정보) 목록 	-->
+	<select id="selectSalSpecInfo" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM ( SELECT 'R' flag
+    	                 , sal_info_seq			/*순번*/        
+						 , sal_id           	/*매출ID*/      
+						 , spec_type_code    	/*제원구분코드*/
+						 , spec_intro        	/*제원설명*/    
+						 , spec_cnt          	/*제원수량*/    
+						 , spec_vol          	/*제원용량*/    
+						 , note              	/*비고*/        
+						 , final_mod_id      	/*최종변경자ID*/
+						 , final_mod_date    	/*최종변경일시*/
+						 , reg_date          	/*최초등록일*/  
+						 , reg_id            	/*최초등록자*/  
+    	              FROM sal_spec_info
+    	             WHERE sal_id = #sal_id#   	/*수주ID*/ 
+					 ORDER BY sal_info_seq
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	</select>
+	
+	<!-- 매출정보관리(매출처 시스템사양 정보) 목록 총건수  -->
+	<select id="selectSalSpecInfoCount" resultClass="int">
+	SELECT COUNT(sal_info_seq)			/*순번*/        
+      FROM sal_spec_info
+     WHERE sal_id      = #sal_id#     	/*매출ID*/
+	</select>
+	
+	<!-- 매출정보관리(매출처 시스템사양 정보) 저장  -->
+	<insert id="insertSalSpecInfo" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO sal_spec_info ( sal_info_seq				/*순번*/        
+							  , sal_id            			/*매출ID*/      
+							  , spec_type_code    			/*제원구분코드*/
+							  , spec_intro        			/*제원설명*/    
+							  , spec_cnt          			/*제원수량*/    
+							  , spec_vol          			/*제원용량*/    
+							  , note              			/*비고*/        
+							  , final_mod_id      			/*최종변경자ID*/
+							  , final_mod_date    			/*최종변경일시*/
+							  , reg_date          			/*최초등록일*/  
+							  , reg_id            			/*최초등록자*/   
+							  ) 
+					   VALUES ( 
+					   			(
+					  			 SELECT NVL(MAX(sal_info_seq),0)+1
+  								   FROM sal_spec_info
+  								  WHERE sal_id = #sal_id# 
+  								)							/*순번*/        
+						 	  , #sal_id#            		/*매출ID*/      
+							  , #spec_type_code#    		/*제원구분코드*/
+							  , #spec_intro#        		/*제원설명*/    
+							  , #spec_cnt#          		/*제원수량*/    
+							  , #spec_vol#          		/*제원용량*/    
+							  , #note#              		/*비고*/        
+							  , #final_mod_id#      		/*최종변경자ID*/
+							  , SYSDATE    					/*최종변경일시*/
+							  , SYSDATE          			/*최초등록일*/  
+							  , #final_mod_id#         		/*최초등록자*/  
+					  		  )
+	]]>
+	</insert>
+	
+	<!-- 매출정보관리(매출처 시스템사양 정보) 수정 -->
+	<update id="updateSalSpecInfo" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE sal_spec_info 
+	   SET spec_type_code  = #spec_type_code#    	/*제원구분코드*/
+		 , spec_intro      = #spec_intro#        	/*제원설명*/    
+		 , spec_cnt        = #spec_cnt#          	/*제원수량*/    
+		 , spec_vol        = #spec_vol#          	/*제원용량*/    
+		 , note            = #note#              	/*비고*/        
+		 , final_mod_id    = #final_mod_id#      	/*최종변경자ID*/
+		 , final_mod_date  = SYSDATE    			/*최종변경일시*/
+    WHERE sal_info_seq	   = #sal_info_seq#			/*순번*/        
+	  AND sal_id           = #sal_id#            	/*매출ID*/ 
+	]]>
+	</update>
+	
+	<!-- 매출정보에 해당 프로젝트가 등록되어 있는지확인	-->
+	<select id="checkUpdatePjtStatusSalse" resultClass="String">
+	SELECT DECODE(count(sal_id),0,'Y','N')
+      FROM sal_info
+     WHERE pjt_id = #pjt_id#
+     <isEqual property="procStatusDiv" compareValue="ProcStatus">
+       AND proc_status_code = 'D90'
+     </isEqual>
+	</select>
+	
+	<delete id="deleteTaxInfoSal" parameterClass="HashMap">
+	DELETE
+	  FROM tax_info
+	 WHERE pur_sal_id =#sal_id#
+	</delete>
+	
+	<delete id="deleteTaxItemInfoSal" parameterClass="HashMap">
+	DELETE
+	  FROM tax_item_info
+	 WHERE tax_id IN ( SELECT tax_id
+	   					 FROM tax_info
+	 					WHERE pur_sal_id =#sal_id#
+	 				 )
+	</delete>
+	
+	<!-- 수주정보관리(세금계산서관리) 저장  -->
+	<update id="updateTaxInfo" parameterClass="HashMap">
+	UPDATE /*+ bypass_ujvc */ 
+	     (
+	     SELECT ti.custom_code taget_custom                  /*거래처코드*/
+		      , ti.dem_biz_num                               /*공급받는자사업자등록번호*/
+		      , ti.dem_biz_name                              /*공급받는자상호*/
+		      , ti.dem_biz_ceo                               /*공급받는자대표자명*/
+		      , ti.dem_biz_addr                              /*공급받는자사업장주소*/
+		      , ti.dem_biz_condition                         /*공급받는자업태*/
+		      , ti.dem_biz_item                              /*공급받는자업종*/
+		      , ti.prepare_date                              /*작성일자*/
+		      , ti.sup_price                                 /*공급가액*/
+		      , ti.tax_amt                                   /*세액*/
+		      , ti.reciever_email                            /*받는 사람 E-Mail*/
+		      , ti.final_mod_id                              /*최종변경자ID*/
+		      , ti.final_mod_date                            /*최종변경일시*/
+		      , ti.pur_sal_id   							/*매출ID*/
+		      , cc.custom_code                				/*거래처코드*/
+		      , cc.biz_num                     				/*공급받는자사업자등록번호*/
+		      , cc.custom_name                				/*공급받는자상호*/
+		      , cc.ceo_name                    				/*공급받는자대표자명*/
+		      , cc.addr||' '||cc.addr_detail addr          	/*공급받는자사업장주소*/
+		      , cc.biz_type                    				/*공급받는자업태*/
+		      , cc.biz_kind                    				/*공급받는자업종*/
+		      , cc.email					              		/*받는 사람 E-Mail*/
+		   FROM tax_info ti     
+		      , com_custom cc   
+		  WHERE ti.tax_id = #tax_id#                   
+		    AND cc.custom_code = #custom_code#
+	     )                                                                               
+	   SET taget_custom      = custom_code              /*거래처코드*/
+	     , dem_biz_num       = biz_num                  /*공급받는자사업자등록번호*/
+	     , dem_biz_name      = custom_name              /*공급받는자상호*/
+	     , dem_biz_ceo       = ceo_name                 /*공급받는자대표자명*/
+	     , dem_biz_addr      = addr                     /*공급받는자사업장주소*/
+	     , dem_biz_condition = biz_type                 /*공급받는자업태*/
+	     , dem_biz_item      = biz_kind                 /*공급받는자업종*/
+	     , prepare_date      = #prepare_date#           /*작성일자*/
+	     , sup_price         = #amt#                    /*공급가액*/
+	     , tax_amt           = #tax#                    /*세액*/
+	     , reciever_email    = email                    /*받는 사람 E-Mail*/
+	     , final_mod_id      = #final_mod_id#           /*최종변경자ID*/
+	     , final_mod_date    = SYSDATE                  /*최종변경일시*/ 
+	     , pur_sal_id   	 = #pur_sal_id#				/*매출ID*/   
+	</update>
+
+	<!-- 매출정보관리_매출정보 목록조회 -->
+	<select id="saleInfoManageList" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+                , DECODE(pjt_status_code,'99','N',NVL(modify_yn1,'Y')) modify_yn  
+                , DECODE(pjt_status_code,'99','C00',proc_status_code1) proc_status_code  			/*진행상태코드*/  
+     	     FROM (	SELECT 'R' flag 
+						 , oi.ord_id                												/*수주ID*/                
+						 , to_char(to_date(oi.ord_date),'YYYY-MM-DD') ord_date      				/*수주일자*/              
+						 , oi.ord_type_code         												/*수주구분코드*/     
+						 ,(
+						   SELECT com_code_name
+					         FROM com_code
+					        WHERE group_code = 'EST_TYPE_CODE'
+					          AND com_code = ord_type_code
+						  )ord_type_name     
+						 , oi.ord_name              												/*수주명*/                
+						 , oi.est_id                												/*견적ID*/                
+						 , oi.est_version           												/*버전*/                  
+						 , oi.roll_type_code        												/*업무구분코드*/          
+						 , oi.pjt_id                												/*프로젝트ID*/    
+						 , CASE WHEN oi.ord_type_code = '20' 
+						        THEN (SELECT est_name                                                                       
+								        FROM est_info ei                                                                     
+								       WHERE ei.est_id = oi.est_id	
+								         AND ei.est_version = oi.est_version				                                                 
+						  		     )
+							    ELSE (SELECT pjt_name 
+							            FROM pjt_info pi
+								       WHERE pi.pjt_id = oi.pjt_id					
+								     )
+						   END pjt_name         
+						 , oi.ord_dept_code         												/*수주부서코드*/ 
+						 , ( SELECT dept_name 
+						      FROM com_dept
+						     WHERE dept_code = oi.ord_dept_code 					
+						   ) ord_dept_name         
+						 , oi.ord_emp_num           												/*수주담당자번호*/        
+						 ,( SELECT kor_name 
+						      FROM com_emp_info
+						     WHERE emp_num = oi.ord_emp_num
+						  ) ord_emp_name
+						 , oi.ord_custom_code      											 		/*수주처코드*/ 
+						 ,( SELECT custom_name
+						      FROM com_custom
+						     WHERE custom_code = oi.ord_custom_code
+						  ) ord_custom_name          
+						 , oi.dve_custom_code       												/*납품처코드*/ 
+						 , (SELECT custom_name
+						      FROM com_custom
+						     WHERE custom_code = oi.dve_custom_code
+						  ) dve_custom_name           
+						 , to_char(to_date(oi.inspect_exp_date),'YYYY-MM-DD') inspect_exp_date      /*검수예정일*/            
+						 , to_char(to_date(oi.delivery_exp_date),'YYYY-MM-DD') delivery_exp_date    /*납품예정일*/            
+						 , to_char(to_date(oi.set_exp_date),'YYYY-MM-DD') set_exp_date          	/*설치예정일시*/          
+						 , to_char(to_date(oi.sal_exp_date),'YYYY-MM-DD') sal_exp_date          	/*매출예정일*/            
+						 , to_char(to_date(oi.account_date),'YYYY-MM-DD') account_date          	/*결제일*/                
+						 , oi.ord_total_amt         												/*수주총액*/              
+						 , oi.discnt_total_amt      												/*할인총액*/              
+						 , oi.ord_aply_total_amt    												/*수주적용총액*/          
+						 , oi.ord_aply_total_tax    												/*수주적용총세액*/        
+						 , oi.aply_job_descript     												/*적용업무설명*/          
+						 , oi.summary               												/*특이사항*/              
+						 , oi.pay_free_code         												/*유무상구분코드*/        
+						 , to_char(to_date(oi.maintenance_from),'YYYY-MM-DD') maintenance_from      /*유지보수기간_From*/     
+						 , to_char(to_date(oi.maintenance_to),'YYYY-MM-DD') maintenance_to        	/*유지보수기간_To*/       
+						 , to_char(to_date(oi.pjt_date_from),'YYYY-MM-DD') pjt_date_from         	/*프로젝트기간_FROM*/    
+						 , to_char(to_date(oi.pjt_date_to),'YYYY-MM-DD') pjt_date_to           		/*프로젝트기간_To*/      
+						 , oi.tax_issue_type        												/*세금계산서발행구분*/    
+						 , oi.tax_mod_issue_cnt     												/*세금계산서분할발행회수*/
+						 , oi.proc_status_code proc_status_code1    								/*진행상태코드*/          
+						 , oi.final_mod_id         													/*최종변경자ID*/          
+						 , TO_CHAR(oi.final_mod_date,'YYYY-MM-DD') final_mod_date        			/*최종변경일시*/          
+						 , oi.reg_date              												/*최초등록일*/            
+						 , oi.reg_id                												/*최초등록자*/            
+						 , oi.ord_customer_num      												/*수주처담당자번호*/      
+						 , ( SELECT customer_name  
+						       FROM com_custom_member
+						      WHERE customer_num = oi.ord_customer_num
+						        AND custom_code = oi.ord_custom_code
+						   ) ord_customer_name
+						 , ( SELECT customer_dept  
+						       FROM com_custom_member
+						      WHERE customer_num = oi.ord_customer_num
+						        AND custom_code = oi.ord_custom_code
+						   ) ord_customer_dept  
+						 , oi.dve_customer_num      												/*납품처담당자번호*/    
+						 , ( SELECT customer_name  
+						       FROM com_custom_member
+						      WHERE customer_num = oi.dve_customer_num
+						        AND custom_code = oi.dve_custom_code
+						   ) dve_customer_name  
+						 , ee.modify_yn1 
+					     , (SELECT proc_status_code 
+                              FROM pjt_info
+                             WHERE pjt_id = oi.pjt_id
+                           ) pjt_status_code  
+                         ,'※('||(SELECT COUNT(issue_info_seq) 
+                                    FROM pjt_issue 
+                                   WHERE pjt_id = oi.pjt_id)||')건※' AS reg_issue
+                         , (SELECT admin_nm
+						     FROM tb_admin
+						    WHERE admin_id = oi.final_mod_id
+						  ) final_mod_name
+						 , cc.biz_type																/*업태*/
+						 , cc.biz_kind																/*업종*/
+					  FROM (SELECT oi.*
+					             , ( SELECT pjt_name 
+								      FROM pjt_info pi
+								     WHERE pi.pjt_id = oi.pjt_id					
+								   ) pjt_name
+					  		  FROM ord_info oi
+					       ) oi
+					  LEFT OUTER JOIN
+              			   com_custom cc        	   /*거래처관리*/
+	            		ON oi.ord_custom_code = cc.custom_code  
+            		  LEFT OUTER JOIN
+                           (
+                            SELECT ord_id
+                                 , 'N' modify_yn1  
+                              FROM ord_info 
+                             WHERE proc_status_code = 'C90'
+                           ) ee 
+                        ON oi.ord_id = ee.ord_id    
+                        WHERE oi.proc_status_code = 'C90'
+					    <isNotEmpty property="src_pjt_id">
+						  AND oi.pjt_id like '%'||#src_pjt_id#||'%'
+					    </isNotEmpty>
+					    <isNotEmpty property="src_pjt_name">
+						  AND oi.pjt_name like '%'||#src_pjt_name#||'%'
+						</isNotEmpty>
+					    <isNotEmpty property="src_custom_code">
+						  AND oi.ord_custom_code = #src_custom_code#
+						</isNotEmpty>
+						<isNotEmpty property="src_custom_name">
+						  AND cc.custom_name like '%'||#src_custom_name#||'%'
+						</isNotEmpty>
+						<isNotEmpty property="src_ord_id">
+						  AND oi.ord_id like '%'||#src_ord_id#||'%'
+						</isNotEmpty>
+						<isNotEmpty property="src_ord_name">
+						  AND oi.ord_name like '%'||#src_ord_name#||'%'
+						</isNotEmpty>
+						<isNotEmpty property="session_dept_code">
+						  AND oi.ord_dept_code  = #session_dept_code#
+						</isNotEmpty>
+						<isNotEmpty property="reg_id">
+						  AND oi.reg_id  = #reg_id#
+						</isNotEmpty>	
+						ORDER BY oi.reg_date DESC , oi.final_mod_date DESC
+				  ) A
+		    
+	       )
+	 <isNotNull property="start">      
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	 </isNotNull>     	
+	</select>
+	
+	<!-- 매출정보관리_매출정보 목록조회  총건수-->
+	<select id="saleInfoManageListCount" resultClass="int">
+	SELECT COUNT(oi.ord_id)
+	  FROM (SELECT oi.*
+	             , ( SELECT pjt_name 
+				      FROM pjt_info pi
+				     WHERE pi.pjt_id = oi.pjt_id					
+				   ) pjt_name
+	  		  FROM ord_info oi
+	       ) oi
+	  LEFT OUTER JOIN
+	 	   com_custom cc        	   /*거래처관리*/
+   		ON oi.ord_custom_code = cc.custom_code   
+  	  LEFT OUTER JOIN
+           (
+            SELECT ord_id
+                 , 'N' modify_yn  
+              FROM ord_info 
+             WHERE proc_status_code = 'C90'
+           ) ee 
+        ON oi.ord_id = ee.ord_id       
+	 WHERE oi.proc_status_code = 'C90'
+	 <isNotEmpty property="src_pjt_id">
+	   AND oi.pjt_id like '%'||#src_pjt_id#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_pjt_name">
+	   AND oi.pjt_name like '%'||#src_pjt_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_custom_code">
+	   AND oi.ord_custom_code = #src_custom_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_custom_name">
+	   AND cc.custom_name like '%'||#src_custom_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_ord_id">
+	   AND oi.ord_id like '%'||#src_ord_id#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_ord_name">
+	   AND oi.ord_name like '%'||#src_ord_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="session_dept_code">
+	   AND oi.ord_dept_code  = #session_dept_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="reg_id">
+	   AND oi.reg_id  = #reg_id#
+	 </isNotEmpty>	
+	</select>
+	
+</sqlMap>

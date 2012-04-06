@@ -1,0 +1,685 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Calendar">
+	 
+	<select id="selectCalDayCount" resultClass="Int">
+      SELECT  
+            COUNT(DAY)
+       FROM COM_CALENDAR      
+       WHERE 1=1       
+       <isNotEmpty property="src_date" prepend="AND">
+                DAY   = #src_day#
+            AND MONTH = #src_month#
+            ANd YEAR  = #src_year#    
+       </isNotEmpty>
+       <isNotEmpty property="src_whatday" prepend="AND">
+                WHATDAY  like  '%$src_whatday$%'  
+       </isNotEmpty>
+       <isNotEmpty property="src_status_val" prepend="AND">
+                STATUS_VAL  =  #src_status_val#
+       </isNotEmpty>
+       ORDER BY DAY DESC, MONTH DESC, YEAR DESC
+    </select> 
+	  
+	<select id="selectCalDay" resultClass="HashMap">
+    
+    SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT   
+                             A.DAY             ,
+                             A.MONTH           ,
+                             A.YEAR            ,
+                             A.WHATDAY         ,
+                             A.STATUS_VAL      ,
+                             A.CONTENT         ,
+                             A.NOTE            ,
+                             (select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID    ,
+                             TO_CHAR(final_mod_date, 'YYYY-MM-DD') AS final_mod_date  , 
+                             (
+                              SELECT 
+                                 CEIL(TO_NUMBER(TO_DATE(B.year||'-'||B.month||'-'||B.day, 'yyyy-mm-dd') - SYSDATE)) 
+                              FROM COM_CALENDAR B
+                              WHERE A.DAY=B.DAY
+                                    AND A.MONTH=B.MONTH
+                                    AND A.YEAR=B.YEAR 
+                              ) AS DIFFDAY
+                             
+		            FROM COM_CALENDAR A  
+		            WHERE 1=1       
+		            <isNotEmpty property="src_date" prepend="AND">
+		                     DAY   = #src_day#
+		                 AND MONTH = #src_month#
+		                 ANd YEAR  = #src_year#    
+		            </isNotEmpty>
+		            <isNotEmpty property="src_whatday" prepend="AND">
+		                     WHATDAY  like  '%$src_whatday$%'  
+		            </isNotEmpty>
+		             <isNotEmpty property="src_content" prepend="AND">
+		                     content  like  '%$src_content$%'  
+		            </isNotEmpty>
+		            <isNotEmpty property="src_status_val" prepend="AND">
+		                     STATUS_VAL  =  #src_status_val#
+		            </isNotEmpty>   
+                             
+                    ORDER BY DAY DESC, MONTH DESC, YEAR DESC 
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 
+	   
+    </select>
+    
+    <insert id="insertCalDay" parameterClass="HashMap">
+         INSERT INTO COM_CALENDAR 
+           (DAY             ,
+            MONTH           ,
+            YEAR            ,
+            WHATDAY         ,
+            STATUS_VAL      ,
+            CONTENT         ,
+            NOTE            ,
+            FINAL_MOD_ID    ,
+            FINAL_MOD_DATE) 
+          VALUES
+           (#day#             ,
+            #month#           ,
+            #year#            ,
+            #whatday#         ,
+            #status_val#      ,
+            #content#         ,
+            #note#            ,
+            #admin_id#    ,
+            SYSTIMESTAMP)  
+    </insert>
+    
+    <update id="updateCalDay" parameterClass="HashMap"> 
+        UPDATE COM_CALENDAR SET                       
+            WHATDAY        = #whatday#         ,
+            STATUS_VAL     = #status_val#      ,
+            CONTENT        = #content#         ,
+            NOTE           = #note#            ,
+            FINAL_MOD_ID   = #admin_id#    	   ,
+            
+            DAY 	= #day#,
+            MONTH 	= #month#,
+            YEAR	= #year#,
+            
+            FINAL_MOD_DATE = SYSTIMESTAMP                                         
+        WHERE DAY  =  #src_day#
+              AND MONTH = #src_month#
+              ANd YEAR  = #src_year#
+    </update>
+    
+    <delete id="deleteCalDay" parameterClass="HashMap">
+        DELETE FROM COM_CALENDAR 
+        WHERE DAY       = #src_day#
+              AND MONTH = #src_month#
+              ANd YEAR  = #src_year#    
+    </delete> 
+	  
+	  
+	<!-- 공통코드 조회 -->
+    <select id="selectComboCode" resultClass="HashMap" parameterClass="String">
+    <![CDATA[
+        SELECT 
+                          COM_CODE
+                        , GROUP_CODE
+                        , REF_VAL_01
+                        , REF_NAME_01
+                        , REF_VAL_02
+                        , REF_NAME_02
+                        , REF_VAL_03
+                        , REF_NAME_03
+                        , REF_VAL_04
+                        , REF_NAME_04
+                        , REF_VAL_05
+                        , REF_NAME_05
+                        , SYSTEM_CODE_YN
+                        , USE_YN
+                        , COM_CODE_NAME
+                        , FINAL_MOD_ID
+                        , TO_CHAR(FINAL_MOD_DATE, 'YYYY-MM-DD') AS FINAL_MOD_DATE
+                        , SORT_NUM
+          FROM COM_CODE
+         WHERE USE_YN = 'Y'   
+           AND COM_CODE != '$$'             
+           AND GROUP_CODE = #group_code#
+         ORDER BY TO_NUMBER(SORT_NUM)
+    ]]>           
+    </select>
+    
+    
+    
+    
+    
+     <select id="selectSchedule" resultClass="HashMap">
+	 	
+		       <!-- 공휴일 관리 테이블의 휴일 내용 -->
+		 SELECT * FROM (
+		       SELECT   
+		         
+		           '0' AS SCD_DAY_SEQ											<!--순번-->
+		         , '01'AS SCD_TYPE_CODE											<!--일정구분코드 (공통코드 CALENDARS 데이터 참조 - 01: 공휴일, ...)-->
+		         , '휴무일' AS SCD_TYPE_NM
+		         ,  '' AS PROC_TYPE_CODE										<!--계획수행구분코드-->
+		         , '휴무일' AS PROC_TYPE_NM
+		         ,  '00001' AS SCD_DAY_REG_DEPT									<!--일정등록부서 (사원관리테이블 참조 - 00001: 한국정보인증 - 최상위부서)-->
+		         ,  '00000' AS SCD_DAY_REG_EMP_NUM								<!--일정등록자사원번호 (사원관리 테이블 참조 - 00000: 관리자)-->
+		         ,  A.STATUS_VAL AS STATUS_VAL									<!--일정상태값 (공통코드 CAL_STATUS Y: 사용   )-->
+		         , '사용' AS STATUS_NM
+		         , '' AS WORK_PATTERN_CODE										<!--내근/외근구분코드 (공통코드: )-->
+		         , '휴무일' AS WORK_PATTERN_NM
+		         , (
+		             SELECT 
+		               CEIL(TO_NUMBER(TO_DATE(B.year||'-'||B.month||'-'||B.day, 'yyyy-mm-dd') - SYSDATE)) 
+		            FROM COM_CALENDAR B
+		            WHERE A.DAY=B.DAY
+		                  AND A.MONTH=B.MONTH
+		                  AND A.YEAR=B.YEAR 
+		            ) AS SCD_SDATE												<!--일정 시작일-->
+		          , (
+		             SELECT 
+		               CEIL(TO_NUMBER(TO_DATE(C.year||'-'||C.month||'-'||C.day, 'yyyy-mm-dd') - SYSDATE)) 
+		            FROM COM_CALENDAR C
+		            WHERE A.DAY=C.DAY
+		                  AND A.MONTH=C.MONTH
+		                  AND A.YEAR=C.YEAR 
+		            ) AS SCD_EDATE												<!--일정 종료일-->  
+		          , '00:00:00' AS SCD_TIME_FROM											<!--일정 시작 시간-->
+		          , '00:00:00' AS SCD_TIME_TO											<!--일정 종료 시간-->
+		          , '' AS LABOR_COST											<!--인건비--> 
+		          , '' AS PJT_NM
+		          , '' AS PJT_ID												<!--포로젝트ID-->
+		          , '' AS TASK_GROUP_CODE					 					<!--타스크그룹코드-->
+		          , '' AS TASK_GROUP_NM
+		          , '' AS TASK_CODE												<!--타스크 코드-->
+		          , '' AS TASK_NM
+		          , '' AS PAY_NO												<!--지출결의서번호-->
+		          , '' AS VISIT_REPORT_NO										<!--방문일지번호-->
+		          , A.CONTENT AS SCD_PROC_RES_CONTENT							<!--수행결과내용-->
+		          , A.NOTE AS NOTE 												<!--비고-->
+		          , (select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID    
+		          , (SELECT admin_nm FROM TB_ADMIN WHERE ADMIN_ID=A.REG_ID) as REG_NM
+		          
+		          , TO_CHAR(A.final_mod_date, 'YYYY-MM-DD') AS final_mod_date
+		          , TO_CHAR(A.reg_date, 'YYYY-MM-DD') AS reg_date
+		          
+		          
+			FROM COM_CALENDAR A
+			
+			UNION
+			<!-- 개인별 일 스케줄  -->
+			SELECT 
+		           TO_CHAR(SCD.SCD_DAY_SEQ) AS SCD_DAY_SEQ						<!--순번-->
+		         , SCD.SCD_TYPE_CODE											<!--일정구분코드 (공통코드 CALENDARS 데이터 참조 - 01: 공휴일, ...)-->
+		         
+		         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->		
+		            WHERE  GROUP_CODE='SCD_TYPE_CODE'
+		               AND COM_CODE=SCD.SCD_TYPE_CODE
+		           )AS SCD_TYPE_NM	
+		          
+		         , SCD.PROC_TYPE_CODE											<!--계획수행구분코드-->
+		         
+		         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->
+		            WHERE  GROUP_CODE='PROC_TYPE_CODE'
+		               AND COM_CODE=SCD.PROC_TYPE_CODE
+		           )AS PROC_TYPE_NM
+		         
+		         , SCD.SCD_DAY_REG_DEPT											<!--일정등록부서 (사원관리테이블 참조 - 00001: 한국정보인증 - 최상위부서)-->
+		         , SCD.SCD_DAY_REG_EMP_NUM										<!--일정등록자사원번호 (사원관리 테이블 참조 - 00000: 관리자)-->
+		         
+		         , SCD.STATUS_VAL AS STATUS_VAL									<!--일정상태값 (공통코드 STATUS_VAL 10:  대기, 20: 진행 ...   )-->
+		         
+		         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->
+		            WHERE  GROUP_CODE='STATUS_VAL'
+		               AND COM_CODE=SCD.STATUS_VAL
+		           )AS STATUS_NM
+		           
+		         , SCD.WORK_PATTERN_CODE AS WORK_PATTERN_CODE					<!--내근/외근구분코드 (공통코드: )-->
+		         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->
+		            WHERE  GROUP_CODE='WORK_TYPE_CODE'
+		               AND COM_CODE=SCD.WORK_PATTERN_CODE
+		           )AS WORK_PATTERN_NM
+		         
+		         
+		         , (
+		             SELECT 
+		               CEIL(TO_NUMBER(TO_DATE(SCD.SCD_SDATE, 'yyyy-mm-dd') - SYSDATE)) 
+		            FROM SCD_DAY_INFO SCD1
+		            WHERE SCD.SCD_DAY_SEQ=SCD1.SCD_DAY_SEQ 
+		            ) AS SCD_SDATE												<!--일정 시작일-->
+		          , (
+		             SELECT 
+		               CEIL(TO_NUMBER(TO_DATE(SCD.SCD_EDATE, 'yyyy-mm-dd') - SYSDATE)) 
+		            FROM  SCD_DAY_INFO SCD2
+		            WHERE SCD.SCD_DAY_SEQ=SCD2.SCD_DAY_SEQ
+		            ) AS SCD_EDATE												<!--일정 종료일-->  
+		          , NVL(SCD.SCD_TIME_FROM, '00:00:00') AS SCD_TIME_FROM			<!--일정 시작 시간-->
+		          , NVL(SCD.SCD_TIME_TO, '00:00:00') AS SCD_TIME_TO 			<!--일정 종료 시간-->
+		          
+		          , TO_CHAR(SCD.LABOR_COST) AS LABOR_COST						<!--인건비--> 
+		           
+		          , (
+		          	SELECT PJT_NAME FROM PJT_INFO PJT
+		            WHERE SCD.PJT_ID=PJT.PJT_ID
+		           ) AS PJT_NM
+		           , SCD.PJT_ID													<!--포로젝트ID(이름)-->
+		           
+		           , SCD.TASK_GROUP_CODE
+		           , (
+		          	SELECT TASK_GROUP_NAME FROM COM_TASK_INFO TSKG
+		            WHERE SCD.TASK_GROUP_CODE=TSKG.TASK_GROUP_CODE
+		              AND SCD.TASK_CODE=TSKG.TASK_CODE
+		           ) AS TASK_GROUP_NM					 						<!--타스크그룹코드(이름)-->
+		          
+		           , SCD.TASK_CODE
+		           , (
+		          	SELECT TASK_NAME FROM COM_TASK_INFO TSK
+		            WHERE SCD.TASK_GROUP_CODE=TSK.TASK_GROUP_CODE
+		           	  AND SCD.TASK_CODE=TSK.TASK_CODE
+		           ) AS TASK_NM													<!--타스크 코드(이름)-->
+		          
+		          , SCD.PAY_NO													<!--지출결의서번호-->
+		          
+		          , SCD.VISIT_REPORT_NO											<!--방문일지번호-->
+		          
+		          , SCD.SCD_PROC_RES_CONTENT									<!--수행결과내용-->
+		          
+		          , SCD.NOTE 													<!--비고-->
+		          
+		          , (SELECT ADMIN_NM FROM TB_ADMIN WHERE ADMIN_ID=SCD.FINAL_MOD_ID) as FINAL_MOD_ID
+		          , (SELECT admin_nm FROM TB_ADMIN WHERE ADMIN_ID=SCD.REG_ID) as REG_NM
+		          
+		          , TO_CHAR(SCD.final_mod_date, 'YYYY-MM-DD') AS final_mod_date
+		          , TO_CHAR(SCD.reg_date, 'YYYY-MM-DD') AS reg_date
+			FROM SCD_DAY_INFO SCD
+			WHERE 1=1 
+			<isNotEmpty property="src_scd_day_reg_emp_num">
+		      	AND SCD.reg_id  = #src_scd_day_reg_emp_num# 
+			</isNotEmpty>
+			
+			<isNotEmpty property="scd_day_reg_emp_num">
+			  AND (SELECT  dept_code  FROM COM_EMP_INFO WHERE SCD.reg_id=emp_num) 	= #scd_day_reg_dept#
+		      AND SCD.reg_id  				= #scd_day_reg_emp_num# 
+			</isNotEmpty>
+			
+			) 
+			ORDER BY  TO_NUMBER(SCD_SDATE) ASC, SCD_TIME_FROM  ASC 
+            
+    </select>
+    
+    
+    
+    <insert id="insertSchedule" parameterClass="HashMap">
+         INSERT INTO SCD_DAY_INFO 
+           (
+           	 SCD_DAY_SEQ
+			,SCD_TYPE_CODE
+			,PROC_TYPE_CODE
+			,SCD_DAY_REG_DEPT
+			,SCD_DAY_REG_EMP_NUM
+			,STATUS_VAL
+			,WORK_PATTERN_CODE
+			,SCD_SDATE
+			,SCD_EDATE
+			,SCD_TIME_FROM
+			,SCD_TIME_TO
+			,SCD_TIME
+			,LABOR_COST
+			,PJT_ID
+			,TASK_GROUP_CODE
+			,TASK_CODE
+			,PAY_NO
+			,VISIT_REPORT_NO
+			,SCD_PROC_RES_CONTENT
+			,NOTE
+			,PJT_STATUS
+			
+			,REG_DATE
+			,REG_ID 
+           ) 
+          VALUES
+           (
+             (SELECT NVL(max(TO_NUMBER(scd_day_seq)), 0) + 1  FROM SCD_DAY_INFO )
+			,#scd_type_code#
+			,#proc_type_code#
+			,#scd_day_reg_dept#
+			,#scd_day_reg_emp_num#
+			,#status_val#
+			,#work_pattern_code#
+			,#scd_sdate#
+			,#scd_edate#
+			,#scd_time_from#
+			,#scd_time_to#
+			,#scd_time#
+			,REPLACE(#labor_cost#, ',', '')
+			,#pjt_id#
+			,#task_group_code#
+			,#task_code#
+			,#pay_no#
+			,#visit_report_no#
+			,#scd_proc_res_content#
+			,#note#
+			,#pjt_status#
+			,SYSTIMESTAMP
+			,#scd_day_reg_emp_num#
+            )  
+    </insert>
+    
+    <update id="updateSchedule" parameterClass="HashMap"> 
+        UPDATE SCD_DAY_INFO SET                       
+       		 SCD_TYPE_CODE				= #scd_type_code#
+			,PROC_TYPE_CODE             = #proc_type_code#
+			,SCD_DAY_REG_DEPT           = #scd_day_reg_dept#
+			,SCD_DAY_REG_EMP_NUM        = #scd_day_reg_emp_num#
+			,STATUS_VAL                 = #status_val#
+			,WORK_PATTERN_CODE          = #work_pattern_code#
+			,SCD_SDATE                  = #scd_sdate#
+			,SCD_EDATE                  = #scd_edate#
+			,SCD_TIME_FROM              = #scd_time_from#
+			,SCD_TIME_TO                = #scd_time_to#
+			,SCD_TIME                   = #scd_time#
+			,LABOR_COST                 = REPLACE(#labor_cost#, ',', '')
+			,PJT_ID                     = #pjt_id#
+			,TASK_GROUP_CODE            = #task_group_code#
+			,TASK_CODE                  = #task_code#
+			,PAY_NO                     = #pay_no#
+			,VISIT_REPORT_NO            = #visit_report_no#
+			,SCD_PROC_RES_CONTENT       = #scd_proc_res_content#
+			,NOTE                       = #note#
+			,PJT_STATUS                 = #pjt_status#
+            ,FINAL_MOD_ID   			= #scd_day_reg_emp_num#
+            ,FINAL_MOD_DATE 			= SYSTIMESTAMP                                                     
+        WHERE SCD_DAY_SEQ  =  #scd_day_seq#
+        
+    </update>
+    
+    <delete id="deleteSchedule" parameterClass="HashMap">
+        DELETE FROM SCD_DAY_INFO 
+        WHERE  SCD_DAY_SEQ  =  #scd_day_seq#
+    </delete> 
+	 
+	 
+	 
+	 
+	  <select id="selectAllSchedule" resultClass="HashMap"> 
+		SELECT	* FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     		FROM ( 
+			 				SELECT * FROM(	
+											SELECT 
+										           TO_CHAR(SCD.SCD_DAY_SEQ) AS SCD_DAY_SEQ						<!--순번-->
+										         , SCD.SCD_TYPE_CODE											<!--일정구분코드 (공통코드 CALENDARS 데이터 참조 - 01: 공휴일, ...)-->
+										         
+										         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->		
+										            WHERE  GROUP_CODE='SCD_TYPE_CODE'
+										               AND COM_CODE=SCD.SCD_TYPE_CODE
+										           )AS SCD_TYPE_CODE_NM	
+										          
+										         , SCD.PROC_TYPE_CODE											<!--계획수행구분코드-->
+										         
+										         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->
+										            WHERE  GROUP_CODE='PROC_TYPE_CODE'
+										               AND COM_CODE=SCD.PROC_TYPE_CODE
+										           )AS PROC_TYPE_CODE_NM
+										         
+										         , SCD.SCD_DAY_REG_DEPT											<!--일정등록부서 (사원관리테이블 참조 - 00001: 한국정보인증 - 최상위부서)-->
+										         ,(
+											        SELECT DEPT_NAME
+											         FROM COM_DEPT
+											         WHERE DEPT_CODE = SCD.SCD_DAY_REG_DEPT
+											     ) SCD_DAY_REG_DEPT_NM
+										         
+										         , SCD.SCD_DAY_REG_EMP_NUM										<!--일정등록자사원번호 (사원관리 테이블 참조 - 00000: 관리자)-->
+										         ,(
+											         SELECT KOR_NAME
+											         FROM COM_EMP_INFO
+											         WHERE EMP_NUM = SCD.SCD_DAY_REG_EMP_NUM
+											     ) SCD_DAY_REG_EMP_NUM_NM  
+										         
+										         , SCD.STATUS_VAL AS STATUS_VAL									<!--일정상태값 (공통코드 STATUS_VAL 10:  대기, 20: 진행 ...   )-->
+										         
+										         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->
+										            WHERE  GROUP_CODE='STATUS_VAL'
+										               AND COM_CODE=SCD.STATUS_VAL
+										           )AS STATUS_NM
+										           
+										         , SCD.WORK_PATTERN_CODE AS WORK_PATTERN_CODE					<!--내근/외근구분코드 (공통코드: )-->
+										         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->
+										            WHERE  GROUP_CODE='WORK_TYPE_CODE'
+										               AND COM_CODE=SCD.WORK_PATTERN_CODE
+										           )AS WORK_PATTERN_CODE_NM
+										         		         
+										          , TO_CHAR(TO_DATE(SCD.SCD_SDATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS SCD_SDATE			<!--일정 시작일-->
+										          , TO_CHAR(TO_DATE(SCD.SCD_EDATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS SCD_EDATE			<!--일정 종료일-->  
+										          , NVL(SCD.SCD_TIME_FROM, '00:00:00') AS SCD_TIME_FROM			<!--일정 시작 시간-->
+		         								  , NVL(SCD.SCD_TIME_TO, '00:00:00') AS SCD_TIME_TO 			<!--일정 종료 시간-->
+										          
+										          , TO_CHAR(SCD.LABOR_COST) AS LABOR_COST						<!--인건비--> 
+										           
+										          , (
+										          	SELECT PJT_NAME FROM PJT_INFO PJT
+										            WHERE SCD.PJT_ID=PJT.PJT_ID
+										           ) AS PJT_NM
+										           , SCD.PJT_ID													<!--포로젝트ID(이름)-->
+										           
+										           , SCD.TASK_GROUP_CODE
+										           , (
+										          	SELECT TASK_GROUP_NAME FROM COM_TASK_INFO TSKG
+										            WHERE SCD.TASK_GROUP_CODE=TSKG.TASK_GROUP_CODE
+										              AND SCD.TASK_CODE=TSKG.TASK_CODE
+										           ) AS TASK_GROUP_CODE_NM					 					<!--타스크그룹코드(이름)-->
+										          
+										           , SCD.TASK_CODE
+										           , (
+										          	SELECT TASK_NAME FROM COM_TASK_INFO TSK
+										            WHERE SCD.TASK_GROUP_CODE=TSK.TASK_GROUP_CODE
+										           	  AND SCD.TASK_CODE=TSK.TASK_CODE
+										           ) AS TASK_CODE_NM											<!--타스크 코드(이름)-->
+										          
+										          , SCD.PAY_NO													<!--지출결의서번호-->
+										          
+										          , SCD.VISIT_REPORT_NO											<!--방문일지번호-->
+										          
+										          , SCD.SCD_PROC_RES_CONTENT									<!--수행결과내용-->
+										          
+										          , SCD.NOTE 													<!--비고-->
+										          
+										          , SCD.PJT_STATUS
+										          ,(
+												      SELECT COM_CODE_NAME
+												          FROM COM_CODE
+												          WHERE GROUP_CODE = 'PJT_STATUS' AND COM_CODE = SCD.PJT_STATUS
+												          AND USE_YN ='Y'
+												     )PJT_STATUS_NM    
+										          , (SELECT ADMIN_NM FROM TB_ADMIN WHERE ADMIN_ID=SCD.FINAL_MOD_ID) as FINAL_MOD_ID
+										          , (SELECT admin_nm FROM TB_ADMIN WHERE ADMIN_ID=SCD.REG_ID) as REG_NM
+										          
+										          , TO_CHAR(SCD.final_mod_date, 'YYYY-MM-DD') AS final_mod_date
+										          , TO_CHAR(SCD.reg_date, 'YYYY-MM-DD') AS reg_date
+										          ,(
+											         SELECT POSTION_CODE
+											         FROM COM_EMP_INFO
+											         WHERE EMP_NUM = SCD.SCD_DAY_REG_EMP_NUM
+											       ) POSTION_CODE
+											      ,(SELECT  dept_code  FROM COM_EMP_INFO WHERE SCD.reg_id=emp_num) AS real_dept   
+											FROM SCD_DAY_INFO SCD
+								)WHERE 1 = 1 
+										 <isNotEmpty property="src_postion_code">
+										   AND POSTION_CODE LIKE '%$src_postion_code$%'
+										 </isNotEmpty>
+										 	
+										 <isNotEmpty property="src_dept_name">
+										   AND SCD_DAY_REG_DEPT_NM LIKE '%$src_dept_name$%'
+										 </isNotEmpty>
+										 <isNotEmpty property="src_kor_name">
+										   AND SCD_DAY_REG_EMP_NUM_NM LIKE '%$src_kor_name$%'
+										 </isNotEmpty>
+										
+										<isNotEmpty property="src_scd_time_from">
+											AND SCD_SDATE  <![CDATA[>=]]>  #src_scd_time_from#
+										</isNotEmpty>
+										<isNotEmpty property="src_scd_time_to">
+											AND SCD_SDATE  <![CDATA[<=]]>  #src_scd_time_to#
+										</isNotEmpty>
+										
+										<isNotEmpty property="src_pjt_id">
+											AND PJT_ID = #src_pjt_id#   
+										</isNotEmpty>
+										<isNotEmpty property="src_pjt_name">
+											AND PJT_NM LIKE '%$src_pjt_name$%'   
+										</isNotEmpty>
+										
+										<isNotEmpty property="session_dept_code">
+											AND real_dept = #session_dept_code#
+										</isNotEmpty>
+										
+								 
+								ORDER BY to_number(POSTION_CODE), SCD_DAY_REG_EMP_NUM_NM, SCD_SDATE desc, SCD_TIME_FROM desc     
+				  	) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 
+            
+    </select>
+    
+    
+    <select id="selectAllScheduleCount" resultClass="Int">
+      SELECT count(*) FROM(	
+     				 
+					SELECT 
+				           TO_CHAR(SCD.SCD_DAY_SEQ) AS SCD_DAY_SEQ						<!--순번-->
+				         , SCD.SCD_TYPE_CODE											<!--일정구분코드 (공통코드 CALENDARS 데이터 참조 - 01: 공휴일, ...)-->
+				         
+				         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->		
+				            WHERE  GROUP_CODE='SCD_TYPE_CODE'
+				               AND COM_CODE=SCD.SCD_TYPE_CODE
+				           )AS SCD_TYPE_CODE_NM	
+				          
+				         , SCD.PROC_TYPE_CODE											<!--계획수행구분코드-->
+				         
+				         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->
+				            WHERE  GROUP_CODE='PROC_TYPE_CODE'
+				               AND COM_CODE=SCD.PROC_TYPE_CODE
+				           )AS PROC_TYPE_CODE_NM
+				         
+				         , SCD.SCD_DAY_REG_DEPT											<!--일정등록부서 (사원관리테이블 참조 - 00001: 한국정보인증 - 최상위부서)-->
+				         ,(
+					        SELECT DEPT_NAME
+					         FROM COM_DEPT
+					         WHERE DEPT_CODE = SCD.SCD_DAY_REG_DEPT
+					     ) SCD_DAY_REG_DEPT_NM
+				         
+				         , SCD.SCD_DAY_REG_EMP_NUM										<!--일정등록자사원번호 (사원관리 테이블 참조 - 00000: 관리자)-->
+				         ,(
+					         SELECT KOR_NAME
+					         FROM COM_EMP_INFO
+					         WHERE EMP_NUM = SCD.SCD_DAY_REG_EMP_NUM
+					     ) SCD_DAY_REG_EMP_NUM_NM  
+				         
+				         , SCD.STATUS_VAL AS STATUS_VAL									<!--일정상태값 (공통코드 STATUS_VAL 10:  대기, 20: 진행 ...   )-->
+				         
+				         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->
+				            WHERE  GROUP_CODE='STATUS_VAL'
+				               AND COM_CODE=SCD.STATUS_VAL
+				           )AS STATUS_NM
+				           
+				         , SCD.WORK_PATTERN_CODE AS WORK_PATTERN_CODE					<!--내근/외근구분코드 (공통코드: )-->
+				         , (SELECT COM_CODE_NAME FROM COM_CODE 							<!--  -->
+				            WHERE  GROUP_CODE='WORK_TYPE_CODE'
+				               AND COM_CODE=SCD.WORK_PATTERN_CODE
+				           )AS WORK_PATTERN_CODE_NM
+				         		         
+				          , TO_CHAR(TO_DATE(SCD.SCD_SDATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS SCD_SDATE			<!--일정 시작일-->
+				          , TO_CHAR(TO_DATE(SCD.SCD_EDATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS SCD_EDATE			<!--일정 종료일-->  
+				          , NVL(SCD.SCD_TIME_FROM, '00:00:00') AS SCD_TIME_FROM			<!--일정 시작 시간-->
+		          		  , NVL(SCD.SCD_TIME_TO, '00:00:00') AS SCD_TIME_TO 			<!--일정 종료 시간-->
+				          
+				          , TO_CHAR(SCD.LABOR_COST) AS LABOR_COST						<!--인건비--> 
+				           
+				          , (
+				          	SELECT PJT_NAME FROM PJT_INFO PJT
+				            WHERE SCD.PJT_ID=PJT.PJT_ID
+				           ) AS PJT_NM
+				           , SCD.PJT_ID													<!--포로젝트ID(이름)-->
+				           
+				           , SCD.TASK_GROUP_CODE
+				           , (
+				          	SELECT TASK_GROUP_NAME FROM COM_TASK_INFO TSKG
+				            WHERE SCD.TASK_GROUP_CODE=TSKG.TASK_GROUP_CODE
+				              AND SCD.TASK_CODE=TSKG.TASK_CODE
+				           ) AS TASK_GROUP_CODE_NM					 					<!--타스크그룹코드(이름)-->
+				          
+				           , SCD.TASK_CODE
+				           , (
+				          	SELECT TASK_NAME FROM COM_TASK_INFO TSK
+				            WHERE SCD.TASK_GROUP_CODE=TSK.TASK_GROUP_CODE
+				           	  AND SCD.TASK_CODE=TSK.TASK_CODE
+				           ) AS TASK_CODE_NM											<!--타스크 코드(이름)-->
+				          
+				          , SCD.PAY_NO													<!--지출결의서번호-->
+				          
+				          , SCD.VISIT_REPORT_NO											<!--방문일지번호-->
+				          
+				          , SCD.SCD_PROC_RES_CONTENT									<!--수행결과내용-->
+				          
+				          , SCD.NOTE 													<!--비고-->
+				          
+				          , SCD.PJT_STATUS
+				          ,(
+						      SELECT COM_CODE_NAME
+						          FROM COM_CODE
+						          WHERE GROUP_CODE = 'PJT_STATUS' AND COM_CODE = SCD.PJT_STATUS
+						          AND USE_YN ='Y'
+						     )PJT_STATUS_NM    
+				          , (SELECT ADMIN_NM FROM TB_ADMIN WHERE ADMIN_ID=SCD.FINAL_MOD_ID) as FINAL_MOD_ID
+				          , (SELECT admin_nm FROM TB_ADMIN WHERE ADMIN_ID=SCD.REG_ID) as REG_NM
+				          
+				          , TO_CHAR(SCD.final_mod_date, 'YYYY-MM-DD') AS final_mod_date
+				          , TO_CHAR(SCD.reg_date, 'YYYY-MM-DD') AS reg_date
+				          ,(
+					         SELECT POSTION_CODE
+					         FROM COM_EMP_INFO
+					         WHERE EMP_NUM = SCD.SCD_DAY_REG_EMP_NUM
+					        ) POSTION_CODE
+					      ,(SELECT  dept_code  FROM COM_EMP_INFO WHERE SCD.reg_id=emp_num) AS real_dept   
+					FROM SCD_DAY_INFO SCD
+			)WHERE 1 = 1
+					 <isNotEmpty property="src_postion_code">
+					   AND POSTION_CODE LIKE '%$src_postion_code$%'
+					</isNotEmpty>
+					 <isNotEmpty property="src_dept_name">
+					   AND SCD_DAY_REG_DEPT_NM LIKE '%$src_dept_name$%'
+					 </isNotEmpty>
+					 <isNotEmpty property="src_kor_name">
+					   AND SCD_DAY_REG_EMP_NUM_NM LIKE '%$src_kor_name$%'
+					 </isNotEmpty>
+					
+					<isNotEmpty property="src_scd_time_from">
+						AND SCD_SDATE  <![CDATA[>=]]>  #src_scd_time_from#
+					</isNotEmpty>
+					<isNotEmpty property="src_scd_time_to">
+						AND SCD_SDATE  <![CDATA[<=]]>  #src_scd_time_to#
+					</isNotEmpty>
+					
+					<isNotEmpty property="src_pjt_id">
+						AND PJT_ID = #src_pjt_id#   
+					</isNotEmpty>
+					<isNotEmpty property="src_pjt_name">
+						AND PJT_NM LIKE '%$src_pjt_name$%'   
+					</isNotEmpty>
+					
+					<isNotEmpty property="session_dept_code">
+						AND real_dept = #session_dept_code#
+					</isNotEmpty>
+					
+					
+    </select> 
+	  
+	 
+ </sqlMap>

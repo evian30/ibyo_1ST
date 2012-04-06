@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : ItemHW.xml
+    Description : 제품권장사양_하드웨어 정보
+-->
+<sqlMap namespace="ItemHW">
+  
+	<!-- 제품권장사양_하드웨어 정보 조회 -->
+	<select id="selectItemHW" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT spec_hw_seq
+						 , item_code
+						 , item_type_code
+						 , spec_hw_cpu
+						 , spec_hw_mem
+						 , spec_hw_storage
+						 , spec_hw_nic
+						 , use_yn
+						 , note
+						 , final_mod_id
+						 , TO_CHAR(final_mod_date, 'YYYY-MM-DD') AS final_mod_date 
+				 	  FROM com_item_spec_hw
+				     WHERE item_code = #item_code#
+					   AND item_type_code = #item_type_code#
+					   <isEmpty property="item_type_code">
+					   AND item_type_code = '999999'
+					   </isEmpty>
+					 ORDER BY TO_NUMBER(spec_hw_seq)
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 
+	</select>
+	
+	<!-- 제품권장사양_하드웨어 정보 조회 총건수 -->
+	<select id="selectItemHWCount" resultClass="int">
+		SELECT COUNT(spec_hw_seq)	
+		  FROM com_item_spec_hw
+		 WHERE item_code = #item_code#
+		   AND item_type_code = #item_type_code#
+		<isEmpty property="item_type_code">
+	 	   AND item_type_code = '999999'
+	   	</isEmpty>
+	</select> 
+	
+	<!-- 제품권장사양_하드웨어 정보 저장 -->
+	<insert id="insertItemHW" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO COM_ITEM_SPEC_HW(
+								  	 spec_hw_seq
+									,item_code
+									,item_type_code
+									,spec_hw_cpu
+									,spec_hw_mem
+									,spec_hw_storage
+									,spec_hw_nic
+									,use_yn
+									,note
+									,final_mod_id
+									,final_mod_date 
+								)
+					VALUES
+							(
+						  		  	 (SELECT NVL(max(TO_NUMBER(spec_hw_seq)), 0) + 1  FROM COM_ITEM_SPEC_HW )
+									,#item_code#
+									,#item_type_code#
+									,#spec_hw_cpu#
+									,#spec_hw_mem#
+									,#spec_hw_storage#
+									,#spec_hw_nic#
+									,#use_yn#
+									,#note#
+									,#final_mod_id# 
+						  			,SYSTIMESTAMP
+							)
+	]]>
+	</insert>
+	
+	<!-- 제품권장사양_하드웨어 정보 수정 -->
+	<update id="updateItemHW" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE com_item_spec_hw 
+	   SET spec_hw_cpu      = #spec_hw_cpu#    
+		 , spec_hw_mem      = #spec_hw_mem#    
+		 , spec_hw_storage  = #spec_hw_storage#
+		 , spec_hw_nic      = #spec_hw_nic#    
+		 , use_yn           = #use_yn#         
+		 , note             = #note#           
+		 , final_mod_id     = #final_mod_id#   
+		 , final_mod_date   = SYSTIMESTAMP 
+     WHERE item_code		= #item_code#
+   	   AND item_type_code 	= #item_type_code#
+   	   AND spec_hw_seq      = #spec_hw_seq# 	  
+	]]>
+	</update> 
+
+ </sqlMap>

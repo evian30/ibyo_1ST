@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Main">
+	<typeAlias alias="Schedule" type="sg.svc.portal.bass.schedule.domain.Schedule"/>	
+	
+	
+	
+	<select id="selectNoticeBoard" resultClass="HashMap">
+   	SELECT T1.*, T2.CNT, T3.FCNT 
+   	  FROM(
+       SELECT  BOARD_ID,
+               BOARD_SEQ,
+               BOARD_WRITE,
+               WRITE_ID,
+               PASSWD,
+               BOARD_TITLE,
+               BOARD_CONTENTS,
+               READ_CNT,
+               POS,
+               THREAD,
+               NOTICE_YN,
+               TO_CHAR(REG_DT, 'YYYY-MM-DD') AS REG_DT          
+          FROM TB_BOARD2 A
+          WHERE BOARD_ID = '2'
+             
+       )T1  
+       LEFT OUTER JOIN    
+      (SELECT BOARD_ID, BOARD_SEQ, COUNT(*) AS CNT FROM TB_BOARD1 WHERE BOARD_ID = '2' GROUP BY BOARD_ID, BOARD_SEQ ) T2
+       ON T1.BOARD_ID = T2.BOARD_ID AND T1.BOARD_SEQ = T2.BOARD_SEQ
+       
+       LEFT OUTER JOIN
+	  (SELECT BOARD_ID, BOARD_SEQ, COUNT(*) AS FCNT FROM TB_BOARDFILE1 WHERE BOARD_ID = '2' GROUP BY BOARD_ID, BOARD_SEQ ) T3   
+	   ON T1.BOARD_ID = T3.BOARD_ID AND T1.BOARD_SEQ = T3.BOARD_SEQ  
+    </select>
+	
+	
+    <insert id="insertSchedule" parameterClass="HashMap">
+         INSERT INTO SCHE_MNG 
+ 			(TECH_SUP_APP_NO, SCHE_NO, CHMAN_NO, ST_DATE, END_DATE, TITLE, CONTENTS, CR_DATE) 
+			      SELECT #tech_sup_app_no#,
+			             (SELECT NVL(MAX(sche_no), 0) + 1 
+			                FROM SCHE_MNG 
+			               WHERE TECH_SUP_APP_NO = #tech_sup_app_no#
+			                 AND CHMAN_NO =(SELECT chman_no FROM CHMAN WHERE ID=#admin_id#)
+			              ) sche_no,
+			             (SELECT chman_no FROM CHMAN WHERE ID=#admin_id#), 
+			             TO_DATE(#st_date#, 'yyyy-MM-dd HH24:mi:ss'), 
+			             TO_DATE(#end_date#, 'yyyy-MM-dd HH24:mi:ss'), 
+			             #title#, #contents#, sysdate
+			       FROM DUAL           
+    </insert>
+    
+    <select id="selectSchedule" resultClass="HashMap">
+     <![CDATA[ 
+		SELECT 
+			A.SCHE_NO,
+			A.CHMAN_NO,
+			TO_CHAR(A.ST_DATE, 'yyyyMMddHH24miss') ST_DATE,
+			TO_CHAR(A.END_DATE, 'yyyyMMddHH24miss') END_DATE,
+			A.TITLE,
+			A.CONTENTS,
+			TO_CHAR(A.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') CR_DATE,
+			TO_CHAR(A.UP_DATE, 'yyyy-MM-dd HH24:mi:ss') UP_DATE,
+			A.TECH_SUP_APP_NO,
+			B.CHMAN_NM, 
+			B.DEPT_CODE
+		FROM SCHE_MNG A, CHMAN B
+		WHERE A.CHMAN_NO = B.CHMAN_NO(+) 
+		      AND TO_CHAR(A.ST_DATE, 'yyyyMM') LIKE #year# || #month# || '%'
+			 
+     ]]>    						 	  
+    </select>
+    <!--(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE=B.DEPT_CODE AND CODE_SECT='DEPT_CODE') AS DEPT_NM, AND A.ST_DATE LIKE #year# || #month# || '%'-->
+    <select id="selectScheduleView" resultClass="HashMap">
+		SELECT 
+			A.SCHE_NO,
+			A.CHMAN_NO,
+			TO_CHAR(A.ST_DATE, 'yyyyMMddHH24miss') ST_DATE,
+			TO_CHAR(A.END_DATE, 'yyyyMMddHH24miss') END_DATE,
+			A.TITLE,
+			A.CONTENTS,
+			TO_CHAR(A.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') CR_DATE,
+			TO_CHAR(A.UP_DATE, 'yyyy-MM-dd HH24:mi:ss') UP_DATE,
+			A.TECH_SUP_APP_NO,
+			B.CHMAN_NM,
+			(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE=B.DEPT_CODE AND CODE_SECT='DEPT_CODE') AS DEPT_NM,
+			B.DEPT_CODE
+		FROM SCHE_MNG A, CHMAN B
+		WHERE A.CHMAN_NO = B.CHMAN_NO(+)
+			AND A.TECH_SUP_APP_NO = #tech_sup_app_no#   
+		    AND A.SCHE_NO = #sche_no#
+		    
+    </select>
+    
+    
+    <update id="updateSchedule" parameterClass="HashMap">
+        UPDATE SCHE_MNG 
+           SET title = #title#,
+               contents = #contents#,
+               st_date = TO_DATE(#st_date#, 'yyyy-MM-dd HH24:mi:ss'),
+               end_date = TO_DATE(#end_date#, 'yyyy-MM-dd HH24:mi:ss'), 
+               up_date = sysdate                                                    
+       	 WHERE TECH_SUP_APP_NO = #tech_sup_app_no# 
+		   AND SCHE_NO = #sche_no#
+    </update>
+    
+    <delete id="deleteSchedule" parameterClass="HashMap">
+        DELETE FROM SCHE_MNG 
+        WHERE TECH_SUP_APP_NO = #tech_sup_app_no#   
+		   AND SCHE_NO = #sche_no#
+    </delete>
+    
+    <select id="selectWeekSchedule" resultClass="HashMap">
+    <![CDATA[
+		SELECT 
+			A.SCHE_NO,
+			A.CHMAN_NO,
+			TO_CHAR(A.ST_DATE, 'yyyyMMddHH24miss') ST_DATE,
+    		TO_CHAR(A.END_DATE, 'yyyyMMddHH24miss') END_DATE,
+			A.TITLE,
+			A.CONTENTS,
+			TO_CHAR(A.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') CR_DATE,
+			TO_CHAR(A.UP_DATE, 'yyyy-MM-dd HH24:mi:ss') UP_DATE,
+			A.TECH_SUP_APP_NO,
+			B.CHMAN_NM,
+			(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE=B.DEPT_CODE AND CODE_SECT='DEPT_CODE') AS DEPT_NM,
+			B.DEPT_CODE
+		FROM SCHE_MNG A, CHMAN B
+		WHERE A.CHMAN_NO = B.CHMAN_NO(+)
+		 	  AND A.ST_DATE BETWEEN TO_DATE(#stdate#, 'yyyy-MM-dd') AND TO_DATE(#eddate#, 'yyyy-MM-dd')
+     ]]>	
+    </select>
+    
+    
+    
+     
+    
+    
+    
+     <!--  목록 수 S-->
+    <select id="selectTechsupAppTotCount" resultClass="Int">		 
+		SELECT COUNT(TECH_SUP_APP_NO) FROM (
+				SELECT * FROM ( 
+									SELECT  TSA.TECH_SUP_APP_NO, 
+									        TSA.APP_TITLE,
+									        TSA.APP_CONTENTS,
+										        (	SELECT 
+										        		CODE_NM 
+										        	FROM TOT_CODE_MNG 
+										        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+										        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+										       	) AS TECH_SUP_STATUS_CODE_NM,
+									        	NVL((SELECT COUNT(*) FROM TECH_SUP TS WHERE TS.TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO),0) AS TECH_SUP_APP_CNT,
+									        TSA.APP_REC_DATE,
+									        TSA.APP_NM,
+									        NVL(PJ.PJT_NAME,'프로젝트없음') AS PJT_NAME,
+										        (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='Y' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM1, 
+										         (	SELECT  
+											        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+											        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+											        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+											        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+											        		  AND TSC.MATCH_YN='N' 
+											        	GROUP BY TECH_SUP_APP_NO
+											        ) AS TECH_SUP_APP_NM2,
+									        SUBSTR(TSA.ST_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,7,2) AS ABOUT_DATE1,
+									        SUBSTR(TSA.END_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.END_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.END_ABOUT_DATE,7,2) AS ABOUT_DATE2,
+									        TSA.CR_DATE,
+									        C.CONT_NM,
+									       P.PROD_NM ||' ('||CP.CNT||')' AS PROD_NM,
+									        
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) PJT_CHMAN_NM,
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NO)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CL_CORP_NO,
+									        (	SELECT  
+									        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+									        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+												WHERE PJT_NO = PJ.PJT_NO 
+												  AND PC.CHMAN_NO = C.CHMAN_NO 
+											      AND C.CORP_NO=CP.CORP_NO
+											    GROUP BY PJT_NO
+											) CL_CORP_NM
+									FROM
+								        TECH_SUP_APP TSA, 
+								        PJT PJ,
+								        CONTRACT C,
+								        CONT_PROD CP,
+								        PROD P,
+									   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+									WHERE TSA.PJT_NO = PJ.PJT_NO
+									      AND PJ.PJT_NO = C.PJT_NO(+)
+										  AND P.PROD_NO(+) = CP.PROD_NO
+										  AND C.CONT_NO = CP.CONT_NO(+)
+									      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+					  ) WHERE 1=1 
+								 
+				)
+		
+	</select>
+    
+    <select id="getTechsupApp" resultClass="HashMap">	 
+		SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / 10) PAGE, VR_T1.* FROM 
+				(
+					
+					SELECT * FROM ( 
+									SELECT  TSA.TECH_SUP_APP_NO, PJ.PJT_NO,
+									        TSA.APP_TITLE,
+									        TSA.APP_CONTENTS,
+										        (	SELECT 
+										        		CODE_NM 
+										        	FROM TOT_CODE_MNG 
+										        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+										        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+										       	) AS TECH_SUP_STATUS_CODE_NM,
+									        	NVL((SELECT COUNT(*) FROM TECH_SUP TS WHERE TS.TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO),0) AS TECH_SUP_APP_CNT,
+									        TSA.APP_REC_DATE,
+									        TSA.APP_NM,
+									        NVL(PJ.PJT_NAME,'프로젝트없음') AS PJT_NAME,
+										        (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='Y' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM1, 
+										         (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='N' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM2,
+									        SUBSTR(TSA.ST_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,7,2) AS ABOUT_DATE1,
+									        SUBSTR(TSA.END_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.END_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.END_ABOUT_DATE,7,2) AS ABOUT_DATE2,
+									        TO_CHAR(TSA.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+									        C.CONT_NM,
+									       P.PROD_NM ||' ('||CP.CNT||')' AS PROD_NM,
+									        
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) PJT_CHMAN_NM,
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NO)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CL_CORP_NO,
+									        (	SELECT  
+									        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+									        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+												WHERE PJT_NO = PJ.PJT_NO 
+												  AND PC.CHMAN_NO = C.CHMAN_NO 
+											      AND C.CORP_NO=CP.CORP_NO
+											    GROUP BY PJT_NO
+											) CL_CORP_NM,
+											TSA.CHMAN_NO,
+											(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = TSA.CHMAN_NO) CHMAN_NM
+									FROM
+								        TECH_SUP_APP TSA, 
+								        PJT PJ,
+								        CONTRACT C,
+								        CONT_PROD CP,
+								        PROD P,
+									   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+									WHERE TSA.PJT_NO = PJ.PJT_NO
+									      AND PJ.PJT_NO = C.PJT_NO(+)
+										  AND P.PROD_NO(+) = CP.PROD_NO
+										  AND C.CONT_NO = CP.CONT_NO(+)
+									      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+						) WHERE  TECH_SUP_STATUS_CODE_NM = '요청'  
+				    	
+				    	ORDER BY CR_DATE DESC 	
+				    		
+				) VR_T1 WHERE ROWNUM &lt;= 10) VR_T2 
+		WHERE RNUM > 0 AND PAGE = 1  
+    </select>
+     <!--  목록 수 S-->
+    <select id="getTechsupAppCount" resultClass="Int">		 
+		SELECT COUNT(TECH_SUP_APP_NO) FROM (
+			SELECT * FROM ( 
+							SELECT  TSA.TECH_SUP_APP_NO,  
+								        (	SELECT 
+								        		CODE_NM 
+								        	FROM TOT_CODE_MNG 
+								        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+								        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+								       	) AS TECH_SUP_STATUS_CODE_NM 
+							FROM
+						        TECH_SUP_APP TSA, 
+						        PJT PJ,
+						        CONTRACT C,
+						        CONT_PROD CP,
+						        PROD P,
+							   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+							WHERE TSA.PJT_NO = PJ.PJT_NO
+							      AND PJ.PJT_NO = C.PJT_NO(+)
+								  AND P.PROD_NO(+) = CP.PROD_NO
+								  AND C.CONT_NO = CP.CONT_NO(+)
+							      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+				  ) WHERE TECH_SUP_STATUS_CODE_NM = '요청'  
+				) 
+	</select>
+    
+    
+    
+    
+     <select id="getTechsupAppIng" resultClass="HashMap">	 
+		SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / 10) PAGE, VR_T1.* FROM 
+				(
+					
+					SELECT * FROM ( 
+									SELECT  TSA.TECH_SUP_APP_NO, PJ.PJT_NO,
+									        TSA.APP_TITLE,
+									        TSA.APP_CONTENTS,
+										        (	SELECT 
+										        		CODE_NM 
+										        	FROM TOT_CODE_MNG 
+										        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+										        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+										       	) AS TECH_SUP_STATUS_CODE_NM,
+									        	NVL((SELECT COUNT(*) FROM TECH_SUP TS WHERE TS.TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO),0) AS TECH_SUP_APP_CNT,
+									        TSA.APP_REC_DATE,
+									        TSA.APP_NM,
+									        NVL(PJ.PJT_NAME,'프로젝트없음') AS PJT_NAME,
+										        (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='Y' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM1, 
+										         (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='N' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM2,
+									        SUBSTR(TSA.ST_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,7,2) AS ABOUT_DATE1,
+									        SUBSTR(TSA.END_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.END_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.END_ABOUT_DATE,7,2) AS ABOUT_DATE2,
+									        TO_CHAR(TSA.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+									        C.CONT_NM,
+									       P.PROD_NM ||' ('||CP.CNT||')' AS PROD_NM,
+									        
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) PJT_CHMAN_NM,
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NO)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CL_CORP_NO,
+									        (	SELECT  
+									        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+									        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+												WHERE PJT_NO = PJ.PJT_NO 
+												  AND PC.CHMAN_NO = C.CHMAN_NO 
+											      AND C.CORP_NO=CP.CORP_NO
+											    GROUP BY PJT_NO
+											) CL_CORP_NM,
+											TSA.CHMAN_NO,
+											(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = TSA.CHMAN_NO) CHMAN_NM,
+											(SELECT ST_DATE FROM SCHE_MNG A WHERE A.TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO AND rownum=1) AS ST_DATE
+									FROM
+								        TECH_SUP_APP TSA, 
+								        PJT PJ,
+								        CONTRACT C,
+								        CONT_PROD CP,
+								        PROD P,
+									   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+									WHERE TSA.PJT_NO = PJ.PJT_NO
+									      AND PJ.PJT_NO = C.PJT_NO(+)
+										  AND P.PROD_NO(+) = CP.PROD_NO
+										  AND C.CONT_NO = CP.CONT_NO(+)
+									      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+						) WHERE  TECH_SUP_STATUS_CODE_NM &lt;&gt; '요청'  
+				    	
+				    	ORDER BY CR_DATE DESC 	
+				    		
+				) VR_T1 WHERE ROWNUM &lt;= 10) VR_T2 
+		WHERE RNUM > 0 AND PAGE = 1  
+    </select>
+    
+    
+    
+     <!--  목록 수 S-->
+    <select id="selectTechsupAppTotCountIng" resultClass="Int">		 
+		SELECT COUNT(TECH_SUP_APP_NO) FROM (
+			SELECT * FROM ( 
+							SELECT  TSA.TECH_SUP_APP_NO,  
+								        (	SELECT 
+								        		CODE_NM 
+								        	FROM TOT_CODE_MNG 
+								        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+								        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+								       	) AS TECH_SUP_STATUS_CODE_NM 
+							FROM
+						        TECH_SUP_APP TSA, 
+						        PJT PJ,
+						        CONTRACT C,
+						        CONT_PROD CP,
+						        PROD P,
+							   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+							WHERE TSA.PJT_NO = PJ.PJT_NO
+							      AND PJ.PJT_NO = C.PJT_NO(+)
+								  AND P.PROD_NO(+) = CP.PROD_NO
+								  AND C.CONT_NO = CP.CONT_NO(+)
+							      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+				  ) WHERE  TECH_SUP_STATUS_CODE_NM &lt;&gt; '요청'
+				)   
+	</select>
+    
+    
+     <insert id="insertLoginInfo" parameterClass="HashMap">
+         INSERT INTO LOGIN_HIS 
+         	(admin_id, groups, chman_no, login_date, login_ip)
+         VALUES (#admin_id#, #groups#, #chman_no#, sysdate, #login_ip#)
+    </insert>
+    
+ </sqlMap>

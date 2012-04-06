@@ -1,0 +1,1029 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : EstimateInfoManage.xml
+    Description : 견적정보관리
+-->
+<sqlMap namespace="EstimateInfoManage">
+
+	<!-- ******************************************** EST_INFO **************************************** -->
+
+	<!-- 견적정보관리_견적정보 목록조회 -->
+	<select id="selectEstimateInfoManageList" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (	
+    	     	   SELECT 'R' flag
+    	     	   		, est_id                  		   /*견적id*/     
+						, est_version			 		   /*버전*/                
+						, est_type_code           		   /*견적구분코드*/   
+						, (
+						   SELECT com_code_name
+					         FROM com_code
+					        WHERE group_code = 'EST_TYPE_CODE'
+					          AND com_code = est_type_code
+						  ) est_type_name     
+						, TO_CHAR(TO_DATE(est_date),'YYYY-MM-DD') 
+						  est_date                 		   /*견적일자*/            
+						, roll_type_code          		   /*업무구분코드*/        
+						, pjt_id                  		   /*프로젝트id*/  
+						, est_name                		   /*견적명*/              
+						, est_dept_code          		   /*견적부서코드*/ 
+						, ( SELECT dept_name 
+						      FROM com_dept
+						     WHERE dept_code = ei.est_dept_code					
+						  ) est_dept_name        
+						, est_emp_num             		   /*견적담당자사번*/     
+						, ( SELECT kor_name
+						      FROM com_emp_info
+						     WHERE emp_num = est_emp_num
+						  ) est_emp_name 
+						, custom_code             		   /*거래처코드*/          
+						, costomer_num            		   /*거래처담당자번호*/  
+						, ( SELECT customer_name
+						      FROM com_custom_member
+						     WHERE customer_num = ei.costomer_num
+						       AND custom_code = ei.custom_code 
+						  ) costomer_name
+						, ( SELECT customer_dept
+						      FROM com_custom_member
+						     WHERE customer_num = ei.costomer_num
+						       AND custom_code = ei.custom_code 
+						  ) customer_dept  
+						, est_valid_type_code     		   /*견적유효기간구분코드*/
+						, TO_CHAR(TO_DATE(delivery_exp_date),'YYYY-MM-DD') 
+						  delivery_exp_date       		   /*납품예정일*/ 
+						, delivery_custom_code    		   /*납품처코드*/         
+						, pay_conditon            		   /*지불조건*/   
+						, DECODE(pjt_status_code,'99','B00',proc_status_code) proc_status_code  /*진행상태코드*/  
+						, (
+						   SELECT com_code_name
+					         FROM com_code
+					        WHERE group_code = 'FLOW_STATUS_CODE'
+					          AND com_code = DECODE(pjt_status_code,'99','B00',proc_status_code)
+						  ) proc_status_name
+						, est_total_amt           		   /*견적총액*/            
+						, discnt_total_amt        		   /*할인총액*/            
+						, est_aply_total_amt      		   /*견적적용총액*/        
+						, est_aply_total_tax      		   /*견적적용총세액*/      
+						, TO_CHAR(TO_DATE(pjt_date_from),'YYYY-MM-DD') 
+						  pjt_date_from           		   /*프로젝트기간*/ 
+						, TO_CHAR(TO_DATE(pjt_date_to),'YYYY-MM-DD') 
+						  pjt_date_to             		   /*구축기간*/         
+						, ref_desc                		   /*침고시항*/            
+						, final_mod_id            		   /*최종변경자id*/ 
+						, (SELECT admin_nm
+						     FROM tb_admin
+						    WHERE admin_id = final_mod_id
+						  ) final_mod_name        
+						, TO_CHAR(final_mod_date,'YYYY-MM-DD')
+						  final_mod_date          		   /*최종변경일시*/
+						, custom_name			  		   /*거래처명*/ 
+						, final
+						, DECODE(pjt_status_code,'99','N',NVL(modify_yn,'Y')) modify_yn
+						, pjt_name
+    	      	    FROM (
+	    	      	     SELECT ei.est_id                  /*견적id*/     
+							  , ei.est_version			   /*버전*/                
+							  , ei.est_type_code           /*견적구분코드*/        
+							  , ei.est_date                /*견적일자*/            
+							  , ei.roll_type_code          /*업무구분코드*/        
+							  , ei.pjt_id                  /*프로젝트id*/ 
+							  , CASE WHEN ei.est_type_code = '20' 
+							         THEN ei.est_name 
+                			     	 ELSE (SELECT pjt_name 
+								             FROM pjt_info pi
+								            WHERE pi.pjt_id = ei.pjt_id		
+								          )			
+						        END pjt_name          
+							  , ei.est_name                /*견적명*/              
+							  , ei.est_dept_code           /*견적부서코드*/        
+							  , ei.est_emp_num             /*견적담당자사번*/      
+							  , ei.custom_code             /*거래처코드*/          
+							  , ei.costomer_num            /*거래처담당자번호*/    
+							  , ei.est_valid_type_code     /*견적유효기간구분코드*/
+							  , ei.delivery_exp_date       /*납품예정일*/ 
+							  , ei.delivery_custom_code    /*납품처코드*/         
+							  , ei.pay_conditon            /*지불조건*/   
+							  , ei.proc_status_code        /*진행상태코드*/           
+							  , ei.est_total_amt           /*견적총액*/            
+							  , ei.discnt_total_amt        /*할인총액*/            
+							  , ei.est_aply_total_amt      /*견적적용총액*/        
+							  , ei.est_aply_total_tax      /*견적적용총세액*/      
+							  , ei.pjt_date_from           /*프로젝트기간*/ 
+							  , ei.pjt_date_to             /*구축기간*/         
+							  , ei.ref_desc                /*침고시항*/            
+							  , ei.final_mod_id            /*최종변경자id*/        
+							  , ei.final_mod_date          /*최종변경일시*/
+							  , cc.custom_name
+							  , ROW_NUMBER() OVER(PARTITION BY EI.EST_ID 
+							                          ORDER BY EI.EST_VERSION DESC) final  
+							  , ee.modify_yn 
+							  , (SELECT proc_status_code 
+                                   FROM pjt_info
+                                  WHERE pjt_id = ei.pjt_id
+                                ) pjt_status_code            
+                              , ei.reg_date      
+                              , ei.reg_id        
+					   	   FROM est_info ei	   		       /*견적정보관리*/
+					       LEFT OUTER JOIN
+	              			    com_custom cc        	   /*거래처관리*/
+	            		     ON ei.custom_code = cc.custom_code
+                           LEFT OUTER JOIN
+                                (
+                                 SELECT est_id
+                                      , pjt_id
+                                      , 'N' modify_yn  
+                                   FROM est_info 
+                                  WHERE proc_status_code = 'B90'
+                                ) ee 
+                             ON ei.est_id = ee.est_id
+                            AND ei.pjt_id = ee.pjt_id      
+	            		  ORDER BY ei.est_date DESC
+    	      	         ) ei
+    	      	     WHERE 1=1
+				    <isNotEmpty property="src_pjt_id">
+					  AND pjt_id like '%'||#src_pjt_id#||'%'
+					</isNotEmpty> 
+					<isNotEmpty property="src_custom_code">
+					  AND custom_code = #src_custom_code#
+					</isNotEmpty> 
+					<isNotEmpty property="src_custom_name">
+					  AND custom_name like '%'||#src_custom_name#||'%'
+					</isNotEmpty> 
+					<isNotEmpty property="src_est_type_code">
+					  AND est_type_code = #src_est_type_code#
+					</isNotEmpty> 
+					<isNotEmpty property="src_est_id">
+					  AND est_id like '%'||#src_est_id#||'%'
+					</isNotEmpty> 
+					<isNotEmpty property="src_est_date_start">
+					  AND est_date >= #src_est_date_start#
+					</isNotEmpty> 
+					<isNotEmpty property="src_est_date_end">
+					  AND est_date &lt;= #src_est_date_end#
+					</isNotEmpty> 
+					<isEqual property="src_final_version" compareValue="Y">
+					  AND final = '1'
+					</isEqual> 
+					<isNotEmpty property="src_pjt_name">
+					  AND pjt_name like '%'||#src_pjt_name#||'%'
+					</isNotEmpty> 
+					<isNotEmpty property="src_est_name">
+					  AND est_name like '%'||#src_est_name#||'%'
+					</isNotEmpty> 
+					<isNotEmpty property="session_dept_code">
+					  AND est_dept_code  = #session_dept_code#
+					</isNotEmpty>
+					<isNotEmpty property="reg_id">
+					  AND reg_id  = #reg_id#
+					</isNotEmpty>	
+					ORDER BY ei.reg_date DESC ,ei.final_mod_date DESC
+				  ) A
+	       )
+	 <isNotNull property="start">      
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	 </isNotNull>   	
+	</select>
+
+	<!-- 견적정보 목록조회 총건수-->
+	<select id="selectEstimateInfoManageListCount" resultClass="int">
+	SELECT COUNT(*)
+ 	  FROM (
+   	       SELECT ei.est_id                /*견적id*/     
+			  , ei.est_version			   /*버전*/            
+			  , ei.est_name   			   /*견적명*/ 
+			  , ei.est_dept_code   
+			  , ei.est_type_code           /*견적구분코드*/        
+			  , ei.est_date                /*견적일자*/            
+			  , ei.pjt_id                  /*프로젝트id*/         
+			  , ( SELECT pjt_name 
+		            FROM pjt_info pi
+		           WHERE pi.pjt_id = ei.pjt_id					
+		        ) pjt_name 
+			  , ei.custom_code             /*거래처코드*/          
+			  , cc.custom_name
+			  , ROW_NUMBER() OVER(PARTITION BY EI.EST_ID 
+			                          ORDER BY EI.EST_VERSION DESC) final  
+			  , ei.reg_id                        
+	   	   FROM est_info ei	   		       /*견적정보관리*/
+	       LEFT OUTER JOIN
+           			    com_custom cc        	   /*거래처관리*/
+  		     ON ei.custom_code = cc.custom_code      
+  		   LEFT OUTER JOIN
+                (
+                 SELECT est_id
+                      , pjt_id
+                      , 'N' modify_yn  
+                   FROM est_info 
+                  WHERE proc_status_code = 'B90'
+                ) ee 
+             ON ei.est_id = ee.est_id
+            AND ei.pjt_id = ee.pjt_id  
+	      )
+   	WHERE 1=1
+    <isNotEmpty property="src_pjt_id">
+	  AND pjt_id like '%'||#src_pjt_id#||'%'
+	</isNotEmpty> 
+	<isNotEmpty property="src_custom_code">
+	  AND custom_code = #src_custom_code#
+	</isNotEmpty> 
+	<isNotEmpty property="src_custom_name">
+	  AND custom_name like '%'||#src_custom_name#||'%'
+	</isNotEmpty> 
+	<isNotEmpty property="src_est_type_code">
+	  AND est_type_code = #src_est_type_code#
+	</isNotEmpty> 
+	<isNotEmpty property="src_est_id">
+	  AND est_id like '%'||#src_est_id#||'%'
+	</isNotEmpty> 
+	<isNotEmpty property="src_est_date_start">
+	  AND est_date >= #src_est_date_start#
+	</isNotEmpty> 
+	<isNotEmpty property="src_est_date_end">
+	  AND est_date &lt;= #src_est_date_end#
+	</isNotEmpty> 
+	<isEqual property="src_final_version" compareValue="Y">
+	  AND final = '1'
+	</isEqual> 
+	<isNotEmpty property="src_pjt_name">
+	  AND pjt_name like '%'||#src_pjt_name#||'%'
+	</isNotEmpty> 
+	<isNotEmpty property="src_est_name">
+	  AND est_name like '%'||#src_est_name#||'%'
+	</isNotEmpty> 
+	<isNotEmpty property="session_dept_code">
+	  AND est_dept_code  = #session_dept_code#
+	</isNotEmpty>
+	<isNotEmpty property="reg_id">
+	  AND reg_id  = #reg_id#
+	</isNotEmpty>		
+	</select>
+	
+	<!-- 견적정보 수정 -->
+	<update id="updateEstimateInfoManage" parameterClass="HashMap"> 
+	<![CDATA[
+	UPDATE est_info 
+	   SET est_type_code        = #est_type_code#           	/*견적구분코드*/        
+		 , est_date             = #est_date#                	/*견적일자*/            
+		 , roll_type_code       = #roll_type_code#          	/*업무구분코드*/        
+		 , pjt_id               = #pjt_id#                  	/*프로젝트ID*/          
+		 , est_name             = #est_name#                	/*견적명*/              
+		 , est_dept_code        = #est_dept_code#           	/*견적부서코드*/        
+		 , est_emp_num          = #est_emp_num#             	/*견적담당자사번*/      
+		 , custom_code          = #custom_code#             	/*거래처코드*/          
+		 , costomer_num         = #costomer_num#            	/*거래처담당자번호*/    
+		 , est_valid_type_code  = #est_valid_type_code#     	/*견적유효기간구분코드*/
+		 , delivery_exp_date    = #delivery_exp_date#       	/*납품예정일*/          
+		 , delivery_custom_code = #delivery_custom_code#    	/*납품처코드*/          
+		 , pay_conditon         = #pay_conditon#            	/*지불조건*/            
+		 , est_total_amt        = REPLACE(#est_total_amt#,',','')           	/*견적총액*/            
+		 , discnt_total_amt     = REPLACE(#discnt_total_amt#,',','')        	/*할인총액*/            
+		 , est_aply_total_amt   = REPLACE(#est_aply_total_amt#,',','')      	/*견적적용총액*/        
+		 , est_aply_total_tax   = REPLACE(#est_aply_total_tax#,',','')      	/*견적적용총세액*/      
+		 , pjt_date_from        = #pjt_date_from#           	/*프로젝트기간  FROM*/  
+		 , pjt_date_to          = #pjt_date_to#             	/*구축기간 To*/         
+		 , ref_desc             = #ref_desc#                	/*참고사항*/            
+		 , proc_status_code     = #proc_status_code#        	/*진행상태코드*/        
+		 , final_mod_id         = #final_mod_id#            	/*최종변경자ID*/        
+		 , final_mod_date       = SYSDATE			          	/*최종변경일시*/        
+	 WHERE est_version          = #est_version#					/*버전*/                
+  	   AND est_id               = #est_id#                  	/*견적ID*/              
+	  
+	]]>
+	</update>
+	
+	<!-- 견적정보 입력 -->
+	<insert id="insertEstimateInfoManage" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO est_info ( est_version					/*버전*/                
+						 , est_id                  		/*견적ID*/              
+						 , est_type_code           		/*견적구분코드*/        
+						 , est_date                		/*견적일자*/            
+						 , roll_type_code          		/*업무구분코드*/        
+						 , pjt_id                  		/*프로젝트ID*/          
+						 , est_name                		/*견적명*/              
+						 , est_dept_code           		/*견적부서코드*/        
+						 , est_emp_num             		/*견적담당자사번*/      
+						 , custom_code             		/*거래처코드*/          
+						 , costomer_num            		/*거래처담당자번호*/    
+						 , est_valid_type_code     		/*견적유효기간구분코드*/
+						 , delivery_exp_date       		/*납품예정일*/          
+						 , delivery_custom_code    		/*납품처코드*/          
+						 , pay_conditon            		/*지불조건*/            
+						 , est_total_amt           		/*견적총액*/            
+						 , discnt_total_amt        		/*할인총액*/            
+						 , est_aply_total_amt      		/*견적적용총액*/        
+						 , est_aply_total_tax      		/*견적적용총세액*/      
+						 , pjt_date_from           		/*프로젝트기간  FROM*/  
+						 , pjt_date_to             		/*구축기간 To*/         
+						 , ref_desc                		/*참고시힝*/            
+						 , proc_status_code        		/*진행상태코드*/        
+						 , final_mod_id            		/*최종변경자ID*/        
+						 , final_mod_date          		/*최종변경일시*/        
+						 , reg_date                		/*최초등록일*/          
+						 , reg_id                  		/*최초등록자*/          
+						 )
+				  VALUES ( NVL(#est_version#,0)			/*버전*/                
+						 , #est_id#                  	/*견적ID*/              
+						 , #est_type_code#           	/*견적구분코드*/        
+						 , #est_date#                	/*견적일자*/            
+						 , #roll_type_code#          	/*업무구분코드*/        
+						 , #pjt_id#                  	/*프로젝트ID*/          
+						 , #est_name#                	/*견적명*/              
+						 , #est_dept_code#           	/*견적부서코드*/        
+						 , #est_emp_num#             	/*견적담당자사번*/      
+						 , #custom_code#             	/*거래처코드*/          
+						 , #costomer_num#            	/*거래처담당자번호*/    
+						 , #est_valid_type_code#     	/*견적유효기간구분코드*/
+						 , #delivery_exp_date#       	/*납품예정일*/          
+						 , #delivery_custom_code#    	/*납품처코드*/          
+						 , #pay_conditon#            	/*지불조건*/            
+						 , REPLACE(#est_total_amt#,',','')             	/*견적총액*/            
+						 , REPLACE(#discnt_total_amt#,',','')          	/*할인총액*/            
+						 , REPLACE(#est_aply_total_amt#,',','')        	/*견적적용총액*/        
+						 , REPLACE(#est_aply_total_tax#,',','')        	/*견적적용총세액*/      
+						 , #pjt_date_from#           	/*프로젝트기간  FROM*/  
+						 , #pjt_date_to#             	/*구축기간 To*/         
+						 , #ref_desc#                	/*참고시힝*/            
+						 , #proc_status_code#        	/*진행상태코드*/        
+						 , #final_mod_id#            	/*최종변경자ID*/        
+						 , SYSDATE			          	/*최종변경일시*/        
+						 , SYSDATE	                	/*최초등록일*/          
+						 , #final_mod_id#              	/*최초등록자*/          
+						 )
+	]]>
+	</insert>
+	
+	<!-- 견적ID 생성	-->
+	<select id="createEstId" resultClass="String">
+	SELECT SGIS.GET_AUTO_NUM('EST','EST',TO_CHAR(SYSDATE,'YYYYMMDD'),4) 
+  	  FROM DUAL
+	</select>
+	
+	<!-- ******************************************* EST_ITEM_INFO ***************************************** -->
+	
+	<!-- 견적정보관리(견적 품목정보) 목록	-->
+	<select id="selectEstItemInfo" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (SELECT 'R' flag 
+    	                , est_info_seq	    			/*순번*/        
+						, est_version       			/*버전*/        
+						, est_id            			/*견적ID*/      
+						, item_code         			/*품목코드*/    
+						, item_name         			/*품목명*/ 
+						,(SELECT ci.standard
+						     FROM com_item ci
+						    WHERE ci.item_code = ei.item_code
+						  ) standard         			/*규격*/
+						, (SELECT ci.unit
+						     FROM com_item ci
+						    WHERE ci.item_code = ei.item_code
+						  ) unit         				/*단위*/       
+						, cnt               			/*수량*/        
+						, unit_price        			/*단가*/        
+						, amt               			/*금액*/        
+						, discount_ratio    			/*할인율*/      
+						, pay_free_code     			/*유무상구분*/  
+						, aply_unit_price   			/*적용단가*/    
+						, aply_amt          			/*적용금액*/    
+						, aply_tax          			/*적용세액*/    
+						, note              			/*비고*/        
+						, final_mod_id      			/*최종변경자ID*/
+						, final_mod_date    			/*최종변경일시*/
+						, reg_date          			/*최초등록일*/  
+						, reg_id            			/*최초등록자*/  
+    	             FROM est_item_info ei
+    	            WHERE est_version = #est_version#   /*버전*/        
+					  AND est_id      = #est_id#      	/*견적ID*/
+					ORDER BY est_info_seq
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#  
+	</select>
+	
+	<!-- 견적정보관리(견적 품목정보) 목록	총건수 -->
+	<select id="selectEstItemInfoCount" resultClass="int">
+	SELECT COUNT(est_info_seq)        
+      FROM est_item_info
+     WHERE est_version = #est_version#   /*버전*/        
+	   AND est_id      = #est_id#      	 /*견적ID*/
+	</select>
+	
+	<!-- 견적정보관리(견적 품목정보) 저장  -->
+	<insert id="insertEstItemInfo" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO est_item_info ( est_info_seq			  	/*순번*/        
+							  , est_version       			/*버전*/        
+							  , est_id            			/*견적ID*/      
+							  , item_code         			/*품목코드*/    
+							  , item_name         			/*품목명*/      
+							  , cnt               			/*수량*/        
+							  , unit_price        			/*단가*/        
+							  , amt               			/*금액*/        
+							  , discount_ratio    			/*할인율*/      
+							  , pay_free_code     			/*유무상구분*/  
+							  , aply_unit_price   			/*적용단가*/    
+							  , aply_amt          			/*적용금액*/    
+							  , aply_tax          			/*적용세액*/    
+							  , note              			/*비고*/        
+							  , final_mod_id      			/*최종변경자ID*/
+							  , final_mod_date    			/*최종변경일시*/
+							  , reg_date          			/*최초등록일*/  
+							  , reg_id            			/*최초등록자*/ 
+							 ) 
+					  VALUES (  
+					  			(
+					  			 SELECT NVL(MAX(est_info_seq),0)+1
+  								   FROM est_item_info
+  								)			  	/*순번*/        
+							  , NVL(#est_version#,0)     	/*버전*/        
+							  , #est_id#            		/*견적ID*/      
+							  , #item_code#         		/*품목코드*/    
+							  , #item_name#         		/*품목명*/      
+							  , #cnt#               		/*수량*/        
+							  , #unit_price#        		/*단가*/        
+							  , #amt#               		/*금액*/        
+							  , #discount_ratio#    		/*할인율*/      
+							  , #pay_free_code#     		/*유무상구분*/  
+							  , #aply_unit_price#   		/*적용단가*/    
+							  , #aply_amt#          		/*적용금액*/    
+							  , #aply_tax#          		/*적용세액*/    
+							  , #note#              		/*비고*/        
+							  , #final_mod_id#      		/*최종변경자ID*/
+							  , SYSDATE    					/*최종변경일시*/
+							  , SYSDATE          			/*최초등록일*/  
+							  , #final_mod_id#         		/*최초등록자*/ 
+					  		 )
+	]]>
+	</insert>
+	
+	<!-- 견적정보관리(견적 품목정보) 수정 -->
+	<update id="updateEstItemInfo" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE est_item_info 
+	   SET item_code       = #item_code#         	/*품목코드*/    
+		 , item_name       = #item_name#         	/*품목명*/      
+		 , cnt             = #cnt#               	/*수량*/        
+		 , unit_price      = #unit_price#        	/*단가*/        
+		 , amt             = #amt#               	/*금액*/        
+		 , discount_ratio  = #discount_ratio#    	/*할인율*/      
+		 , pay_free_code   = #pay_free_code#     	/*유무상구분*/  
+		 , aply_unit_price = #aply_unit_price#   	/*적용단가*/    
+		 , aply_amt        = #aply_amt#          	/*적용금액*/    
+		 , aply_tax        = #aply_tax#          	/*적용세액*/    
+		 , note            = #note#              	/*비고*/        
+		 , final_mod_id    = #final_mod_id#      	/*최종변경자ID*/
+		 , final_mod_date  = SYSDATE	    		/*최종변경일시*/
+   WHERE est_info_seq	   = #est_info_seq#			/*순번*/        
+	 AND est_version       = #est_version#       	/*버전*/        
+	 AND est_id            = #est_id#            	/*견적ID*/ 
+	]]>
+	</update>
+	
+	<!-- 견적정보관리(견적 품목정보) 삭제 -->
+	<delete id="deleteEstItemInfo" parameterClass="HashMap">
+	DELETE
+	  FROM est_item_info
+	 WHERE est_info_seq	   = #est_info_seq#			/*순번*/        
+	   AND est_version      = #est_version#       	/*버전*/        
+	   AND est_id           = #est_id#            	/*견적ID*/  
+	</delete>
+	<!-- ******************************************** EST_SPEC_INFO **************************************** -->
+	
+	<!-- 견적정보관리(납품처 시스템사양 정보) 목록 	-->
+	<select id="selectEstSpecInfo" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM ( SELECT 'R' flag
+    	                 , est_info_seq			/*순번*/        
+						 , est_version       	/*버전*/        
+						 , est_id           	/*견적ID*/      
+						 , spec_type_code    	/*제원구분코드*/
+						 , spec_intro        	/*제원설명*/    
+						 , spec_cnt          	/*제원수량*/    
+						 , spec_vol          	/*제원용량*/    
+						 , note              	/*비고*/        
+						 , final_mod_id      	/*최종변경자ID*/
+						 , final_mod_date    	/*최종변경일시*/
+						 , reg_date          	/*최초등록일*/  
+						 , reg_id            	/*최초등록자*/  
+    	              FROM est_spec_info
+    	             WHERE est_version = #est_version#  /*버전*/        
+					   AND est_id      = #est_id#     	/*견적ID*/ 
+					 ORDER BY est_info_seq
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	</select>
+	
+	<!-- 견적정보관리(납품처 시스템사양 정보) 목록 총건수  -->
+	<select id="selectEstSpecInfoCount" resultClass="int">
+	SELECT COUNT(est_info_seq)			/*순번*/        
+      FROM est_spec_info
+     WHERE est_version = #est_version#  /*버전*/        
+	   AND est_id      = #est_id#     	/*견적ID*/
+	</select>
+	
+	<!-- 견적정보관리(납품처 시스템사양 정보) 저장  -->
+	<insert id="insertEstSpecInfo" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO est_spec_info ( est_info_seq				/*순번*/        
+							  , est_version       			/*버전*/        
+							  , est_id            			/*견적ID*/      
+							  , spec_type_code    			/*제원구분코드*/
+							  , spec_intro        			/*제원설명*/    
+							  , spec_cnt          			/*제원수량*/    
+							  , spec_vol          			/*제원용량*/    
+							  , note              			/*비고*/        
+							  , final_mod_id      			/*최종변경자ID*/
+							  , final_mod_date    			/*최종변경일시*/
+							  , reg_date          			/*최초등록일*/  
+							  , reg_id            			/*최초등록자*/   
+							  ) 
+					   VALUES ( 
+					   			(
+					  			 SELECT NVL(MAX(est_info_seq),0)+1
+  								   FROM est_spec_info
+  								)							/*순번*/        
+							  , NVL(#est_version#,0)   		/*버전*/        
+						 	  , #est_id#            		/*견적ID*/      
+							  , #spec_type_code#    		/*제원구분코드*/
+							  , #spec_intro#        		/*제원설명*/    
+							  , #spec_cnt#          		/*제원수량*/    
+							  , #spec_vol#          		/*제원용량*/    
+							  , #note#              		/*비고*/        
+							  , #final_mod_id#      		/*최종변경자ID*/
+							  , SYSDATE    					/*최종변경일시*/
+							  , SYSDATE          			/*최초등록일*/  
+							  , #final_mod_id#         		/*최초등록자*/  
+					  		  )
+	]]>
+	</insert>
+	
+	<!-- 견적정보관리(납품처 시스템사양 정보) 수정 -->
+	<update id="updateEstSpecInfo" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE est_spec_info 
+	   SET spec_type_code  = #spec_type_code#    	/*제원구분코드*/
+		 , spec_intro      = #spec_intro#        	/*제원설명*/    
+		 , spec_cnt        = #spec_cnt#          	/*제원수량*/    
+		 , spec_vol        = #spec_vol#          	/*제원용량*/    
+		 , note            = #note#              	/*비고*/        
+		 , final_mod_id    = #final_mod_id#      	/*최종변경자ID*/
+		 , final_mod_date  = SYSDATE    			/*최종변경일시*/
+    WHERE est_info_seq	   = #est_info_seq#			/*순번*/        
+	  AND est_version      = #est_version#       	/*버전*/        
+	  AND est_id           = #est_id#            	/*견적ID*/ 
+	]]>
+	</update>
+	
+	<!-- 견적정보관리(납품처 시스템사양 정보) 삭제 -->
+	<delete id="deleteEstSpecInfo" parameterClass="HashMap">
+	DELETE
+	  FROM est_spec_info
+	 WHERE est_info_seq	   = #est_info_seq#			/*순번*/        
+	   AND est_version      = #est_version#       	/*버전*/        
+	   AND est_id           = #est_id#            	/*견적ID*/  
+	</delete>
+	
+	<!-- 견적 rev 팝업 목록조회 -->
+	<select id="selectEstimateInfoManageRevPopList" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (	
+    	     	   SELECT 'R' flag
+    	     	   		, est_id                  		   /*견적id*/     
+						, est_version			 		   /*버전*/                
+						, est_type_code           		   /*견적구분코드*/   
+						, (
+						   SELECT com_code_name
+					         FROM com_code
+					        WHERE group_code = 'ITEM_PATTERN_CODE'
+					          AND com_code = est_type_code
+						  ) est_type_name     
+						, TO_CHAR(TO_DATE(est_date),'YYYY-MM-DD') 
+						  est_date                 		   /*견적일자*/            
+						, roll_type_code          		   /*업무구분코드*/        
+						, pjt_id                  		   /*프로젝트id*/   
+						, ( SELECT pjt_name 
+						      FROM pjt_info pi
+						     WHERE pi.pjt_id = ei.pjt_id					
+						  ) pjt_name       
+						, est_name                		   /*견적명*/              
+						, est_dept_code          		   /*견적부서코드*/        
+						, est_emp_num             		   /*견적담당자사번*/
+						, ( SELECT kor_name
+						      FROM com_emp_info
+						     WHERE emp_num = ei.est_emp_num
+						  ) est_emp_name
+						, custom_code             		   /*거래처코드*/          
+						, costomer_num            		   /*거래처담당자번호*/    
+						, est_valid_type_code     		   /*견적유효기간구분코드*/
+						, TO_CHAR(TO_DATE(delivery_exp_date),'YYYY-MM-DD') 
+						  delivery_exp_date       		   /*납품예정일*/ 
+						, delivery_custom_code    		   /*납품처코드*/         
+						, pay_conditon            		   /*지불조건*/   
+						, proc_status_code        		   /*진행상태코드*/  
+						, (
+						   SELECT com_code_name
+					         FROM com_code
+					        WHERE group_code = 'FLOW_STATUS_CODE'
+					          AND com_code = proc_status_code
+						  ) proc_status_name
+						, est_total_amt           		   /*견적총액*/            
+						, discnt_total_amt        		   /*할인총액*/            
+						, est_aply_total_amt      		   /*견적적용총액*/        
+						, est_aply_total_tax      		   /*견적적용총세액*/      
+						, TO_CHAR(TO_DATE(pjt_date_from),'YYYY-MM-DD') 
+						  pjt_date_from           		   /*프로젝트기간*/ 
+						, TO_CHAR(TO_DATE(pjt_date_to),'YYYY-MM-DD') 
+						  pjt_date_to             		   /*구축기간*/         
+						, ref_desc                		   /*침고시항*/            
+						, final_mod_id            		   /*최종변경자id*/        
+						, TO_CHAR(final_mod_date,'YYYY-MM-DD')
+						  final_mod_date          		   /*최종변경일시*/
+						, custom_name			  		   /*거래처명*/ 
+						, (
+                           SELECT NVL(MAX(est_version),0)+1
+                             FROM est_info
+                            WHERE 1=1
+                            <isNotEmpty property="src_pjt_id">
+							  AND pjt_id like #src_pjt_id#||'%'
+							</isNotEmpty> 					
+							<isNotEmpty property="src_est_id">
+							  AND est_id like #src_est_id#||'%'
+							</isNotEmpty> 
+                          ) final
+    	      	    FROM (
+	    	      	     SELECT ei.est_id                  /*견적id*/     
+							  , ei.est_version			   /*버전*/                
+							  , ei.est_type_code           /*견적구분코드*/        
+							  , ei.est_date                /*견적일자*/            
+							  , ei.roll_type_code          /*업무구분코드*/        
+							  , ei.pjt_id                  /*프로젝트id*/          
+							  , ei.est_name                /*견적명*/              
+							  , ei.est_dept_code           /*견적부서코드*/        
+							  , ei.est_emp_num             /*견적담당자사번*/      
+							  , ei.custom_code             /*거래처코드*/          
+							  , ei.costomer_num            /*거래처담당자번호*/    
+							  , ei.est_valid_type_code     /*견적유효기간구분코드*/
+							  , ei.delivery_exp_date       /*납품예정일*/ 
+							  , ei.delivery_custom_code    /*납품처코드*/         
+							  , ei.pay_conditon            /*지불조건*/   
+							  , ei.proc_status_code        /*진행상태코드*/           
+							  , ei.est_total_amt           /*견적총액*/            
+							  , ei.discnt_total_amt        /*할인총액*/            
+							  , ei.est_aply_total_amt      /*견적적용총액*/        
+							  , ei.est_aply_total_tax      /*견적적용총세액*/      
+							  , ei.pjt_date_from           /*프로젝트기간*/ 
+							  , ei.pjt_date_to             /*구축기간*/         
+							  , ei.ref_desc                /*침고시항*/            
+							  , ei.final_mod_id            /*최종변경자id*/        
+							  , ei.final_mod_date          /*최종변경일시*/
+							  , cc.custom_name
+					   	   FROM est_info ei	   		       /*견적정보관리*/
+					       LEFT OUTER JOIN
+	              			    com_custom cc        	   /*거래처관리*/
+	            		     ON ei.custom_code = cc.custom_code      
+	            		  ORDER BY ei.est_date DESC
+    	      	         ) ei
+    	      	     WHERE 1=1
+				    <isNotEmpty property="src_pjt_id">
+					  AND pjt_id like #src_pjt_id#||'%'
+					</isNotEmpty> 					
+					<isNotEmpty property="src_est_id">
+					  AND est_id like #src_est_id#||'%'
+					</isNotEmpty> 
+				  ) A
+	       )
+	 <isNotNull property="start">      
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	 </isNotNull>   	
+	</select>
+
+	<!-- 견적 rev 팝업 목록조회 총건수-->
+	<select id="selectEstimateInfoManageRevPopListCount" resultClass="int">
+	SELECT COUNT(*)
+ 	  FROM (
+   	       SELECT ei.est_id                /*견적id*/     
+			    , ei.pjt_id                /*프로젝트id*/          
+	   	     FROM est_info ei	   		   /*견적정보관리*/
+	         LEFT OUTER JOIN
+           	      com_custom cc        	   /*거래처관리*/
+         	   ON ei.custom_code = cc.custom_code      
+	      )
+    WHERE 1=1
+    <isNotEmpty property="src_pjt_id">
+	  AND pjt_id like #src_pjt_id#||'%'
+	</isNotEmpty> 
+	<isNotEmpty property="src_est_id">
+	  AND est_id like #src_est_id#||'%'
+	</isNotEmpty> 
+	</select>
+	
+	<!-- 견적정보관리_팝업 목록조회 -->
+	<select id="estimatePopList" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (	
+    	     	   SELECT 'R' flag
+    	     	   		, est_id                  		   /*견적id*/     
+						, est_version			 		   /*버전*/                
+						, est_type_code           		   /*견적구분코드*/   
+						, (
+						   SELECT com_code_name
+					         FROM com_code
+					        WHERE group_code = 'EST_TYPE_CODE'
+					          AND com_code = est_type_code
+						  ) est_type_name     
+						, TO_CHAR(TO_DATE(est_date),'YYYY-MM-DD') 
+						  est_date                 		   /*견적일자*/            
+						, roll_type_code          		   /*업무구분코드*/        
+						, pjt_id                  		   /*프로젝트id*/  
+						, CASE WHEN est_type_code = '20' 
+					           THEN est_name 
+              			       ELSE (SELECT pjt_name 
+						               FROM pjt_info pi
+						              WHERE pi.pjt_id = ei.pjt_id		
+						            )			
+				          END pjt_name           
+						, est_name                		   /*견적명*/              
+						, est_dept_code          		   /*견적부서코드*/ 
+						, ( SELECT dept_name 
+						      FROM com_dept
+						     WHERE dept_code = ei.est_dept_code					
+						  ) est_dept_name        
+						, est_emp_num             		   /*견적담당자사번*/     
+						, ( SELECT kor_name
+						      FROM com_emp_info
+						     WHERE emp_num = est_emp_num
+						     
+						  ) est_emp_name 
+						, custom_code             		   /*거래처코드*/          
+						, costomer_num            		   /*거래처담당자번호*/  
+						, ( SELECT customer_name
+						      FROM com_custom_member
+						     WHERE customer_num = ei.costomer_num
+						       AND custom_code = ei.custom_code
+						  ) costomer_name
+						, ( SELECT customer_dept
+						      FROM com_custom_member
+						     WHERE customer_num = ei.costomer_num
+						       AND custom_code = ei.custom_code
+						  ) costomer_dept
+						, est_valid_type_code     		   /*견적유효기간구분코드*/
+						, TO_CHAR(TO_DATE(delivery_exp_date),'YYYY-MM-DD') 
+						  delivery_exp_date       		   /*납품예정일*/ 
+						, delivery_custom_code    		   /*납품처코드*/         
+						, pay_conditon            		   /*지불조건*/   
+						, proc_status_code        		   /*진행상태코드*/  
+						, (
+						   SELECT com_code_name
+					         FROM com_code
+					        WHERE group_code = 'FLOW_STATUS_CODE'
+					          AND com_code = proc_status_code
+						  ) proc_status_name
+						, est_total_amt           		   /*견적총액*/            
+						, discnt_total_amt        		   /*할인총액*/            
+						, est_aply_total_amt      		   /*견적적용총액*/        
+						, est_aply_total_tax      		   /*견적적용총세액*/      
+						, TO_CHAR(TO_DATE(pjt_date_from),'YYYY-MM-DD') 
+						  pjt_date_from           		   /*프로젝트기간*/ 
+						, TO_CHAR(TO_DATE(pjt_date_to),'YYYY-MM-DD') 
+						  pjt_date_to             		   /*구축기간*/         
+						, ref_desc                		   /*침고시항*/            
+						, final_mod_id            		   /*최종변경자id*/        
+						, TO_CHAR(final_mod_date,'YYYY-MM-DD')
+						  final_mod_date          		   /*최종변경일시*/
+						, custom_name			  		   /*거래처명*/ 
+						, final
+						, biz_type
+						, biz_kind
+    	      	    FROM (
+	    	      	     SELECT ei.est_id                  /*견적id*/     
+							  , ei.est_version			   /*버전*/                
+							  , ei.est_type_code           /*견적구분코드*/        
+							  , ei.est_date                /*견적일자*/            
+							  , ei.roll_type_code          /*업무구분코드*/        
+							  , ei.pjt_id                  /*프로젝트id*/          
+							  , ei.est_name                /*견적명*/              
+							  , ei.est_dept_code           /*견적부서코드*/        
+							  , ei.est_emp_num             /*견적담당자사번*/      
+							  , ei.custom_code             /*거래처코드*/          
+							  , ei.costomer_num            /*거래처담당자번호*/    
+							  , ei.est_valid_type_code     /*견적유효기간구분코드*/
+							  , ei.delivery_exp_date       /*납품예정일*/ 
+							  , ei.delivery_custom_code    /*납품처코드*/         
+							  , ei.pay_conditon            /*지불조건*/   
+							  , ei.proc_status_code        /*진행상태코드*/           
+							  , ei.est_total_amt           /*견적총액*/            
+							  , ei.discnt_total_amt        /*할인총액*/            
+							  , ei.est_aply_total_amt      /*견적적용총액*/        
+							  , ei.est_aply_total_tax      /*견적적용총세액*/      
+							  , ei.pjt_date_from           /*프로젝트기간*/ 
+							  , ei.pjt_date_to             /*구축기간*/         
+							  , ei.ref_desc                /*침고시항*/            
+							  , ei.final_mod_id            /*최종변경자id*/        
+							  , ei.final_mod_date          /*최종변경일시*/
+							  , cc.custom_name
+							  , ROW_NUMBER() OVER(PARTITION BY EI.EST_ID 
+							                          ORDER BY EI.EST_VERSION DESC) final  
+							  , cc.biz_type
+							  , cc.biz_kind
+							  , ei.reg_id
+					   	   FROM est_info ei	   		       /*견적정보관리*/
+					       LEFT OUTER JOIN
+	              			    com_custom cc        	   /*거래처관리*/
+	            		     ON ei.custom_code = cc.custom_code    
+           		           LEFT OUTER JOIN 
+                                ord_info oi
+                             ON ei.est_id = oi.est_id
+                          WHERE ei.proc_status_code = 'B90'	   /*견적확정(B90)*/
+                            AND oi.est_id is null      
+	            		  ORDER BY ei.est_date DESC
+    	      	         ) ei
+    	      	     WHERE 1 = 1    
+				     <isNotEmpty property="src_est_id">
+					   AND ei.est_id = #src_est_id#
+					 </isNotEmpty> 
+					 <isNotEmpty property="src_est_name">
+					   AND ei.est_name like '%'||#src_est_name#||'%'
+					 </isNotEmpty> 
+					 <isNotEmpty property="session_dept_code">
+					   AND ei.est_dept_code  = #session_dept_code#
+					 </isNotEmpty>
+					 <isNotEmpty property="reg_id">
+					   AND ei.reg_id  = #reg_id#
+					 </isNotEmpty>		
+				  ) A
+	       )
+	 <isNotNull property="start">      
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	 </isNotNull>   	
+	</select>
+
+	<!-- 견적정보 팝업 목록조회 총건수-->
+	<select id="estimatePopListCount" resultClass="int">
+	SELECT COUNT(*)
+ 	  FROM (
+   	       SELECT ei.est_id                /*견적id*/    
+   	          , ei.est_name				   /*견적명*/
+			  , ei.est_version			   /*버전*/                
+			  , ei.est_type_code           /*견적구분코드*/        
+			  , ei.est_date                /*견적일자*/            
+			  , ei.pjt_id                  /*프로젝트id*/          
+			  , ei.custom_code             /*거래처코드*/          
+			  , cc.custom_name
+			  , ei.proc_status_code	       /*진행상태코드*/
+			  , ei.est_dept_code
+			  , ei.reg_id
+	   	   FROM est_info ei	   		       /*견적정보관리*/
+	       LEFT OUTER JOIN
+ 			    com_custom cc        	   /*거래처관리*/
+   		     ON ei.custom_code = cc.custom_code 
+	       LEFT OUTER JOIN 
+                ord_info oi
+             ON ei.est_id = oi.est_id
+          WHERE ei.proc_status_code = 'B90'	   /*견적확정(B90)*/
+            AND oi.est_id is null  		          
+	      )
+	WHERE 1 = 1 
+    <isNotEmpty property="src_est_id">
+	  AND est_id = #src_est_id#
+	</isNotEmpty> 
+	<isNotEmpty property="src_est_name">
+	  AND est_name like '%'||#src_est_name#||'%'
+	</isNotEmpty> 
+	<isNotEmpty property="session_dept_code">
+	  AND est_dept_code  = #session_dept_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="reg_id">
+	  AND reg_id  = #reg_id#
+     </isNotEmpty>	
+	</select>
+	
+	<select id="checkUpdatePjtStatus" resultClass="String">
+	SELECT DECODE(count(est_id),0,'Y','N')
+      FROM est_info
+     WHERE pjt_id = #pjt_id#
+     <isEqual property="procStatusDiv" compareValue="ProcStatus">
+       AND proc_status_code = 'B90'
+     </isEqual>
+	</select>
+	
+	<!-- 프로젝트조회시 프로젝트의 거래처 정보 조회 -->
+	<select id="selectPjtCustom" resultClass="HashMap">
+	SELECT pc.pjt_info_seq            /*순번*/
+	     , pc.pjt_reg_date            /*등록일자*/
+	     , pc.pjt_id                  /*프로젝트ID*/
+	     , pc.custom_pattern_code     /*거래처유형*/
+	     , pc.custom_code             /*거래처코드*/  
+	     , (SELECT custom_name
+	          FROM com_custom
+	         WHERE custom_code = pc.custom_code 
+	       ) custom_name
+	     , pc.costomer_num            /*거래처담당자번호*/    
+	     ,(SELECT customer_name
+	         FROM com_custom_member
+	        WHERE customer_num = pc.costomer_num
+	          AND custom_code = pc.custom_code        
+	       ) customer_name      
+	     ,(SELECT customer_dept
+	         FROM com_custom_member
+	        WHERE customer_num = pc.costomer_num
+	          AND custom_code = pc.custom_code        
+	       ) customer_dept  
+	     , pc.constract_yn            /*당사와계약여부*/
+	     , pc.note                    /*비고*/
+	  FROM pjt_custom pc
+	 WHERE pc.constract_yn = 'Y'       
+	   AND PC.pjt_id = #src_pjt_id#
+	</select>
+
+	<!-- 프로젝트조회시 프로젝트의 매출품목 조회	 -->
+	<select id="selectPjtItemList" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (	
+    	     	   SELECT 'I' flag 
+					    , ps.item_code                     /*품목코드*/
+					    , (
+					       SELECT item_name
+					         FROM com_item 
+					        WHERE item_code = ps.item_code 
+					      ) item_name
+					    , ps.cnt                           /*수량*/    
+					    , ps.unit_price                    /*단가*/    
+					    , ps.amt                           /*금액*/
+					    , ps.unit_price aply_unit_price    /*적용단가*/    
+					    , ps.amt aply_amt                  /*적용금액*/    
+					    , ps.tax aply_tax                  /*적용세액*/    
+					    , ps.note                          /*비고*/
+					    , 0 discount_ratio                 /*할인율*/     
+				  	 FROM pjt_sal_item ps
+				    WHERE ps.pjt_id = #src_pjt_id#
+				  ) A
+	       )
+	 <isNotNull property="start">      
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	 </isNotNull>   	
+	</select>
+
+	<!-- 프로젝트조회시 프로젝트의 매출품목 조회 총건수 -->
+	<select id="selectPjtItemListCount" resultClass="int">
+	SELECT COUNT(ps.pjt_id)
+  	  FROM pjt_sal_item ps
+     WHERE ps.pjt_id = #src_pjt_id#
+	</select>
+	
+	<!-- 견적정보관리_견적등록 가능여부 확인 -->
+	<select id="projectUseCheck" resultClass="HashMap">
+	SELECT ei.use_yn
+    	 , mi.man_id
+    	 , mi.maintenance_from
+    	 , mi.maintenance_to
+      FROM (
+      	    SELECT DECODE(COUNT(MAX(ei.pjt_id)),0,'Y','N') use_yn
+              FROM est_info ei 
+             WHERE ei.est_type_code = #src_est_type_code#
+               AND ei.pjt_id = #src_pjt_id#
+             GROUP BY ei.pjt_id  
+           ) ei
+         , (
+            SELECT MAX(mi.man_id) man_id
+                 , MAX(mi.maintenance_from) maintenance_from
+     			 , MAX(mi.maintenance_to) maintenance_to 
+              FROM (
+                    SELECT ROW_NUMBER() OVER (PARTITION BY pjt_id ORDER BY reg_date DESC ) row_num
+                         , mi.man_id
+                         , mi.pjt_id
+                         , mi.reg_date
+                         , mi.maintenance_from
+                         , mi.maintenance_to
+                      FROM man_info mi
+                     WHERE mi.pjt_id = #src_pjt_id#
+                   ) mi
+             WHERE mi.row_num = 1     
+           ) mi 
+	</select>
+</sqlMap>

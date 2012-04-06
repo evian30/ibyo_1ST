@@ -1,0 +1,972 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : Manage.xml
+    Description : 프로젝트관리
+    
+    
+    pjt_type_code	: 프로젝트 유형 (영업, 개발, 유지보수, ...)
+    getPjtType  	: (ID 생성시 자동 채번에 들어 가는 변수 )
+    
+    PJT_TYPE_CODE	10 =	PJT
+	PJT_TYPE_CODE	21 =	PJD
+	PJT_TYPE_CODE	22
+	PJT_TYPE_CODE	30 =	PJM	
+	PJT_TYPE_CODE	99 =	PJI 	
+     
+-->
+<sqlMap namespace="PjtManage">
+
+	<select id="selectPjtManage" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 
+						 'R' flag                                               							/*조회상태*/
+					    ,PI.pjt_id                                                							/*프로젝트ID*/
+					    ,PI.pjt_type_code                                        							/*프로젝트구분코드*/
+					    ,PI.pjt_name                                            							/*프로젝트명*/
+					    ,TO_CHAR(TO_DATE(PI.pjt_reg_date, 'YYYY-MM-DD'),'YYYY-MM-DD') AS pjt_reg_date   	/*등록일자 */
+					    ,TO_CHAR(TO_DATE(PI.pjt_date_from, 'YYYY-MM-DD'),'YYYY-MM-DD') AS pjt_date_from     /*프로젝트기간 FROM*/
+					    ,TO_CHAR(TO_DATE(PI.pjt_date_to, 'YYYY-MM-DD'),'YYYY-MM-DD') AS pjt_date_to  		/*프로젝트기간 TO*/
+					    ,PI.pjt_own_dept_code                                    							/*프로젝트담당자부서코드 */
+					    ,PI.pjt_own_emp_num                                        							/*프로젝트담당자사번*/
+					    ,PI.pjt_reg_dept_code                                    							/*프로젝트등록자부서코드 */
+					    ,PI.pjt_reg_emp_num                                        							/*프로젝트등록자사번 */
+					    ,PI.roll_type_code                                        							/*업무구분코드 */
+					    ,PI.order_possble                                        							/*수주가능성*/
+					    ,PI.pay_free_code																	/*유/무상구분코드*/
+					    ,TO_CHAR(TO_DATE(PI.order_exp_date, 'YYYY-MM-DD'),'YYYY-MM-DD') AS order_exp_date	/*수주예정일 */
+					    ,TO_CHAR(TO_DATE(PI.bid_dday, 'YYYY-MM-DD'),'YYYY-MM-DD') AS bid_dday			 	/*제안(입찰)마감일*/
+					    ,PI.proc_status_code                                    							/*진행상태코드*/
+					    ,PI.pjt_summary                                            							/*개요및특이사항 */
+					    ,PI.exp_sal_total_amt                                    							/*예상매출총액 */
+					    ,PI.exp_sal_total_tax                                    							/*예상매출총세액 */
+					    ,PI.note                                                							/*비고*/
+					  	<!-- ,(select admin_nm from tb_admin where admin_id=PI.final_mod_id) as FINAL_MOD_ID-->     /*최종변경자ID*/
+					    ,TO_CHAR(PI.final_mod_date,'YYYY-MM-DD') final_mod_date    							/*최종변경일시*/
+					    ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'PJT_TYPE_CODE' AND A.com_code = PI.pjt_type_code
+					          AND A.use_yn ='Y'
+					     ) pjt_type_code_nm                                         /*프로젝트구분명*/
+					    ,(
+					        SELECT B.dept_name
+					         FROM com_dept B
+					         WHERE B.dept_code = PI.pjt_own_dept_code
+					     ) pjt_own_dept_nm                                          /*프로젝트담당자부서명*/
+					    ,(
+					         SELECT C.kor_name
+					         FROM com_emp_info C
+					         WHERE C.emp_num = PI.pjt_own_emp_num
+					     ) pjt_own_emp_nm                                           /*프로젝트담당자명*/
+					    ,(                                                                             
+					        SELECT B.dept_name                                                             
+					          FROM com_dept B                                                               
+					          WHERE B.dept_code = PI.pjt_reg_dept_code                                      
+					     ) pjt_reg_dept_nm                                          /*프로젝트등록자부서코드*/
+					    ,(                                                                                 
+					         SELECT C.kor_name                                                              
+					          FROM com_emp_info C                                                           
+					          WHERE C.emp_num = PI.pjt_reg_emp_num                                          
+					     ) pjt_reg_emp_nm    	                                    /*프로젝트등록자명*/ 
+					    ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'PAY_FREE_CODE' AND A.com_code = PI.pay_free_code
+					          AND A.use_yn ='Y'
+					     ) pay_free_nm       	                                    /*유/무상구분명*/    
+					    ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'PJT_STATUS' AND A.com_code = PI.proc_status_code
+					          AND A.use_yn ='Y'
+					     )proc_status_nm                                            /*진행상태명*/   
+					   ,(
+					        SELECT A.com_code_name
+					          FROM com_code A
+					          WHERE A.group_code = 'ROLL_TYPE_CODE' AND A.com_code = PI.roll_type_code
+					          AND A.use_yn ='Y'
+					     )roll_type_nm                                              /*업무구분명*/
+					     ,AD.ADMIN_NM AS FINAL_MOD_ID
+					     ,'※('||(select count(ISSUE_INFO_SEQ) from PJT_ISSUE where PJT_ID=PI.PJT_ID)||')건※' AS REG_ISSUE  
+					     ,(
+						    SELECT A.com_code_name
+							FROM com_code A
+							WHERE A.group_code = decode(substr(PI.pjt_id,0,3),'PJD','FLOW_STATUS_CODE','PJT_STATUS') AND A.com_code = PI.proc_status_code
+							AND A.use_yn ='Y'
+					      )proc_status_name   															/*진행상태명*/
+					      
+					      ,PJT_DAMDANG.CUSTOM_CODE
+					      ,PJT_DAMDANG.CUSTOM_NAME
+					      ,PJT_DAMDANG.COSTOMER_NUM
+					      ,PJT_DAMDANG.CUSTOMER_NAME
+					      ,PJT_DAMDANG.CUSTOMER_DEPT_NAME
+					      ,PJT_DAMDANG.CUSTOMER_TELEPHONE
+					      
+					FROM PJT_INFO PI,  TB_ADMIN AD
+					
+					,(
+						SELECT 
+						    CUS.PJT_ID,
+						    CUS.CUSTOM_CODE,
+						    (
+						     SELECT CUSTOM_NAME
+						        FROM COM_CUSTOM
+						        WHERE CUSTOM_CODE = CUS.CUSTOM_CODE
+						        AND USE_YN ='Y'
+						    ) AS CUSTOM_NAME,
+						    
+						    CUS.COSTOMER_NUM,
+						      (
+						     SELECT CUSTOMER_NAME
+						        FROM COM_CUSTOM_MEMBER
+						        WHERE CUSTOMER_NUM = CUS.COSTOMER_NUM
+						        AND USE_YN ='Y'
+						    ) AS CUSTOMER_NAME,
+						    
+						    (
+						     SELECT CUSTOMER_DEPT
+						        FROM COM_CUSTOM_MEMBER
+						        WHERE CUSTOMER_NUM = CUS.COSTOMER_NUM
+						        AND USE_YN ='Y'
+						    ) AS CUSTOMER_DEPT_NAME,
+						    
+						    (
+						     SELECT CUSTOMER_TELEPHONE
+						        FROM COM_CUSTOM_MEMBER
+						        WHERE CUSTOMER_NUM = CUS.COSTOMER_NUM
+						        AND USE_YN ='Y'
+						    ) AS CUSTOMER_TELEPHONE 
+						    						    
+						    FROM  PJT_CUSTOM CUS
+						    WHERE CONSTRACT_YN ='Y'
+						GROUP BY CUS.PJT_ID, CUS.CUSTOM_CODE,  CUS.COSTOMER_NUM
+					) PJT_DAMDANG
+					
+					<isNotEmpty property="src_custom_name">
+						,(
+	                          SELECT * FROM (
+					                          SELECT 
+					                              CUS.PJT_ID,
+					                              CUS.CUSTOM_CODE,
+					                              (
+											       SELECT CUSTOM_NAME
+											          FROM COM_CUSTOM
+											          WHERE CUSTOM_CODE = CUS.CUSTOM_CODE
+											          AND USE_YN ='Y'
+											      ) AS CUSTOM_NAME	
+					                              FROM  PJT_CUSTOM CUS
+					                          GROUP BY CUS.PJT_ID, CUS.CUSTOM_CODE 
+					                         )
+					          WHERE CUSTOM_NAME like '%'||#src_custom_name#||'%'    
+                          ) CU
+					</isNotEmpty>
+					 
+					WHERE 
+						PI.FINAL_MOD_ID = AD.ADMIN_ID(+)  
+					<!-- AND PI.PJT_TYPE_CODE IN ('10', '20') -->
+					AND PI.PJT_ID = PJT_DAMDANG.PJT_ID(+)
+					<isNotEmpty property="src_pjt_type_code">
+						AND PI.PJT_TYPE_CODE = #src_pjt_type_code#
+					</isNotEmpty>  
+					
+					<isNotEmpty property="src_custom_name">
+						AND PI.PJT_ID=CU.PJT_ID
+					</isNotEmpty> 
+					
+					<isNotEmpty property="src_pjt_id">
+						AND PI.pjt_id like '%'||#src_pjt_id#||'%'
+					</isNotEmpty>
+					
+					<isNotEmpty property="src_pjt_name">
+						AND PI.pjt_name like '%'||#src_pjt_name#||'%'   
+					</isNotEmpty>
+					 
+					<isNotEmpty property="src_pjt_date_from">
+						AND PJT_DATE_FROM  <![CDATA[>=]]>  #src_pjt_date_from#
+					</isNotEmpty>
+					
+					<isNotEmpty property="src_pjt_date_to">
+						AND PJT_DATE_FROM  <![CDATA[<=]]>  #src_pjt_date_to#
+						<!--AND PJT_DATE_TO  <![CDATA[<=]]>  #src_pjt_date_to# -->
+					</isNotEmpty>
+					
+					
+					<isNotEmpty property="session_dept_code">
+						AND PJT_REG_DEPT_CODE  = #session_dept_code#
+					</isNotEmpty>
+					<isNotEmpty property="reg_id">
+						AND PI.REG_ID  = #reg_id#
+					</isNotEmpty>
+					
+					ORDER BY pjt_id desc 			
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	 ORDER BY PJT_REG_DATE DESC, PJT_ID DESC
+	</select>
+	
+	
+	<!-- 개발프로젝트정보 총갯수 -->
+	<select id="selectPjtManageCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(PI.pjt_id)	
+		FROM pjt_info PI,  TB_ADMIN AD
+		<isNotEmpty property="src_custom_name">
+			,(
+                        SELECT * FROM (
+		                          SELECT 
+		                              CUS.PJT_ID,
+		                              CUS.CUSTOM_CODE,
+		                              (
+								       SELECT CUSTOM_NAME
+								          FROM COM_CUSTOM
+								          WHERE CUSTOM_CODE = CUS.CUSTOM_CODE
+								          AND USE_YN ='Y'
+								      ) AS CUSTOM_NAME	
+		                              FROM  PJT_CUSTOM CUS
+		                          GROUP BY CUS.PJT_ID, CUS.CUSTOM_CODE 
+		                         )
+		          WHERE CUSTOM_NAME like '%'||#src_custom_name#||'%'    
+              ) CU
+		</isNotEmpty>
+		 
+		WHERE 
+				PI.FINAL_MOD_ID = AD.ADMIN_ID(+)
+			<!-- AND PI.PJT_TYPE_CODE IN ('10', '20') -->   
+		
+		<isNotEmpty property="src_pjt_type_code">
+			AND PI.PJT_TYPE_CODE = #src_pjt_type_code#
+		</isNotEmpty>  
+		
+		<isNotEmpty property="src_custom_name">
+			AND PI.PJT_ID=CU.PJT_ID
+		</isNotEmpty> 
+		
+		<isNotEmpty property="src_pjt_id">
+			AND PI.pjt_id like '%'||#src_pjt_id#||'%'
+		</isNotEmpty>
+		
+		<isNotEmpty property="src_pjt_name">
+			AND PI.pjt_name like '%'||#src_pjt_name#||'%'   
+		</isNotEmpty>
+		 
+		<isNotEmpty property="src_pjt_date_from">
+			AND PJT_DATE_FROM  <![CDATA[>=]]>  #src_pjt_date_from#
+		</isNotEmpty>
+		
+		<isNotEmpty property="src_pjt_date_to">
+			AND PJT_DATE_FROM  <![CDATA[<=]]>  #src_pjt_date_to#
+			<!--AND PJT_DATE_TO  <![CDATA[<=]]>  #src_pjt_date_to# -->
+		</isNotEmpty>
+		
+		
+		<isNotEmpty property="session_dept_code">
+			AND PJT_REG_DEPT_CODE  = #session_dept_code#
+		</isNotEmpty>
+		<isNotEmpty property="reg_id">
+			AND PI.REG_ID  = #reg_id#
+		</isNotEmpty>
+		
+	</select>
+
+
+	<select id="selectPjtID" parameterClass="HashMap" resultClass="String">
+		<!-- 
+		SELECT 
+			GET_AUTO_NUM(#getPjtType#, #getPjtType#, TO_CHAR(SYSDATE,'YYYYMMDD'), 4) 
+		FROM DUAL
+		-->
+		SELECT #getPjtType#||TO_CHAR(SYSDATE,'YYYYMMDD')||pjtNum FROM (
+		    SELECT   
+		    	CASE
+			        WHEN maxPjtNum <![CDATA[<]]> 10  THEN '000'||maxPjtNum
+			        WHEN maxPjtNum <![CDATA[<]]> 99  THEN '00' ||maxPjtNum
+			        WHEN maxPjtNum <![CDATA[<]]> 999 THEN '0'  ||maxPjtNum
+			        WHEN maxPjtNum <![CDATA[>]]> 999 THEN ''   ||maxPjtNum
+		    	END  AS pjtNum  
+		    FROM
+		    (  
+		        SELECT 
+		              NVL(MAX(TO_NUMBER(SUBSTR(PJT_ID,12, 4))), 0) + 1 AS maxPjtNum
+		        FROM PJT_INFO
+		        WHERE PJT_REG_DATE = TO_CHAR(SYSDATE,'YYYYMMDD')
+		     )maxPjtNum
+		 )
+	</select>
+	
+  	<!-- 개발프로젝트정보 등록 -->
+	<insert id="insertPjtManage" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO PJT_INFO (
+						 pjt_id
+						,pjt_type_code
+						,pjt_name
+						,pjt_reg_date
+						,pjt_date_from
+						,pjt_date_to
+						,pjt_own_dept_code
+						,pjt_own_emp_num
+						,pjt_reg_dept_code
+						,pjt_reg_emp_num
+						,roll_type_code
+						,order_possble
+						,pay_free_code
+						,order_exp_date
+						,bid_dday
+						,proc_status_code
+						,pjt_summary
+						,exp_sal_total_amt
+						,exp_sal_total_tax
+						,note		
+						,final_mod_id			
+						,final_mod_date
+						,reg_id
+						,reg_date
+					)
+					VALUES(	 
+                 			 #pjt_id#					
+							,#pjt_type_code#
+							,#pjt_name#
+							,#pjt_reg_date#
+							,#pjt_date_from#
+							,#pjt_date_to#
+							,#pjt_own_dept_code#
+							,#pjt_own_emp_num#
+							,#pjt_reg_dept_code#
+							,#pjt_reg_emp_num#
+							,#roll_type_code#
+							,#order_possble#
+							,#pay_free_code#
+							,#order_exp_date#
+							,#bid_dday#			
+							,'10'
+							,#pjt_summary#
+							,#exp_sal_total_amt#
+							,#exp_sal_total_tax#
+							,#note#
+							,#admin_id#
+							,SYSTIMESTAMP
+							,#admin_id#
+							,SYSTIMESTAMP
+					)
+	]]>
+	</insert>
+	
+	<!-- 개발프로젝트정보   수정 -->
+	<update id="updatePjtManage" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE pjt_info
+		   SET   pjt_name			= #pjt_name#
+		   		,pjt_reg_date		= #pjt_reg_date#
+		   		,pjt_type_code		= #pjt_type_code#
+				,pjt_date_from		= #pjt_date_from#
+				,pjt_date_to		= #pjt_date_to#
+				,pjt_own_dept_code	= #pjt_own_dept_code#
+				,pjt_own_emp_num	= #pjt_own_emp_num#
+				,pjt_reg_dept_code	= #pjt_reg_dept_code#
+				,pjt_reg_emp_num	= #pjt_reg_emp_num#
+				,roll_type_code		= #roll_type_code#
+				,order_possble		= #order_possble#
+				,pay_free_code		= #pay_free_code#
+				,order_exp_date		= #order_exp_date#
+				,bid_dday			= #bid_dday#
+				,pjt_summary		= #pjt_summary#
+				,exp_sal_total_amt	= #exp_sal_total_amt#
+				,exp_sal_total_tax	= #exp_sal_total_tax#
+				,note				= #note#
+			 	,final_mod_id   	= #admin_id#
+			 	,final_mod_date 	= SYSTIMESTAMP
+		 WHERE
+		        pjt_id  = #pjt_id#
+	]]>
+	</update>
+
+
+	<!-- 개발프로젝트정보   삭제 -->
+    <delete id="deletePjtManage" parameterClass="HashMap">
+        DELETE FROM pjt_info
+        WHERE
+        	pjt_id  	  = #pjt_id#
+    </delete>
+    
+    
+    <select id="selectPjtCustom" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 
+							'R' flag  
+							,A.PJT_INFO_SEQ
+							,TO_CHAR(TO_DATE(A.PJT_REG_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS PJT_REG_DATE
+							,A.PJT_ID
+							,A.CUSTOM_PATTERN_CODE
+							,(
+						       SELECT COM_CODE_NAME
+						          FROM COM_CODE
+						          WHERE GROUP_CODE = 'CUSTOM_PATTERN_CODE' AND COM_CODE = A.CUSTOM_PATTERN_CODE
+						          AND USE_YN ='Y'
+						     ) CUSTOM_PATTERN_NM
+						    ,A.CUSTOM_CODE
+						    ,(
+						       SELECT CUSTOM_NAME
+						          FROM COM_CUSTOM
+						          WHERE CUSTOM_CODE = A.CUSTOM_CODE
+						          AND USE_YN ='Y'
+						     ) AS CUSTOM_NAME						     
+							,A.COSTOMER_NUM
+                            ,(
+						       SELECT CUSTOMER_NAME
+						          FROM COM_CUSTOM_MEMBER
+						          WHERE 
+						              CUSTOM_CODE = A.CUSTOM_CODE                          
+                    		      AND CUSTOMER_NUM = A.COSTOMER_NUM         
+						          AND USE_YN ='Y'
+						     ) AS COSTOMER_NAME
+						     
+						     ,(
+						       SELECT CUSTOMER_DEPT
+						          FROM COM_CUSTOM_MEMBER
+						          WHERE CUSTOM_CODE = A.CUSTOM_CODE 
+						          AND CUSTOMER_NUM = A.COSTOMER_NUM         
+						          AND USE_YN ='Y'
+						     ) AS CUSTOMER_DEPT
+						     ,(
+						       SELECT CUSTOMER_POSITION
+						          FROM COM_CUSTOM_MEMBER
+						          WHERE CUSTOM_CODE = A.CUSTOM_CODE 
+						          AND CUSTOMER_NUM = A.COSTOMER_NUM         
+						          AND USE_YN ='Y'
+						     ) AS CUSTOMER_POSITION	
+						     ,(
+						       SELECT CUSTOMER_TELEPHONE
+						          FROM COM_CUSTOM_MEMBER
+						          WHERE CUSTOM_CODE = A.CUSTOM_CODE 
+						          AND CUSTOMER_NUM = A.COSTOMER_NUM         
+						          AND USE_YN ='Y'
+						     ) AS CUSTOMER_TELEPHONE    
+							 
+							
+						     	
+							,A.CONSTRACT_YN
+							,A.NOTE
+							,(select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID  
+							,TO_CHAR(A.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE
+							,TO_CHAR(A.REG_DATE,'YYYY-MM-DD') REG_DATE 
+							,(select admin_nm from tb_admin where admin_id=A.REG_ID) as REG_ID
+					FROM PJT_CUSTOM A
+					WHERE A.PJT_ID = #pjt_id#							
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<select id="selectPjtCustomCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(pjt_id)	
+		FROM PJT_CUSTOM                                                
+		WHERE PJT_ID = #pjt_id#	
+	</select>
+	
+	<insert id="insertPjtCustom" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO PJT_CUSTOM (
+								 pjt_info_seq
+								,pjt_reg_date
+								,pjt_id
+								,custom_pattern_code
+								,custom_code
+								,costomer_num
+								,constract_yn
+								,note
+								,final_mod_id
+								,final_mod_date
+								,reg_date
+								,reg_id
+							)
+					VALUES(	 
+                 			(SELECT NVL(max(TO_NUMBER(PJT_INFO_SEQ)), 0) + 1  FROM PJT_CUSTOM )				
+							,REPLACE(#pjt_reg_date#, '-', '')
+							,#pjt_id#
+							,#custom_pattern_code#
+							,#custom_code#
+							,#costomer_num#
+							,#constract_yn#
+							,#note#
+							,#admin_id#
+							,SYSTIMESTAMP
+							,SYSTIMESTAMP
+							,#admin_id#
+						  )
+	]]>
+	</insert>
+	
+	
+	<update id="updatePjtCustom" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE PJT_CUSTOM
+		   SET       
+				 custom_pattern_code        =   #custom_pattern_code#
+				,custom_code                =   #custom_code#
+				,costomer_num               =   #costomer_num#
+				,constract_yn               =   #constract_yn#
+				,note                       =   #note#
+				,final_mod_date				=   SYSTIMESTAMP
+				,final_mod_id  				=   #admin_id#
+		 WHERE                                
+		        pjt_info_seq	= 	#pjt_info_seq#
+			AND	pjt_reg_date	=   REPLACE(#pjt_reg_date#, '-', '')
+			AND	pjt_id          =   #pjt_id#
+	]]>
+	</update>
+	
+	
+	
+	 <select id="selectPjtItem" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 
+							'R' flag  
+							,A.PJT_INFO_SEQ 
+							,TO_CHAR(TO_DATE(A.PJT_REG_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS PJT_REG_DATE
+							,A.PJT_ID
+							,A.ITEM_CODE
+							,(
+						       SELECT ITEM_NAME
+						          FROM COM_ITEM
+						          WHERE ITEM_CODE = A.ITEM_CODE
+						     ) ITEM_NAME
+							,A.CPU_CNT
+							,A.CORE_CNT
+							,A.CNT
+							,A.UNIT_PRICE
+							,A.AMT
+							,A.TAX
+							,A.NOTE
+							,(select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID  
+							,TO_CHAR(A.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE
+							,TO_CHAR(A.REG_DATE,'YYYY-MM-DD') REG_DATE 
+							,(select admin_nm from tb_admin where admin_id=A.REG_ID) as REG_ID
+					FROM PJT_SAL_ITEM A
+					WHERE A.PJT_ID = #pjt_id#							
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	<select id="selectPjtItemCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(PJT_INFO_SEQ)	
+		FROM PJT_SAL_ITEM                                                
+		WHERE PJT_ID = #pjt_id#	
+	</select>
+	
+	<insert id="insertPjtItem" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO PJT_SAL_ITEM (
+									 pjt_info_seq
+									,pjt_reg_date
+									,pjt_id
+									,item_code
+									,cpu_cnt
+									,core_cnt
+									,cnt
+									,unit_price
+									,amt
+									,tax
+									,note
+									,final_mod_id
+									,final_mod_date
+									,reg_date
+									,reg_id
+							)
+					VALUES(	 
+                 			(SELECT NVL(max(TO_NUMBER(pjt_info_seq)), 0) + 1  FROM PJT_SAL_ITEM )				
+							,REPLACE(#pjt_reg_date#, '-', '')
+							,#pjt_id#
+							,#item_code#
+							,#cpu_cnt#
+							,#core_cnt#
+							,#cnt#
+							,#unit_price#
+							,#amt#
+							,#tax#
+							,#note# 
+							,#admin_id#
+							,SYSTIMESTAMP
+							,SYSTIMESTAMP
+							,#admin_id#
+						  )
+	]]>
+	</insert>
+	
+	
+	<update id="updatePjtItem" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE PJT_SAL_ITEM
+		   SET        		 		
+			 item_code     =    #item_code#  
+			,cpu_cnt       =    #cpu_cnt#    
+			,core_cnt      =    #core_cnt#
+			,cnt           =    #cnt#        
+			,unit_price    =    #unit_price# 
+			,amt           =    #amt#
+			,tax           =    #tax#        
+			,note          =    #note#       
+			,final_mod_date=    SYSTIMESTAMP     
+			,final_mod_id  =    #admin_id#
+		 WHERE                                
+		        pjt_info_seq	= 	#pjt_info_seq#
+			AND pjt_reg_date 	= 	REPLACE(#pjt_reg_date#, '-', '')
+			AND	pjt_id          =   #pjt_id#        
+	]]>
+	</update>
+
+	<select id="getDeptCode" parameterClass="string" resultClass="string">
+		SELECT dept_code FROM COM_EMP_INFO WHERE emp_num = #emp_num#
+	</select>
+	
+	<select id="getDeptNm" parameterClass="string" resultClass="string">
+		SELECT dept_name FROM COM_DEPT WHERE dept_code  = #dept_code# 
+	</select>
+	
+	<select id="getDegreeBCode" parameterClass="string" resultClass="string">
+		SELECT 
+			(SELECT 
+				com_code_name 
+			 FROM COM_CODE 
+			 WHERE 
+			 		group_code='POSITION_CODE'   
+				AND com_code=A.POSTION_CODE  
+			 ) AS degreeNm
+ 		FROM COM_EMP_INFO A
+ 		WHERE A.EMP_NUM = #emp_num#
+	</select>
+	
+	<select id="getDegreeRCode" parameterClass="string" resultClass="string">
+		SELECT 
+			(SELECT 
+				com_code_name 
+			 FROM COM_CODE 
+			 WHERE	
+			 		group_code='DUTY_CODE'
+			 	AND com_code=A.DUTY_CODE  
+			 ) AS degreeNm
+ 		FROM COM_EMP_INFO A
+ 		WHERE A.EMP_NUM = #emp_num#
+		 
+	</select>
+	
+	
+	
+	
+	<update id="updatePjtStatusManage" parameterClass="HashMap">
+	UPDATE PJT_INFO
+	   SET proc_status_code 	= #proc_status_code#
+	   	 , final_mod_date		= SYSTIMESTAMP     
+		 , final_mod_id  		= #admin_id#
+	 WHERE pjt_id  = #pjt_id#
+	 <isNotEmpty property="pjt_type_code">     
+	   AND pjt_type_code = #pjt_type_code#
+	 </isNotEmpty>
+	
+	</update>
+	
+	
+	<update id="updatePjtStatusCustom" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE PJT_CUSTOM
+		   SET   constract_yn 	= #constract_yn#
+		   		,final_mod_date	= SYSTIMESTAMP     
+				,final_mod_id  	= #admin_id#
+		 WHERE
+		     	pjt_reg_date = REPLACE(#pjt_reg_date#, '-', '')
+			AND	pjt_id       = #pjt_id#
+			AND pjt_info_seq = #pjt_info_seq# 
+	]]>
+	</update>
+	
+	<insert id="insertPjtHistory" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO PJT_HISTORY (
+									 PJT_INFO_SEQ
+									,PJT_REG_DATE
+									,PJT_ID
+									,PJT_STATUS_CODE
+									,PJT_PROC_NAME
+									,HIS_COMMENT
+									,EMP_NUM
+									,SYSTEM_REG_YN
+									,FINAL_MOD_ID
+									,FINAL_MOD_DATE
+									,REG_DATE
+									,REG_ID
+							)
+					VALUES(	 
+                 			(
+							   SELECT NVL(MAX(pjt_info_seq),0)+1
+							     FROM pjt_history
+							    WHERE pjt_id = #pjt_id#
+							      AND pjt_reg_date = TO_CHAR(SYSDATE,'YYYYMMDD')			 
+					 		)				
+							,( 
+							   SELECT TO_CHAR(SYSDATE,'yyyymmdd')
+ 							     FROM DUAL
+							) 
+							,#pjt_id#
+							,#pjt_status_code#
+							,#pjt_proc_name#          
+							,#his_comment#                
+							,#admin_id#            
+							,#system_reg_yn#
+							,#admin_id#
+							,SYSTIMESTAMP
+							,SYSTIMESTAMP
+							,#admin_id#
+						  )
+	]]>
+	</insert>
+	
+
+	
+	<select id="selectPjtStatusHIS" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 
+						 A.PJT_INFO_SEQ
+						,TO_CHAR(TO_DATE(A.PJT_REG_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS PJT_REG_DATE
+						
+						,A.PJT_ID
+						,(
+					        SELECT PJT_NAME
+					          FROM PJT_INFO
+					          WHERE PJT_ID = A.PJT_ID 
+					     ) PJT_NAME
+						
+						,A.PJT_STATUS_CODE
+						,(
+					       SELECT COM_CODE_NAME
+					          FROM COM_CODE
+					          WHERE GROUP_CODE = 'PJT_STATUS' AND COM_CODE = A.PJT_STATUS_CODE
+					          AND USE_YN ='Y'
+					     ) PJT_STATUS_CODE_NM
+						
+						,A.PJT_PROC_NAME
+						,A.HIS_COMMENT
+						
+						,EMP_NUM 
+						,(SELECT ADMIN_NM FROM TB_ADMIN WHERE ADMIN_ID=A.EMP_NUM) AS EMP_NUM_NM
+						
+						,A.SYSTEM_REG_YN
+						,(SELECT ADMIN_NM FROM TB_ADMIN WHERE ADMIN_ID=A.FINAL_MOD_ID) AS FINAL_MOD_ID  
+						,TO_CHAR(A.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE
+						,TO_CHAR(A.REG_DATE,'YYYY-MM-DD') REG_DATE 
+						,(SELECT ADMIN_NM FROM TB_ADMIN WHERE ADMIN_ID=A.REG_ID) AS REG_ID
+					FROM PJT_HISTORY A
+					WHERE PJT_ID = #grd_pjt_id#
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	 ORDER BY PJT_STATUS_CODE DESC, FINAL_MOD_ID DESC
+	</select>
+	 
+	<select id="selectPjtStatusHISCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(PJT_INFO_SEQ)	
+		FROM PJT_HISTORY  
+		WHERE PJT_ID = #grd_pjt_id#   
+	</select>
+	 
+	
+	
+	<select id="selectPjtStatus" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM ( 
+					   
+					SELECT 	  
+							PJT.REG_DATE, PJT.FINAL_MOD_DATE, PJT.PJT_REG_DEPT_CODE
+							,'※상세※' AS HIS
+							,'※('||(SELECT COUNT(ISSUE_INFO_SEQ) FROM PJT_ISSUE WHERE PJT_ID=PJT.PJT_ID)||')건※' AS REG_ISSUE
+							, PJT.PJT_ID, PJT.PJT_NAME, PJT.PROC_STATUS_CODE
+							,(
+					           SELECT COM_CODE_NAME
+					          	 FROM COM_CODE
+					        	 WHERE  GROUP_CODE = 'PJT_STATUS' AND COM_CODE = PJT.PROC_STATUS_CODE
+					                AND USE_YN ='Y'
+					          ) PROC_STATUS_CODE_NM	   
+							, EST.EST_ID, EST.EST_MOD_ID, EST.EST_MOD_NM, EST.EST_MOD_DATE
+							, ORD.ORD_ID, ORD.ORD_MOD_ID, ORD.ORD_MOD_NM, ORD.ORD_MOD_DATE
+							, PUR.PUR_ID, PUR.PUR_MOD_ID, PUR.PUR_MOD_NM, PUR.PUR_MOD_DATE
+							, SAL.SAL_ID, SAL.SAL_MOD_ID, SAL.SAL_MOD_NM, SAL.SAL_MOD_DATE
+					  FROM PJT_INFO PJT
+					     , (SELECT  PJT_ID, EST_ID, FINAL_MOD_ID AS EST_MOD_ID
+					     			,(select admin_nm from tb_admin where admin_id=EST.FINAL_MOD_ID) as EST_MOD_NM  
+									,TO_CHAR(EST.FINAL_MOD_DATE,'YYYY-MM-DD HH24:MI:SS') EST_MOD_DATE
+					          FROM EST_INFO EST
+					         WHERE EST.PROC_STATUS_CODE IN ('B90')
+					       ) EST                     
+					     , (SELECT PJT_ID, ORD_ID, FINAL_MOD_ID AS ORD_MOD_ID
+					     			,(select admin_nm from tb_admin where admin_id=ORD.FINAL_MOD_ID) as ORD_MOD_NM  
+									,TO_CHAR(ORD.FINAL_MOD_DATE,'YYYY-MM-DD HH24:MI:SS') ORD_MOD_DATE
+					          FROM ORD_INFO ORD
+					         WHERE ORD.PROC_STATUS_CODE IN ('C90')
+					       ) ORD                      
+					     , (SELECT PJT_ID, PUR_ID, FINAL_MOD_ID AS PUR_MOD_ID
+					     			,(select admin_nm from tb_admin where admin_id=PUR.FINAL_MOD_ID) as PUR_MOD_NM  
+									,TO_CHAR(PUR.FINAL_MOD_DATE,'YYYY-MM-DD HH24:MI:SS') PUR_MOD_DATE
+					          FROM PUR_INFO PUR
+					         WHERE  PUR.PROC_STATUS_CODE IN ('19')
+					       ) PUR    
+					     , (SELECT PJT_ID, SAL_ID, FINAL_MOD_ID AS SAL_MOD_ID
+					     			,(select admin_nm from tb_admin where admin_id=SAL.FINAL_MOD_ID) as SAL_MOD_NM  
+									,TO_CHAR(SAL.FINAL_MOD_DATE,'YYYY-MM-DD HH24:MI:SS') SAL_MOD_DATE
+					          FROM SAL_INFO SAL
+					       ) SAL
+					 WHERE PJT.PJT_ID = EST.PJT_ID(+)
+					   AND PJT.PJT_ID = ORD.PJT_ID(+)
+					   AND PJT.PJT_ID = PUR.PJT_ID(+)
+					   AND PJT.PJT_ID = SAL.PJT_ID(+)  
+					   AND PJT.PJT_TYPE_CODE IN ('10', '20')
+					
+					<isNotEmpty property="src_pjt_type_code" prepend="AND">
+						PJT.PJT_TYPE_CODE = #src_pjt_type_code#
+					</isNotEmpty>    
+					
+					<isNotEmpty property="src_proc_status_code" prepend="AND">
+						PJT.PROC_STATUS_CODE = #src_proc_status_code#
+					</isNotEmpty>   
+					<isNotEmpty property="src_pjt_id" prepend="AND">
+						PJT.PJT_ID like '%'||#src_pjt_id#||'%'   
+					</isNotEmpty> 
+					<isNotEmpty property="src_pjt_name" prepend="AND">
+						PJT.PJT_NAME like '%'||#src_pjt_name#||'%'   
+					</isNotEmpty>
+					 
+					<isNotEmpty property="src_pjt_date_from" prepend="AND">
+						PJT.PJT_DATE_FROM <![CDATA[>=]]> #src_pjt_date_from#
+					</isNotEmpty> 
+					<isNotEmpty property="src_pjt_date_to">
+						AND PJT.PJT_DATE_FROM  <![CDATA[<=]]>  #src_pjt_date_to#
+						<!--AND PJT_DATE_TO  <![CDATA[<=]]>  #src_pjt_date_to# -->
+					</isNotEmpty>
+					 
+					
+					<isNotEmpty property="session_dept_code">
+						AND PJT.PJT_REG_DEPT_CODE  = #session_dept_code#
+					</isNotEmpty>
+					<isNotEmpty property="reg_id">
+						AND PJT.REG_ID  = #reg_id#
+					</isNotEmpty>
+					
+					 
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	 ORDER BY  REG_DATE DESC, FINAL_MOD_DATE DESC
+	</select> 
+	
+	 
+	<select id="selectPjtStatusCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(PJT_ID)	
+		FROM (
+				SELECT 	  
+					PJT.PJT_ID, PJT.PJT_REG_DEPT_CODE     
+			  	FROM PJT_INFO PJT
+			     , (SELECT  PJT_ID, EST_ID, FINAL_MOD_ID AS EST_MOD_ID
+			     			,(select admin_nm from tb_admin where admin_id=EST.FINAL_MOD_ID) as EST_MOD_NM  
+							,TO_CHAR(EST.FINAL_MOD_DATE,'YYYY-MM-DD HH24:MI:SS') EST_MOD_DATE
+			          FROM EST_INFO EST
+			         WHERE EST.PROC_STATUS_CODE IN ('B90')
+			       ) EST                     
+			     , (SELECT PJT_ID, ORD_ID, FINAL_MOD_ID AS ORD_MOD_ID
+			     			,(select admin_nm from tb_admin where admin_id=ORD.FINAL_MOD_ID) as ORD_MOD_NM  
+							,TO_CHAR(ORD.FINAL_MOD_DATE,'YYYY-MM-DD HH24:MI:SS') ORD_MOD_DATE
+			          FROM ORD_INFO ORD
+			         WHERE ORD.PROC_STATUS_CODE IN ('C90')
+			       ) ORD                      
+			     , (SELECT PJT_ID, PUR_ID, FINAL_MOD_ID AS PUR_MOD_ID
+			     			,(select admin_nm from tb_admin where admin_id=PUR.FINAL_MOD_ID) as PUR_MOD_NM  
+							,TO_CHAR(PUR.FINAL_MOD_DATE,'YYYY-MM-DD HH24:MI:SS') PUR_MOD_DATE
+			          FROM PUR_INFO PUR
+			         WHERE  PUR.PROC_STATUS_CODE IN ('19')
+			       ) PUR    
+			     , (SELECT PJT_ID, SAL_ID, FINAL_MOD_ID AS SAL_MOD_ID
+			     			,(select admin_nm from tb_admin where admin_id=SAL.FINAL_MOD_ID) as SAL_MOD_NM  
+							,TO_CHAR(SAL.FINAL_MOD_DATE,'YYYY-MM-DD HH24:MI:SS') SAL_MOD_DATE
+			          FROM SAL_INFO SAL
+			       ) SAL
+			 WHERE PJT.PJT_ID = EST.PJT_ID(+)
+			   AND PJT.PJT_ID = ORD.PJT_ID(+)
+			   AND PJT.PJT_ID = PUR.PJT_ID(+)
+			   AND PJT.PJT_ID = SAL.PJT_ID(+)
+			   AND PJT.PJT_TYPE_CODE IN ('10', '20')
+			<isNotEmpty property="src_pjt_type_code" prepend="AND">
+				PJT.PJT_TYPE_CODE = #src_pjt_type_code#
+			</isNotEmpty>
+			<isNotEmpty property="src_proc_status_code" prepend="AND">
+				PJT.PROC_STATUS_CODE = #src_proc_status_code#
+			</isNotEmpty>
+			<isNotEmpty property="src_pjt_id" prepend="AND">
+				PJT.PJT_ID like '%'||#src_pjt_id#||'%'   
+			</isNotEmpty> 
+			<isNotEmpty property="src_pjt_name" prepend="AND">
+				PJT.PJT_NAME like '%'||#src_pjt_name#||'%'   
+			</isNotEmpty>
+			 
+			<isNotEmpty property="src_pjt_date_from" prepend="AND">
+				PJT.PJT_DATE_FROM <![CDATA[>=]]> #src_pjt_date_from#
+			</isNotEmpty> 
+			<isNotEmpty property="src_pjt_date_to">
+				AND PJT.PJT_DATE_FROM  <![CDATA[<=]]>  #src_pjt_date_to#
+				<!--AND PJT_DATE_TO  <![CDATA[<=]]>  #src_pjt_date_to# -->
+			</isNotEmpty>
+			
+			<isNotEmpty property="session_dept_code">
+				AND PJT.PJT_REG_DEPT_CODE  = #session_dept_code#
+			</isNotEmpty>
+			<isNotEmpty property="reg_id">
+				AND PJT.REG_ID  = #reg_id#
+			</isNotEmpty>
+		) 
+	</select>
+	 
+	<select id="getAuthority" parameterClass="string" resultClass="string">
+		SELECT
+		    CASE 
+		    	WHEN A.DUTY_CODE = '001' THEN '사장'
+		        WHEN A.DUTY_CODE = '006' THEN '본부장'
+		        WHEN A.DUTY_CODE = '202' THEN '연구소장'
+		        WHEN A.DUTY_CODE = '200' THEN '팀장'
+		        WHEN A.DUTY_CODE = '201' THEN '팀장대행'
+		    	ELSE '팀원'
+		     END  AS WHO    
+		FROM COM_EMP_INFO A, COM_CODE B
+		WHERE	 B.GROUP_CODE='DUTY_CODE'
+			AND  A.DUTY_CODE=B.COM_CODE 
+			AND  A.EMP_NUM = #emp_num#
+	</select>
+	
+	
+ </sqlMap>

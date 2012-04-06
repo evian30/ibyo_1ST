@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- 
+	다운로드 또는 화면에 이미지 출력시 대상 파일 을 찾기 위한 query id 를 등록하며
+	DownloadServlet 에서 해당 query id 를 사용하여 파일 다운로드를 한다.
+-->
+<configuration>	
+	<!-- 다운로드 설정 DownloadServlet-->
+	<download>
+		<board>
+			<downBeanId>boardBiz</downBeanId>
+		</board>
+		<addfile>
+			<downBeanId>techsupBiz</downBeanId>
+		</addfile>
+		<cassfile>
+			<downBeanId>cassTechsupBiz</downBeanId>
+		</cassfile>
+		
+		<!--SGIS 첨부파일 다운로드 -->
+		<employeefile>
+			<downBeanId>employeeBiz</downBeanId>
+		</employeefile>
+		
+		<scdInfofile>
+			<downBeanId>scdInfoMngBiz</downBeanId>
+		</scdInfofile>
+		
+	</download>
+	 
+		 
+    <image>
+        <sample>
+            <imageBeanId></imageBeanId>
+        </sample>
+    </image>
+</configuration>

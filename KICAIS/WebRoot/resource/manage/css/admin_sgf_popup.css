@@ -1,0 +1,326 @@
+font-family: "굴림", "Gulim", "sans-serif"; 
+    background-color: #f7f7f7; 
+    border-right: #a9a9a9 1px solid; @charset "utf-8";
+
+
+/* ------------------------------------------------------------
+ * Name      : admin_sgf_popup.css
+ * Desc       : hanuritien site / admin_sgf_popup
+ * Created  : 2009/04/25 hanuritien by greenqueen
+ * Updated  :  2009/04/25 hanuritien by greenqueen
+ ------------------------------------------------------------ */
+ 
+
+img{border:none} /* 이미지 보더 안생기게 */
+a {text-decoration:none;cursor:hand;} /* 링크 줄 안생기게 */
+a {selector-dummy: expression(this.hideFocus=true);} /* 링크이미지테두리 점선 안생기게 */
+
+tbody td{
+    font-size: 12px;
+    color: #666666;
+    padding-left: 10px;
+    height: 30px;
+}
+
+/* 바디 카진 값, 스크롤바 칼라 */
+body {
+ margin-left: 0px;
+ margin-top: 0px;
+ margin-right: 0px;
+ margin-bottom: 0px;
+ scrollbar-face-color: #f8fafa;
+ scrollbar-shadow-color: #c2c2c2;
+ scrollbar-highlight-color: #ffffff;
+ scrollbar-3dlight-color: #a9a9a9;
+ scrollbar-darkshadow-color: #666666;
+ scrollbar-track-color: #f8fafa;
+ scrollbar-arrow-color: #c2c2c2;
+ }
+ 
+ 
+/* 인풋, 폼, 텍스트에어리아,  */
+input {
+    font-family:굴림,Gulim,sans-serif; 
+    font-size: 12px; 
+    line-height:135%; 
+    color:#656a6b;
+    align:absmiddle;
+    BACKGROUND-COLOR:#ffffff;
+    border-right: #a9a9a9 1px solid; 
+    border-top: #a9a9a9 1px solid;
+    border-left: #a9a9a9 1px solid;
+    border-bottom: #a9a9a9 1px solid;  
+ }
+
+form {
+    font-family:굴림,Gulim,sans-serif; 
+    align:absmiddle;
+    border-top: #a9a9a9 1px solid;
+    border-left: #a9a9a9 1px solid;
+    border-bottom: #a9a9a9 1px solid;  
+    padding-left: 5px; 
+    font-size: 12pt; 
+    color: #474747;     
+}
+
+select {
+    font-family:굴림,Gulim,sans-serif; 
+    align:absmiddle;
+    border-top: #a9a9a9 1px solid;
+    border-left: #a9a9a9 1px solid;
+    border-bottom: #a9a9a9 1px solid;   
+    font-size: 9pt; 
+    color: #474747;     
+}
+
+/* select {behavior: url('selectbox.htc');}*/
+
+/* --------------------------------------------------*/
+/* 체크박스 오프 */
+.checkboxOff {
+    display: inline;
+    margin: 0px;
+    padding: 2px; /* NS 6 problem */
+    padding-left: 20px;
+    color: #666;
+    line-height: 16px;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: .8em;
+    background-image: url(/resource/images/admin/img/checkbox_off.gif);
+    background-repeat: no-repeat;
+    background-color: #efefef;
+    background-position: 0% 50%;
+    border-style:none;
+}
+/* --------------------------------------------------*/
+/* 체크박스 온 */
+.checkboxOn {
+    display: inline;
+    margin: 0px;
+    padding: 2px; /* NS 6 problem */
+    padding-left: 20px;
+    color: #000;
+    line-height: 16px;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: .8em;
+    background-image: url(/resource/images/admin/img/checkbox_on.gif);
+    background-repeat: no-repeat;
+    background-color: #efefef;
+    background-position: 0% 50%;
+    border-style:none;
+}
+/* --------------------------------------------------*/ 
+
+/* 리스트 테이블 */
+#table_gray  {
+    background: #efefef;
+    color:#666666;
+    text-align:left;
+    font-size:12px;
+    border-spacing: 4px;
+}
+#table_gray table a, table, tbody, tfoot, tr, th, td {
+    font-family: Verdana, arial, helvetica, sans-serif;
+}
+#table_gray table {
+    border-left:3px solid #567;
+    border-right:3px solid #000;
+    padding: 3px;
+}
+#table_gray table a {
+    text-decoration: none;
+    background: inherit;
+    color: #666666;
+    font-weight: bold;
+}
+#table_gray table a:link {
+    text-decoration: none;
+    background: inherit;
+    color: #666666;
+    font-weight: bold;
+}
+#table_gray table a:visited {
+    background: inherit;
+    color: #003333;
+    text-decoration: line-through;
+}
+#table_gray table a:hover {
+    position: relative;
+    background: inherit;
+    color: #0093ad;
+    top: 1px;
+    left: 1px;
+    text-decoration: none;
+}
+#table_gray table caption {
+    border-top:1px solid #ddf;
+    border-left:1px solid #ddf;
+    border-right:1px solid #669;
+    border-bottom:1px solid #669;
+    text-align: left;
+    padding: 3px;
+    color: #ccf;
+    background: #99f;
+    font-family: georgia, "times new roman", serif;
+    font-size:20px;
+    font-weight:bold;
+}
+
+#table_gray td, th {
+    height:20px;
+    padding:5px;
+    color: #666666;
+    border-top:1px solid #ffffff;
+    border-left:1px solid #ffffff;
+    border-right:1px solid #c2c2c2;
+    border-bottom:1px solid #c2c2c2;
+}
+
+#table_gray #odd {
+    color:#ffffff;
+    background: #a7adad;
+}
+
+/* --------------------------------------------------*/
+/* 리스트 테이블 */
+.col{
+    border-right: 1px solid #e5e5e5;
+    
+}
+/* --------------------------------------------------*/
+
+/* 팝업 타이틀 폰트 */
+.txt_tt {
+    height:30px;
+    text-align: left;
+    padding:20px 0px 0px 20px;  
+    color: #405757;
+    font-family:굴림,Gulim,sans-serif; 
+    font-size: 12px; 
+    font-weight:bold;
+    background : #ffffff url(/resource/images/admin/img/tt_i.jpg) no-repeat 10px 75%;
+}
+.line_bg{height:5px;background:url(/resource/images/admin/img/line_bg.jpg) repeat-x 5px;}
+/* --------------------------------------------------*/
+
+/* 검색 텍스트 에어리아 */
+.keyword    {font-family:굴림,Gulim,sans-serif;  font-size: 12px; LINE-HEIGHT:135%; COLOR:#656a6b;align:absmiddle; width:200px;height:20px;}
+/* --------------------------------------------------*/
+/* 경로 */
+.root   {
+    height:30px;
+    color: #0093ad;
+    font-family:굴림,Gulim,sans-serif; 
+    font-size: 12px; 
+    font-weight:bold;
+}   
+.root_s {
+    width:100px;
+    height:30px;
+    color: #405757;
+    font-family:굴림,Gulim,sans-serif; 
+    font-size: 12px; 
+}
+/* --------------------------------------------------*/
+/* 팝업 테이블 */
+.table_popup {
+    background: #ffffff;
+    color:#5e95a7;  
+    text-align:left;
+    font-size: 12px; 
+    border:10px solid #efefef;
+    width:100%;
+    height:100%;
+    }
+/* --------------------------------------------------*/ 
+
+/* 인풋 버튼 */
+.button {                       /* 첫번째 버튼 예> 확인*/
+background:url(/resource/images/admin/img/bg_b02.gif);  
+border:1x solid #0093ad;  
+background-Color:#ECF0F0;  
+font:12px 굴림;     
+font-weight:bold;   
+color:#0093ad;    
+width:80px;height:25px;  
+margin:10px 5px 10px 5px;
+}
+
+.button02 {                  /* 첫번째 버튼 예> 취소*/
+background:url(/resource/images/admin/img/bg_b02.gif);   
+border:1x solid #dcdbdb; 
+background-Color:#ECF0F0;  
+font:12px 굴림;     
+font-weight:bold;   
+color:#666666;    
+width:80px;height:25px;  
+margin:10px 5px 10px 5px;
+}
+/* --------------------------------------------------*/ 
+/*- Menu Tabs--------------------------- */
+
+    #tabsB {
+      float:left;
+      width:100%;
+      background:#F4F4F4;
+      font-size:93%;
+      line-height:normal;
+      }
+    #tabsB ul {
+    margin:0;
+    padding:10px 10px 0 50px;
+    list-style:none;
+      }
+    #tabsB li {
+      display:inline;
+      margin:0;
+      padding:0;
+      }
+    #tabsB a {
+      float:left;
+      background:url("/resource/images/admin/img/tableftB.gif") no-repeat left top;
+      margin:0;
+      padding:0 0 0 4px;
+      text-decoration:none;
+      font-weight:bold;
+      }
+    #tabsB a span {
+      float:left;
+      display:block;
+      background:url("/resource/images/admin/img/tabrightB.gif") no-repeat right top;
+      padding:5px 15px 4px 6px;
+      color:#666;
+      font-weight:bold;
+      }
+    /* Commented Backslash Hack hides rule from IE5-Mac \*/
+    #tabsB a span {float:none;}
+    /* End IE5-Mac hack */
+    #tabsB a:hover span {
+      color:#000;
+      }
+    #tabsB a:hover {
+      background-position:0% -42px;
+      }
+    #tabsB a:hover span {
+      background-position:100% -42px;
+      }
+    
+    #tabsB #current a {
+        background-position:0% -42px;
+    }
+    #tabsB #current a span {
+        background-position:100% -42px;
+    }
+
+/* --------------------------------------------------*/ 
+/*- Menu Tabs 내용 테이블--------------------------- */
+.menu_table {
+    background: #ffffff;
+    color:#5e95a7;  
+    text-align:left;
+    font-size: 12px; 
+    border:1px solid #F4F4F4;
+    width:100%;
+    height:100%;
+    }
+/* --------------------------------------------------*/ 

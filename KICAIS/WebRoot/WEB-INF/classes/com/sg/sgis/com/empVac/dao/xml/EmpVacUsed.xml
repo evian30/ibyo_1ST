@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : EmpVacUsed.xml
+    Description : 개인별휴가정보
+-->
+<sqlMap namespace="EmpVacUsed">
+
+	<!-- 개인별휴가사용관리 조회 -->
+	<select id="selectEmpVacUsedList"  parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT          
+	                        'R' flag			   	   							 /*조회상태*/
+	                        ,A.emp_vac_seq
+	                        ,A.emp_num
+	                        ,B.kor_name 
+	                        ,B.dept_code
+	                        ,A.vac_type           
+	                        ,A.vac_days_used_from   
+	                        ,A.vac_days_used_to
+	                        ,A.vac_days
+	                        ,A.vac_used_exp
+	                        ,A.note
+                        	,A.final_mod_id
+                        	,TO_CHAR(A.final_mod_date,'YYYY-MM-DD') AS final_mod_date
+                        	,(SELECT  SUM(vac_days) AS vac_tot_days  FROM com_vac_info WHERE emp_num = A.emp_num and basic_year = #basic_year#) AS vac_tot_days
+	                    FROM
+	                        com_vac_used_info A,
+	                        ( SELECT
+	                            A.emp_num,
+	                            A.kor_name,
+	                            A.dept_code,
+	                            B.dept_name          
+	                        FROM
+	                            com_emp_info A,
+	                            com_dept B         
+	                        WHERE
+	                            A.dept_code =  B.dept_code       
+	                         )B       
+	                    WHERE
+	                        A.emp_num = B.emp_num
+	                        <isNotEmpty property="session_dept_code">
+						   		AND	A.emp_num  in( select emp_num from com_emp_info where dept_code = #session_dept_code# )
+							</isNotEmpty>
+							<isNotEmpty property="reg_id">
+								AND A.emp_num  = #reg_id#
+							</isNotEmpty>
+					   		AND #basic_year#  BETWEEN substr(A.vac_days_used_from,0,4) AND substr(A.vac_days_used_to,0,4)
+					   	order by A.vac_days_used_from ASC
+					  ) A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit#  
+		   
+	</select>
+	
+	<select id="selectEmpVacUsedCount" parameterClass="HashMap" resultClass="int">
+		SELECT          
+           count(A.emp_num) emp_num
+            FROM
+                com_vac_used_info A,
+                ( SELECT
+                    A.emp_num,
+                    A.kor_name,
+                    A.dept_code,
+                    B.dept_name          
+                FROM
+                    com_emp_info A,
+                    com_dept B         
+                WHERE
+                    A.dept_code =  B.dept_code(+)         
+                 )B       
+	          WHERE
+	          A.emp_num = B.emp_num
+	        <isNotEmpty property="session_dept_code">
+			   		AND	A.emp_num  in( select emp_num from com_emp_info where dept_code = #session_dept_code# )
+			</isNotEmpty>
+			<isNotEmpty property="reg_id">
+					AND A.emp_num  = #reg_id#
+			 </isNotEmpty>
+			  AND  #basic_year#  BETWEEN substr(A.vac_days_used_from,0,4) AND substr(A.vac_days_used_to,0,4)
+	</select>	 
+	
+	<!-- 개인별휴가사용관리 저장 -->
+	<insert id="insertEmpVacUsed" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO com_vac_used_info(
+								emp_vac_seq
+								,vac_days_used_from
+								,vac_days_used_to
+								,emp_num
+								,vac_type
+								,vac_days
+								,vac_used_exp
+								,note
+								,final_mod_id
+								,final_mod_date
+								,reg_id     			/*등록일시	          */
+								,reg_date  				/*등록자ID	          */ 								
+								)
+							VALUES
+							(
+							   #emp_vac_seq#    
+							  ,#vac_days_used_from_tmp#         
+							  ,#vac_days_used_to_tmp#          								
+							  ,#emp_num#              							
+							  ,#vac_type#     
+							  ,#vac_days#   
+							  ,#vac_used_exp#     
+							  ,#note#     
+							  ,#final_mod_id#     
+							  , SYSDATE   
+							  ,#final_mod_id#     
+							  , SYSDATE    							
+							)
+	]]>
+	</insert>	
+	
+	<!-- 개인별휴가사용관리 수정 -->
+	<update id="updateEmpVacUsed" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE com_vac_used_info SET  
+			   vac_days_used_from   = #vac_days_used_from_tmp#         
+			   ,vac_days_used_to    = #vac_days_used_to_tmp#   
+			   ,vac_type    = #vac_type# 
+			   ,vac_days    =  #vac_days#   
+			   ,vac_used_exp    = #vac_used_exp#          
+			   ,note        = #note#      
+			   ,final_mod_id    = #final_mod_id#    
+			   ,final_mod_date  = SYSDATE           
+		WHERE   emp_vac_seq     = #emp_vac_seq#                 
+	]]>
+	</update>
+
+	<!-- 개인별휴가사용관리 삭제 -->
+    <delete id="deleteEmpVacUsed" parameterClass="HashMap">
+        DELETE FROM com_vac_used_info 
+        WHERE   emp_vac_seq     = #emp_vac_seq#                         
+    </delete> 
+
+
+	<!-- 개인별휴가일수  -->
+	<select id="selectEmpVacDaysCount" parameterClass="HashMap" resultClass="int">
+		select  GET_VAC_DAYS(#vac_days_used_from_tmp#, #vac_days_used_to_tmp# ) AS CNT from dual
+	</select>	
+	
+	<!-- 개인별총휴가일수  -->	
+	<select id="selectEmpVacTotCount" parameterClass="HashMap" resultClass="int">
+		SELECT  SUM(vac_days) AS vac_tot_days  FROM com_vac_info WHERE emp_num = #emp_num# and basic_year = #basic_year#
+	</select>		
+
+ </sqlMap>

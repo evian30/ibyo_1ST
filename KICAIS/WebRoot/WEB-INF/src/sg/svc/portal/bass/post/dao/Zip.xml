@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="Zip">
+    <typeAlias alias="Zip" type="sg.svc.portal.bass.post.domain.Zip"/>
+    <sql id="baseSelectZip">
+        SELECT 
+			ZIPCODE,
+			ADDR_GUBUN1,
+			ADDR_GUBUN2,
+			ADDR_GUBUN3,
+			ADDR_GUBUN4,
+			ADDR_GUBUN5,
+			BUNZI as bunji,
+			ST_NM,
+			ADDR
+        FROM COM_ZIPCODE
+    </sql>
+
+    <select id="selectZipList" resultClass="Zip" parameterClass="HashMap">
+	    <include refid="Zip.baseSelectZip"/>
+	    WHERE ADDR_GUBUN3 LIKE '%'||#search_word#||'%' OR ADDR_GUBUN4 LIKE '%'||#search_word#||'%' ORDER BY ADDR DESC
+    </select>
+</sqlMap> 

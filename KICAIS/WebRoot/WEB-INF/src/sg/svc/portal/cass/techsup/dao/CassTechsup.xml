@@ -1,0 +1,761 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+	
+	<sqlMap namespace="CassTechsup">
+		   
+		 <select id="DownselCassFile" resultClass="DownloadFileBean" >
+	    	SELECT 		 
+					C_ADD_FILE_NO AS ADD_FILE_NO,
+					C_TECH_SUP_APP AS NO,
+					C_FILE_PATH as filePath,
+					C_FILE_SAVE_NM as viewFileName,
+					C_FILE_REAL_NM as saveFileName,
+					C_FILE_SIZE AS FILE_SIZE,
+					UP_DATE,
+					CR_DATE,
+					CHMAN_NO,
+					C_TECH_SUP_ST_NO
+			FROM C_TECH_SUP_FILE
+			WHERE C_ADD_FILE_NO = #add_file_no_key# 
+			  AND C_TECH_SUP_APP = #no_key#  
+	    </select>
+	    
+	    
+	    
+	    <select id="selCassFile" resultClass="HashMap" >
+	    	SELECT 		 
+					C_ADD_FILE_NO AS ADD_FILE_NO,
+					C_TECH_SUP_APP AS NO,
+					C_FILE_PATH as filePath,
+					C_FILE_REAL_NM as viewFileName,
+					C_FILE_SAVE_NM as saveFileName,
+					C_FILE_SIZE AS FILE_SIZE,
+					UP_DATE,
+					TO_CHAR(ST.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+					CHMAN_NO,
+					C_TECH_SUP_ST_NO,
+					(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = ST.CHMAN_NO) CHMAN_NM
+			FROM C_TECH_SUP_FILE ST
+			WHERE 1=1 
+			  	 AND C_TECH_SUP_APP = #c_tech_sup_app_no#  
+	        ORDER BY C_ADD_FILE_NO DESC
+	    </select>
+	    
+	    
+	    
+	    
+	    
+	    
+	    <insert id="insCassFile" parameterClass="HashMap"> 
+	   	 	INSERT INTO C_TECH_SUP_FILE ( 
+											C_ADD_FILE_NO,
+											C_TECH_SUP_APP,
+											C_FILE_PATH,
+											C_FILE_REAL_NM,
+											C_FILE_SAVE_NM,
+											C_FILE_SIZE, 
+											CR_DATE,
+											CHMAN_NO,
+											C_TECH_SUP_ST_NO
+										)
+			VALUES ( 
+						(SELECT NVL(max(TO_NUMBER(C_ADD_FILE_NO)), 0) + 1  FROM C_TECH_SUP_FILE ),
+						#c_tech_sup_app#,             
+						#file_path#,
+						#file_save_nm#,   
+						#file_real_nm#,   
+						#file_size#,
+						SYSDATE,
+						#chman_no#,
+						#c_tech_sup_st_no#
+	  				)
+    	</insert>
+	    
+	    
+	    
+	    
+	    
+	   	<delete id="delCassFile" parameterClass="HashMap">
+		 	DELETE FROM C_TECH_SUP_FILE WHERE  C_ADD_FILE_NO  =  #add_file_no# 
+		</delete>
+	    
+	    
+	    
+	    
+	    <!-- C_TECH_SUP_APP_NO 조회하기 Start -->
+	    <select id="cassAppNo" resultClass="String">
+	    	SELECT RETURN_NO('C_TECH_SUP_APP') FROM DUAL
+	    </select>
+	    <!-- C_TECH_SUP_APP_NO 조회하기 End -->
+	     
+	     
+	     
+	     
+	     
+	    <!--  master view Start -->
+	    <select id="getCassView" resultClass="HashMap" > 
+	    	SELECT 
+			      C_TECH_SUP_APP_NO, 
+			      C_PJT_NO, 
+			      
+			      <!-- 프로젝트NO 가 있을 경우 프로젝트명 -->
+			      (SELECT PJT_NAME FROM PJT P WHERE P.PJT_NO = T.C_PJT_NO) AS PJT_NM,
+			      
+			      <!-- 프로젝트NO 가 있을 경우 고객사명 --> 
+			      (	SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+			            FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+			            WHERE PJT_NO = T.C_PJT_NO 
+			              AND PC.CHMAN_NO = C.CHMAN_NO 
+			              AND C.CORP_NO=CP.CORP_NO
+			            GROUP BY PJT_NO
+			        ) CL_CORP_NM,
+			        
+			        <!-- 프로젝트NO 가 있을 경우 고객사 담당자명  -->
+			       ( SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) 
+			            FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+			            WHERE PJT_NO = T.C_PJT_NO 
+			              AND PC.CHMAN_NO = C.CHMAN_NO 
+			              AND C.CORP_NO=CP.CORP_NO
+			            GROUP BY PJT_NO
+			        ) CL_CORP_NM,
+			        
+			      C_COM_NM,
+			      C_COM_PER_NM,
+			      C_COM_PER_TEL,
+			      
+			      C_TECH_SUP_TITLE,
+			      C_ETC,
+			      
+			      TO_CHAR(T.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+			      TO_CHAR(T.UP_DATE, 'yyyy-MM-dd HH24:mi:ss') AS UP_DATE,
+			           
+			      (SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = T.CHMAN_NO) C_SG_CHMAN_NM,
+			      (SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = T.C_COM_CHMAN_NO) C_COM_CHMAN_NM,
+			      
+			      C_CATE_ID,
+				  C_CATE_NM,
+				  NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='CASS_CATE' AND CODE = T.C_CATE_ID),'코드값없음') AS CATE_NM,
+				  T.CHMAN_NO
+			      		           
+			FROM C_TECH_SUP_APP T
+				WHERE 1=1				
+					<isNotEmpty property="c_tech_sup_app_no" prepend="AND">
+				   		C_TECH_SUP_APP_NO  =  #c_tech_sup_app_no#	 
+				   </isNotEmpty>		 
+		</select>
+		<!--  master view End -->
+		
+		
+		
+		
+		<!--  CASS Cate Start -->
+	    <select id="getCassViewCate" resultClass="HashMap">	 
+			 SELECT 
+			 		C_TECH_SUP_CATE_SEQ,
+					C_TECH_SUP_APP_NO,
+					CHMAN_NO,
+					 TO_CHAR(CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+					C_TECH_SUP_CATE_NM,
+					C_TECH_SUP_CATE_NO
+			 FROM C_TECH_SUP_CATE
+			 	WHERE  C_TECH_SUP_APP_NO  =  #c_tech_sup_app_no#	 
+		</select>
+	    <!--  CASS Cate End -->
+	    
+	    
+	    
+	    
+	    
+	    <!--  CASS Corp Start -->
+	    <select id="getCassViewCorp" resultClass="HashMap">	 
+			 SELECT 
+			 		C_TECH_SUP_CORP_SEQ,
+					C_TECH_SUP_APP_NO,
+					C_CORP_CHMAN_NO,
+					C.CHMAN_NO,
+					TO_CHAR(C.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+					C.UP_DATE,
+					CHMAN_NM,
+			        NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='DEPT_CODE' AND CODE = C.DEPT_CODE),'코드값없음') DEPT_CODE,
+					NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='GRADE_CODE' AND CODE = C.GRADE_CODE),'코드값없음') GRADE_CODE				 
+					
+			 FROM C_TECH_SUP_CORP CO, CHMAN C
+			 WHERE  CO.C_CORP_CHMAN_NO = C.CHMAN_NO(+)
+				   <isNotEmpty property="c_tech_sup_app_no" prepend="AND">
+				   			C_TECH_SUP_APP_NO  =  #c_tech_sup_app_no#	 
+				   </isNotEmpty>
+				   ORDER BY C_TECH_SUP_CORP_SEQ
+			 
+		</select>
+	    <!--  CASS Corp End -->
+	    
+	    
+	    
+	    
+	    
+	    <!--  CASS HISTORY Start -->
+	    <select id="getCassViewHis" resultClass="HashMap">	 
+			 SELECT ROWNUM,
+			 		C_TECH_SUP_APP_NO,
+					T.CHMAN_NO, 
+					(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = T.CHMAN_NO) CHMAN_NM,
+					TO_CHAR(T.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+					C_TECH_SUP_HIS_SEQ,
+					C_TECH_SUP_PR_ID,
+					NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='DEPT_CODE' AND CODE = C.DEPT_CODE),'코드값없음') DEPT_CODE,
+					NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='GRADE_CODE' AND CODE = C.GRADE_CODE),'코드값없음') GRADE_CODE			
+			 FROM C_TECH_SUP_HIS T, CHMAN C
+		 	 WHERE  T.CHMAN_NO = C.CHMAN_NO
+			   <isNotEmpty property="c_tech_sup_app_no" prepend="AND">
+			   			C_TECH_SUP_APP_NO  =  #c_tech_sup_app_no#	 
+			   </isNotEmpty>
+			   ORDER BY CR_DATE ASC, C_TECH_SUP_PR_ID ASC
+		</select>
+	    <!--  CASS HISTORY End -->
+	    
+	    
+	    
+	    
+	    
+	    <!--  CASS VIEW1 Start -->
+	    <select id="getCassView1" resultClass="HashMap">	 
+			 SELECT 
+			 		C_ST1_SEQ,
+					C_TECH_SUP_APP_NO,
+					C_ST1_CONTENT,
+					CHMAN_NO,
+					TO_CHAR(CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+					TO_CHAR(UP_DATE, 'yyyy-MM-dd HH24:mi:ss') AS UP_DATE,
+					(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = ST.CHMAN_NO) CHMAN_NM
+			 FROM C_TECH_SUP_ST1 ST
+			 WHERE  1=1
+			   <isNotEmpty property="c_tech_sup_app_no" prepend="AND">
+			   			C_TECH_SUP_APP_NO  =  #c_tech_sup_app_no#	 
+			   </isNotEmpty>
+			   ORDER BY CR_DATE DESC
+		</select>
+	    <!--  CASS getCassView1 End -->
+	    
+	    
+	    
+	    
+	    
+	    <!--  CASS VIEW2 Start -->
+	    <select id="getCassView2" resultClass="HashMap">	 
+			 SELECT 
+			 		C_ST2_SEQ,
+					C_TECH_SUP_APP_NO,
+					C_ST2_CONTENT,
+					CHMAN_NO,
+					TO_CHAR(CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+					TO_CHAR(UP_DATE, 'yyyy-MM-dd HH24:mi:ss') AS UP_DATE,
+					(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = ST.CHMAN_NO) CHMAN_NM
+			 FROM C_TECH_SUP_ST2 ST
+			  WHERE  1=1
+			   <isNotEmpty property="c_tech_sup_app_no" prepend="AND">
+			   			C_TECH_SUP_APP_NO  =  #c_tech_sup_app_no#	 
+			   </isNotEmpty>
+			   ORDER BY CR_DATE DESC
+		</select>
+	    <!--  CASS VIEW2 End -->
+	    
+	    
+	    
+	    
+	    
+	    <!--  CASS VIEW3 Start -->
+	    <select id="getCassView3" resultClass="HashMap">	 
+			 SELECT 
+			 		C_ST3_SEQ,
+					C_TECH_SUP_APP_NO,
+					C_ST3_CONTENT,
+					CHMAN_NO,
+					TO_CHAR(CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+					TO_CHAR(UP_DATE, 'yyyy-MM-dd HH24:mi:ss') AS UP_DATE,
+					(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = ST.CHMAN_NO) CHMAN_NM
+			 FROM C_TECH_SUP_ST3 ST
+			  WHERE  1=1
+			   <isNotEmpty property="c_tech_sup_app_no" prepend="AND">
+			   			C_TECH_SUP_APP_NO  =  #c_tech_sup_app_no#	 
+			   </isNotEmpty>
+			   ORDER BY CR_DATE DESC	 
+		</select>
+	    <!--  CASS VIEW3 End -->
+		
+		
+		
+		
+		
+	    <!--  CASS List Count Start -->
+	    <select id="getCassCount" resultClass="Int"> 
+	    		SELECT COUNT(*) FROM (
+	    				SELECT 
+						      T.C_TECH_SUP_APP_NO, 
+						      T.C_PJT_NO, 
+						      (SELECT PJT_NAME FROM PJT P WHERE P.PJT_NO = T.C_PJT_NO) AS PJT_NM,
+						      (	SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+						            FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+						            WHERE PJT_NO = T.C_PJT_NO 
+						              AND PC.CHMAN_NO = C.CHMAN_NO 
+						              AND C.CORP_NO=CP.CORP_NO
+						            GROUP BY PJT_NO
+						        ) CL_CORP_NM,
+						       ( SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) 
+						            FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+						            WHERE PJT_NO = T.C_PJT_NO 
+						              AND PC.CHMAN_NO = C.CHMAN_NO 
+						              AND C.CORP_NO=CP.CORP_NO
+						            GROUP BY PJT_NO
+						        ) CL_CORP_PER_NM,
+						      T.C_COM_NM,
+						      T.C_COM_PER_NM,
+						      T.C_COM_PER_TEL,
+						      T.C_TECH_SUP_TITLE,
+						      T.C_ETC,
+						      TO_CHAR(T.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+						      TO_CHAR(T.UP_DATE, 'yyyy-MM-dd HH24:mi:ss') AS UP_DATE,
+						      (SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = T.CHMAN_NO) C_SG_CHMAN_NM,
+						      (SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = T.C_COM_CHMAN_NO) C_COM_CHMAN_NM
+						FROM C_TECH_SUP_APP T    
+							LEFT OUTER JOIN CHMAN CH ON T.CHMAN_NO = CH.CHMAN_NO
+							
+			            	LEFT OUTER JOIN C_TECH_SUP_ST1 ST1   ON T.C_TECH_SUP_APP_NO=ST1.C_TECH_SUP_APP_NO
+			            	 									AND ST1.C_ST1_SEQ = '1'  
+			            	LEFT OUTER JOIN C_TECH_SUP_ST2 ST2   ON T.C_TECH_SUP_APP_NO=ST2.C_TECH_SUP_APP_NO
+			            	 									AND ST2.C_ST2_SEQ = '1'
+			            	LEFT OUTER JOIN C_TECH_SUP_ST3 ST3   ON T.C_TECH_SUP_APP_NO=ST3.C_TECH_SUP_APP_NO
+			            	 									AND ST3.C_ST3_SEQ = '1' 
+			            
+							WHERE 1=1
+							
+							
+							<isNotEmpty property="src_cate_nm" prepend="AND">  
+						   		T.C_CATE_NM  like '%'||#src_cate_nm#||'%'
+					     	</isNotEmpty>
+					     	
+					     	<isNotEmpty property="src_cate_id" prepend="AND">  
+						   		T.C_CATE_ID  = #src_cate_id#
+					     	</isNotEmpty>					     	
+					     	
+					     	
+					     	<isNotEmpty property="src_status" prepend="AND">
+							   	<isEqual property="src_status" compareValue="001">
+							   		ST1.C_ST1_CONTENT IS NOT NULL
+									AND ST2.C_ST2_CONTENT IS   NULL
+									AND ST3.C_ST3_CONTENT IS   NULL
+							   	</isEqual>
+							   	<isEqual property="src_status" compareValue="002">
+							   			ST1.C_ST1_CONTENT IS NOT NULL
+									AND ST2.C_ST2_CONTENT IS NOT NULL
+									AND ST3.C_ST3_CONTENT IS   NULL
+							   	</isEqual> 
+							   	<isEqual property="src_status" compareValue="003">
+								   		ST1.C_ST1_CONTENT IS NOT NULL
+									AND ST2.C_ST2_CONTENT IS NOT NULL
+									AND ST3.C_ST3_CONTENT IS NOT NULL
+							   	</isEqual> 
+					        </isNotEmpty>    
+					     	
+							<isNotEmpty property="src_tech_sup_id" prepend="AND">  
+						   		T.C_TECH_SUP_APP_NO  like '%'||#src_tech_sup_id#||'%'
+					     	</isNotEmpty>
+					     	
+					     	<isNotEmpty property="src_st_con" prepend="AND">   
+						   		(ST1.C_ST1_CONTENT like '%'||#src_st_con#||'%'
+						   			OR
+						   		ST1.C_ST2_CONTENT like '%'||#src_st_con#||'%')
+					     	</isNotEmpty>
+					     	
+					     	
+					     	<isNotEmpty property="src_chman_nm" prepend="AND">  
+						   		CH.CHMAN_NM like '%'||#src_chman_nm#||'%'
+					     	</isNotEmpty>
+							
+							<isNotEmpty property="src_st3_con" prepend="AND">   
+						   		ST1.C_ST3_CONTENT like '%'||#src_st3_con#||'%'  
+					     	</isNotEmpty>
+					     	
+							
+							<isNotEmpty property="st_cr_date" prepend="AND">  
+								TO_CHAR(T.CR_DATE, 'YYYY-MM-DD') <![CDATA[>=]]> #st_cr_date#
+							</isNotEmpty>
+							
+							<isNotEmpty property="ed_cr_date" prepend="AND">  
+								TO_CHAR(T.CR_DATE, 'YYYY-MM-DD') <![CDATA[<=]]> #ed_cr_date#
+							</isNotEmpty>
+							
+							
+						 	<isNotEmpty property="src_title" prepend="AND">   
+						   		T.C_TECH_SUP_TITLE like '%'||#src_title#||'%'  
+					     	</isNotEmpty>
+							 
+	    		
+	    		) 
+		</select>
+		<!--  CASS List Count End -->
+		
+		
+		
+		
+		
+	    <!--  CASS List Start -->
+	    <select id="getCassList" resultClass="HashMap">	 
+			SELECT * 
+			  FROM (
+			       SELECT ROWNUM AS RNUM, 
+			              CEIL(ROWNUM / #pageSize#) PAGE, 
+			              VR_T1.* 
+			         FROM (
+						  SELECT T.C_TECH_SUP_APP_NO, 
+						         T.C_PJT_NO, 
+						         (SELECT PJT_NAME 
+						            FROM PJT P 
+						           WHERE P.PJT_NO = T.C_PJT_NO) AS PJT_NM,
+						         (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+						            FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+						           WHERE PJT_NO = T.C_PJT_NO 
+						             AND PC.CHMAN_NO = C.CHMAN_NO 
+						             AND C.CORP_NO=CP.CORP_NO
+						           GROUP BY PJT_NO
+						         ) CL_CORP_NM,
+						         (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) 
+						            FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+						           WHERE PJT_NO = T.C_PJT_NO 
+						             AND PC.CHMAN_NO = C.CHMAN_NO 
+						             AND C.CORP_NO=CP.CORP_NO
+						           GROUP BY PJT_NO
+						         ) CL_CORP_PER_NM,
+						         T.C_COM_NM,
+						         T.C_COM_PER_NM,
+						         T.C_COM_PER_TEL,
+						         T.C_TECH_SUP_TITLE,
+						         T.C_ETC,
+						         T.C_CATE_NM,
+						         T.C_CATE_ID,
+						         TO_CHAR(T.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+						         TO_CHAR(T.UP_DATE, 'yyyy-MM-dd HH24:mi:ss') AS UP_DATE,
+						         (SELECT CHMAN_NM 
+						            FROM CHMAN PC 
+						           WHERE PC.CHMAN_NO = T.CHMAN_NO) C_SG_CHMAN_NM,
+						         (SELECT CHMAN_NM 
+						            FROM CHMAN PC 
+						           WHERE PC.CHMAN_NO = T.C_COM_CHMAN_NO) C_COM_CHMAN_NM,
+						         NVL((SELECT CODE_NM 
+						                FROM TOT_CODE_MNG 
+						               WHERE CODE_SECT ='CASS_CATE' AND CODE = T.C_CATE_ID),'코드값없음') AS CATE_NM,
+						         ST4.C_TECH_SUP_PR_ID
+						    FROM C_TECH_SUP_APP T    
+							LEFT OUTER JOIN CHMAN CH ON T.CHMAN_NO = CH.CHMAN_NO
+							
+			            	LEFT OUTER JOIN C_TECH_SUP_ST1 ST1   ON T.C_TECH_SUP_APP_NO=ST1.C_TECH_SUP_APP_NO
+			            	 									AND ST1.C_ST1_SEQ = '1'  
+			            	LEFT OUTER JOIN C_TECH_SUP_ST2 ST2   ON T.C_TECH_SUP_APP_NO=ST2.C_TECH_SUP_APP_NO
+			            	 									AND ST2.C_ST2_SEQ = '1'
+			            	LEFT OUTER JOIN C_TECH_SUP_ST3 ST3   ON T.C_TECH_SUP_APP_NO=ST3.C_TECH_SUP_APP_NO
+			            	 									AND ST3.C_ST3_SEQ = '1'
+			                LEFT OUTER JOIN (SELECT T.C_TECH_SUP_APP_NO
+			                                      , T.C_TECH_SUP_PR_ID
+			                                      , ROW_NUMBER() OVER(PARTITION BY T.C_TECH_SUP_APP_NO 
+			                                                              ORDER BY T.C_TECH_SUP_HIS_SEQ DESC) TEMP_SEQ
+			                                   FROM C_TECH_SUP_HIS T
+			                                ) ST4 ON T.C_TECH_SUP_APP_NO = ST4.C_TECH_SUP_APP_NO
+			                                     AND ST4.TEMP_SEQ = '1'
+							WHERE 1=1
+							<isNotEmpty property="src_cate_nm" prepend="AND">  
+						   		T.C_CATE_NM  like '%'||#src_cate_nm#||'%'
+					     	</isNotEmpty>
+					     	<isNotEmpty property="src_cate_id" prepend="AND">  
+						   		T.C_CATE_ID  = #src_cate_id#
+					     	</isNotEmpty>		
+					     	<isNotEmpty property="src_status" prepend="AND">
+							   	<isEqual property="src_status" compareValue="001">
+							   		ST1.C_ST1_CONTENT IS NOT NULL
+									AND ST2.C_ST2_CONTENT IS   NULL
+									AND ST3.C_ST3_CONTENT IS   NULL
+							   	</isEqual>
+							   	<isEqual property="src_status" compareValue="002">
+							   			ST1.C_ST1_CONTENT IS NOT NULL
+									AND ST2.C_ST2_CONTENT IS NOT NULL
+									AND ST3.C_ST3_CONTENT IS   NULL
+							   	</isEqual> 
+							   	<isEqual property="src_status" compareValue="003">
+								   		ST1.C_ST1_CONTENT IS NOT NULL
+									AND ST2.C_ST2_CONTENT IS NOT NULL
+									AND ST3.C_ST3_CONTENT IS NOT NULL
+							   	</isEqual> 
+					        </isNotEmpty>  
+							<isNotEmpty property="src_tech_sup_id" prepend="AND">  
+						   		T.C_TECH_SUP_APP_NO  like '%'||#src_tech_sup_id#||'%'
+					     	</isNotEmpty>
+					     	<isNotEmpty property="src_st_con" prepend="AND">   
+						   		(ST1.C_ST1_CONTENT like '%'||#src_st_con#||'%'
+						   			OR
+						   		ST1.C_ST2_CONTENT like '%'||#src_st_con#||'%')
+					     	</isNotEmpty>
+					     	<isNotEmpty property="src_chman_nm" prepend="AND">  
+						   		CH.CHMAN_NM  like '%'||#src_chman_nm#||'%'
+					     	</isNotEmpty>
+							<isNotEmpty property="src_st3_con" prepend="AND">   
+						   		ST1.C_ST3_CONTENT like '%'||#src_st3_con#||'%'  
+					     	</isNotEmpty>
+							<isNotEmpty property="st_cr_date" prepend="AND">  
+								TO_CHAR(T.CR_DATE, 'YYYY-MM-DD') <![CDATA[>=]]> #st_cr_date#
+							</isNotEmpty>
+							<isNotEmpty property="ed_cr_date" prepend="AND">  
+								TO_CHAR(T.CR_DATE, 'YYYY-MM-DD') <![CDATA[<=]]> #ed_cr_date#
+							</isNotEmpty>
+						 	<isNotEmpty property="src_title" prepend="AND">   
+						   		T.C_TECH_SUP_TITLE like '%'||#src_title#||'%'  
+					     	</isNotEmpty>
+					    ORDER BY T.CR_DATE DESC 	
+					) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+			WHERE RNUM > 0 AND PAGE = #pageNum#    	
+		</select>
+	    <!--  CASS List Count End -->
+	    
+	    
+	    <!--  Step1 INSERT Start-->
+		<insert id="insertCassStep1" parameterClass="HashMap">
+	      	INSERT INTO C_TECH_SUP_APP ( 
+											C_TECH_SUP_APP_NO,
+											C_PJT_NO,
+											C_COM_NM,
+											C_COM_PER_NM,
+											C_COM_PER_TEL,
+											C_TECH_SUP_TITLE,
+											C_ETC,
+											CHMAN_NO,
+											CR_DATE, 
+											C_COM_CHMAN_NO,
+											C_CATE_NM,
+											C_CATE_ID
+										)
+					VALUES (   
+								#c_tech_sup_app_no#,
+								#c_pjt_no#,
+								#c_com_nm#,
+								#c_com_per_nm#,
+								#c_com_per_tel#,
+								#c_tech_sup_title#,
+								#c_etc#,
+								
+								#chman_no#,
+								SYSDATE, 
+								#c_com_chman_no#,
+								#c_cate_nm#,
+								#c_cate_id#
+							)
+	    </insert> 
+	    <!-- Step1 INSERT  End-->
+	    
+	    
+	    
+	    
+	    
+	    <!--  Step2 INSERT Start-->
+		<insert id="insertCassStep2" parameterClass="HashMap">
+	      	INSERT INTO C_TECH_SUP_CATE ( 
+											C_TECH_SUP_CATE_SEQ
+											C_TECH_SUP_APP_NO,
+											CHMAN_NO,
+											CR_DATE,
+											C_TECH_SUP_CATE_NM,
+											C_TECH_SUP_CATE_NO
+										)
+					VALUES (   
+								(SELECT NVL(max(TO_NUMBER(C_TECH_SUP_CATE_SEQ)), 0) + 1  FROM C_TECH_SUP_CATE ),
+								#c_tech_sup_app_no#,
+								#chman_no#,
+								SYSDATE,
+								#c_tech_sup_cate_nm#,
+								#c_tech_sup_cate_no# 							
+							)
+	    </insert> 
+	    <!-- Step2 INSERT  End-->
+	    
+	    
+	    
+	    
+	    <!--  Step3 INSERT Start-->
+		<insert id="insertCassStep3" parameterClass="HashMap">
+	      	INSERT INTO C_TECH_SUP_CORP ( 
+											C_TECH_SUP_CORP_SEQ,
+											C_TECH_SUP_APP_NO,
+											C_CORP_CHMAN_NO,
+											CHMAN_NO,
+											CR_DATE
+										)
+					VALUES (   
+								(SELECT NVL(max(TO_NUMBER(C_TECH_SUP_CORP_SEQ)), 0) + 1  FROM C_TECH_SUP_CORP ),
+								#c_tech_sup_app_no#,
+								#c_corp_chman_no#,
+								#chman_no#,
+								SYSDATE							
+							)
+	    </insert> 
+	    <!-- Step3 INSERT  End-->
+	    
+	    
+	    
+	    
+	    <!--  Step4 INSERT Start-->
+		<insert id="insertCassStep4" parameterClass="HashMap">
+	      	INSERT INTO C_TECH_SUP_HIS ( 
+											C_TECH_SUP_HIS_SEQ,
+											C_TECH_SUP_APP_NO,
+											CHMAN_NO,
+											CR_DATE, 
+											C_TECH_SUP_PR_ID
+										)
+					VALUES (   
+								(SELECT NVL(max(TO_NUMBER(C_TECH_SUP_HIS_SEQ)), 0) + 1  FROM C_TECH_SUP_HIS WHERE C_TECH_SUP_APP_NO = #c_tech_sup_app_no# ),
+								#c_tech_sup_app_no#, 
+								#chman_no#,
+								SYSDATE,
+								#c_tech_sup_pr_id#						
+							)
+	    </insert> 
+	    <!-- Step4 INSERT  End-->
+	    
+	    
+	    
+	    
+	    <!--  Step1-1 INSERT Start-->
+		<insert id="insertCassStep1_1" parameterClass="HashMap">
+	      	INSERT INTO C_TECH_SUP_ST1 ( 
+											C_ST1_SEQ,
+											C_TECH_SUP_APP_NO,
+											C_ST1_CONTENT,
+											CHMAN_NO,
+											CR_DATE
+										)
+					VALUES (   
+								(SELECT NVL(max(TO_NUMBER(C_ST1_SEQ)), 0) + 1  FROM C_TECH_SUP_ST1 WHERE C_TECH_SUP_APP_NO = #c_tech_sup_app_no# ),
+								#c_tech_sup_app_no#, 
+								#c_st1_content#,
+								#chman_no#,
+								SYSDATE							
+							)
+	    </insert> 
+	    <!-- Step1-1 INSERT  End-->
+	    
+	    
+	    
+	    
+	    <!--  Step1-2 INSERT Start-->
+		<insert id="insertCassStep1_2" parameterClass="HashMap">
+	      	INSERT INTO C_TECH_SUP_ST2 ( 
+											C_ST2_SEQ,
+											C_TECH_SUP_APP_NO,
+											C_ST2_CONTENT,
+											CHMAN_NO,
+											CR_DATE
+										)
+					VALUES (   
+								(SELECT NVL(max(TO_NUMBER(C_ST2_SEQ)), 0) + 1  FROM C_TECH_SUP_ST2 WHERE C_TECH_SUP_APP_NO = #c_tech_sup_app_no# ),
+								#c_tech_sup_app_no#, 
+								#c_st2_content#,
+								#chman_no#,
+								SYSDATE							
+							)
+	    </insert> 
+	    <!-- Step1-2 INSERT  End-->
+	    
+	    
+	    
+	    
+	    <insert id="insertCassStep1_3" parameterClass="HashMap">
+	      	INSERT INTO C_TECH_SUP_ST3 ( 
+											C_ST3_SEQ,
+											C_TECH_SUP_APP_NO,
+											C_ST3_CONTENT,
+											CHMAN_NO,
+											CR_DATE
+										)
+					VALUES (   
+								(SELECT NVL(max(TO_NUMBER(C_ST3_SEQ)), 0) + 1  FROM C_TECH_SUP_ST3 WHERE C_TECH_SUP_APP_NO = #c_tech_sup_app_no# ),
+								#c_tech_sup_app_no#, 
+								#c_st3_content#,
+								#chman_no#,
+								SYSDATE							
+							)
+	    </insert> 
+	    <!-- Step1-3 INSERT  End-->
+	    
+	    
+	    
+	    
+	    
+	    
+	    <!-- Step1 UPDATE Start-->
+		<update id="updateCassStep1" parameterClass="HashMap">
+		 	UPDATE C_TECH_SUP_APP SET 
+									C_PJT_NO		    = #pjt_no#,
+									C_COM_NM   			= #c_com_nm#,     
+									C_COM_PER_NM        = #c_com_per_nm#,          
+									C_COM_PER_TEL       = #c_com_per_tel#,         
+									C_TECH_SUP_TITLE    = #c_tech_sup_title#,
+									C_ETC				= #c_etc#,
+									UP_DATE             = SYSDATE,                 
+									C_COM_CHMAN_NO      = #c_com_chman_no#,
+									C_CATE_ID			= #c_cate_id#,
+									C_CATE_NM			= #c_cate_nm#
+			WHERE C_TECH_SUP_APP_NO	= #c_tech_sup_app_no# 
+		</update>
+		<!-- Step1 UPDATE Start-->
+		
+		
+		
+		
+		
+	    <!-- Step1 DELETE Start-->
+	    <delete id="deleteCassStep1" parameterClass="HashMap">
+		  	DELETE FROM C_TECH_SUP_APP WHERE C_TECH_SUP_APP_NO = #c_tech_sup_app_no# A
+		</delete>
+	    <!-- Step1 DELETE Start-->
+	    
+	    
+	    
+	    
+	    
+	    <!-- Step2 DELETE Start-->
+	    <delete id="deleteCassStep2" parameterClass="HashMap">
+		  	DELETE FROM 		  		
+		  	   <isNotEmpty property="c_st1_seq">
+			   			C_TECH_SUP_ST1
+			   </isNotEmpty>
+			   <isNotEmpty property="c_st2_seq">
+			   			C_TECH_SUP_ST2
+			   </isNotEmpty>
+			   <isNotEmpty property="c_st3_seq">
+			   			C_TECH_SUP_ST3
+			   </isNotEmpty> 
+		  	WHERE C_TECH_SUP_APP_NO = #c_tech_sup_app_no# 
+		       <isNotEmpty property="c_st1_seq">
+			   			 AND C_ST1_SEQ = #c_st1_seq#
+			   </isNotEmpty>
+			   <isNotEmpty property="c_st2_seq">
+			   			 AND C_ST2_SEQ = #c_st2_seq#
+			   </isNotEmpty>
+			   <isNotEmpty property="c_st3_seq">
+			   			 AND C_ST3_SEQ = #c_st3_seq#
+			   </isNotEmpty> 
+		</delete>
+	    <!-- Step2 DELETE Start-->   
+	    
+	    
+	    
+	    
+	    <!-- Step3 DELETE Start-->
+	    <delete id="deleteCassStep3" parameterClass="HashMap">
+		  	DELETE FROM C_TECH_SUP_CORP WHERE C_TECH_SUP_APP_NO = #c_tech_sup_app_no# AND C_TECH_SUP_CORP_SEQ = #c_tech_sup_corp_seq#
+		</delete>
+	    <!-- Step3 DELETE Start-->   
+	    
+	    
+	    
+	    
+	    
+	    
+
+	</sqlMap>

@@ -1,0 +1,590 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Chman">
+	<typeAlias alias="ChmanMaster" type="com.signgate.sgportal.chman.domain.Chman"/>
+	
+	<select id="selectChman_no" resultClass="String">
+   		select MAX(TO_NUMBER(SUBSTR(CHMAN_NO, 4)))+1 FROM CHMAN
+   	 </select>
+	
+	<!-- 공용 --> 
+	<select id="selChmanCount" parameterClass="HashMap" resultClass="int">
+    	SELECT 
+				COUNT(CH.chman_no)							
+		FROM CHMAN CH, TB_ADMIN AD, CORP CO, TB_ADMINGROUP GR
+		WHERE   (CH.USE_YN = 'Y' 
+								OR #groups# = 'G001')
+			AND CH.id = AD.admin_id(+)
+			AND CH.CORP_NO = CO.CORP_NO	
+			AND GR.ADMIN_ID(+) = AD.ADMIN_ID
+			
+	
+	   <isNotEmpty property="group_id" prepend="AND">
+	   		GR.GROUP_ID = #group_id# 
+	   </isNotEmpty>
+						
+	   <isNotEmpty property="corp_no" prepend="AND">
+	   		CO.CORP_NO = #corp_no# 
+	   </isNotEmpty>
+        
+        <isEqual property="comT" compareValue="SG">
+       		AND CO.CORP_SECT_CODE = '1' 
+       	</isEqual>
+       	
+       	<isNotEqual property="comT" compareValue="SG">
+       		AND CO.CORP_SECT_CODE = '2' 
+       	</isNotEqual> 
+       
+        <isNotEmpty property="keyword" prepend="AND">
+		   	<isEqual property="key" compareValue="001">
+		   		CH.chman_nm like '%'||#keyword#||'%'  
+		   	</isEqual> 
+		   	<isEqual property="key" compareValue="002">
+		   		CO.corp_nm like '%'||#keyword#||'%'  
+		   	</isEqual> 
+        </isNotEmpty>  
+    </select>
+	
+	<select id="selectCorpNo" resultClass="String">
+    	SELECT RETURN_NO('CORP') FROM DUAL
+    </select>
+	
+	<!-- 담당자 정보 등록  S-->
+	<insert id="insChmanInsert" parameterClass="HashMap">
+      INSERT INTO CHMAN
+    		  (CHMAN_NO, 
+    		   CHMAN_NM, 
+    		   CHMAN_PHONE, 
+    		   CHMAN_HP, 
+    		   CHMAN_EMAIL, 
+    		   AUTH, 
+    		   ID, 
+    		   PASSWD, 
+    		   LAST_LOGIN_DATE, 
+    		   CORP_NO, 
+			   DEPT_CODE, 
+			   SIGN_IMG_NO, 
+			   CHMAN_TYPE_CODE, 
+			   CHMAN_SECT_CODE, 
+			   GRADE_CODE, 
+			   <!-- WORK_YN,  --> 
+			   MEMO_CONTENTS, 
+			   CR_DATE,
+			   UP_DATE,
+			   USE_YN)
+   		VALUES(
+			   (SELECT RETURN_NO('CHMAN') FROM DUAL), 
+   			   #chman_nm#, 
+   			   #chman_phone#, 
+   			   #chman_hp#, 
+   			   #chman_email#, 
+   			   #auth#, 
+   			   #id#, 
+   			   #passwd#, 
+   			   #last_login_date#, 
+   			   #corp_no#,
+			   #dept_code#, 
+			   #sign_img_no#, 
+			   #chman_type_code#, 
+			   #chman_sect_code#, 
+			   #grade_code#, 
+			   <!-- #work_yn#,  -->
+			   #memo_contents#, 
+			   sysdate,
+			   sysdate,
+			   'Y')
+    </insert> 
+    <!-- 담당자 정보 등록  E-->
+     
+    <!-- 담당자 정보 상세 보기  S-->
+    <select id="selectChmanView" resultClass="HashMap" >
+    	SELECT 
+    		C.CHMAN_NO, D.CORP_NM, C.PASSWD,
+			SUBSTR(D.SSN,1,3)||'-'||SUBSTR(D.SSN,4,2)||'-'||SUBSTR(D.SSN,6,5) AS SSN, 
+			D.ADDR1||' '||D.ADDR2 AS ADDR , 
+			D.REP_PHONE, 
+			D.REP_FAX,
+			NVL(C.ID,'당사회원아님') AS CHMAN_ID,
+			C.CHMAN_TYPE_CODE,
+			NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='CHMAN_TYPE_CODE' AND CODE = C.CHMAN_TYPE_CODE),'코드값없음') CHMAN_TYPE_CODE_NM,
+			C.CHMAN_NM,
+			C.GRADE_CODE,
+			NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='GRADE_CODE' AND CODE = C.GRADE_CODE),'코드값없음') GRADE_CODE_NM,
+			C.DEPT_CODE,
+			NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='DEPT_CODE' AND CODE = C.DEPT_CODE),'코드값없음') DEPT_CODE_NM,
+			C.CHMAN_PHONE,
+			C.CHMAN_HP,
+			C.CHMAN_EMAIL, C.MEMO_CONTENTS,
+			AD.admin_nm       ,
+			AD.admin_pw       ,
+			AD.admin_mail     ,
+			AD.cor_nm         ,
+			AD.cor_number     ,
+			AD.cor_regnumber  ,
+			AD.sabun          ,
+			AD.dept           ,
+			AD.tel            ,
+			AD.reg_dt         ,
+			C.USE_YN			
+		FROM CHMAN C, CORP D, TB_ADMIN AD
+		WHERE C.CORP_NO = D.CORP_NO
+			  AND C.id = AD.admin_id(+)
+			AND C.CHMAN_NO = #chman_no# 
+			 
+    </select>
+    <!-- 담당자 정보 상세 보기  E--> 
+    
+    <!-- 담당자 정보 목록  S-->
+    <select id="selectChmanList" resultClass="HashMap">		
+    	SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+			(  
+			SELECT  
+			        T1.*  FROM 
+						(
+						SELECT 
+								CH.chman_no			   ,		AD.admin_id		  ,		
+								CH.chman_nm            ,  		AD.admin_nm       ,     CO.corp_nm           ,
+								CH.chman_phone         ,  		AD.admin_pw       ,     CO.ssn               ,
+								CH.chman_hp            ,  		AD.admin_mail     ,     CO.addr1             ,
+								CH.chman_email         ,  		AD.cor_nm         ,     CO.rep_phone         ,
+								CH.auth                ,  		AD.cor_number     ,     CO.rep_fax           ,
+								CH.id                  ,  		AD.cor_regnumber  ,     
+								CH.passwd              ,  		AD.sabun          ,     CO.addr2             ,
+								CH.last_login_date     ,  		AD.dept           ,     CO.zipcode           ,
+								CH.corp_no             ,  		AD.tel            ,     CO.imptc_grade_code  ,
+								CH.sign_img_no         ,  		AD.reg_dt         ,     CO.corp_sect_code    ,
+								CH.chman_sect_code     ,				                CO.site_url          ,
+																						CO.ceo_nm            ,
+																						CO.category_nm       ,
+																						CO.condition_nm      ,
+																						CO.corp_status_code  ,
+																						
+								CH.memo_contents       ,				
+								CH.sns_account         ,				
+								CH.chman_status_code   ,				
+								CH.up_date             ,				
+								CH.cr_date             ,				
+								
+								
+								<!--                    
+								CH.grade_code          ,
+								CH.dept_code           ,
+								CH.chman_type_code     ,
+								-->     
+								
+								NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='GRADE_CODE' AND CODE = CH.GRADE_CODE),'코드값없음') GRADE_CODE,
+								NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='DEPT_CODE' AND CODE = CH.DEPT_CODE),'코드값없음') DEPT_CODE,
+								NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='CHMAN_TYPE_CODE' AND CODE = CH.CHMAN_TYPE_CODE),'코드값없음') CHMAN_TYPE_CODE,
+								CH.USE_YN,
+								GR.GROUP_ID,
+								( SELECT COUNT(chman_no) FROM LOGIN_HIS WHERE CH.CHMAN_NO=CHMAN_NO GROUP BY  chman_no) AS loginCnt 							
+					FROM CHMAN CH, TB_ADMIN AD, CORP CO, TB_ADMINGROUP GR
+					WHERE   (CH.USE_YN = 'Y' 
+								OR #groups# = 'G001')
+							
+							AND CH.id = AD.admin_id(+)
+							AND CH.CORP_NO = CO.CORP_NO	
+							AND GR.ADMIN_ID(+) = AD.ADMIN_ID
+							
+					
+					   <isNotEmpty property="group_id" prepend="AND">
+					   		GR.GROUP_ID = #group_id# 
+					   </isNotEmpty>	
+					   				
+					   <isNotEmpty property="corp_no" prepend="AND">
+					   		CO.CORP_NO = #corp_no# 
+					   </isNotEmpty>
+					   
+				       <isEqual property="comT" compareValue="SG">
+				       		AND CO.CORP_SECT_CODE ='1' 
+				       	</isEqual>
+				       	<isNotEqual property="comT" compareValue="SG">
+				       		AND CO.CORP_SECT_CODE = '2' 
+				       	</isNotEqual> 
+				       <isNotEmpty property="keyword" prepend="AND">
+						   	<isEqual property="key" compareValue="001">
+						   		CH.chman_nm like '%'||#keyword#||'%'  
+						   	</isEqual> 
+						   	<isEqual property="key" compareValue="002">
+						   		CO.corp_nm like '%'||#keyword#||'%'  
+						   	</isEqual> 
+				        </isNotEmpty>
+						
+			       		<isNotEmpty property="sortKey" prepend="">
+				        	ORDER BY $sortKey$
+						   	<isEqual property="sort" compareValue="1">
+						   		ASC
+						   	</isEqual> 
+						   	<isEqual property="sort" compareValue="2">
+						   		DESC
+						   	</isEqual>
+				        </isNotEmpty>   
+				        
+				        <isEmpty property="sortKey">
+				        	ORDER BY CO.CORP_NM DESC
+				        </isEmpty>
+				        ) T1
+			        ) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+					WHERE RNUM > 0 AND PAGE = #pageNum#  	
+     
+    </select>
+    <!-- 담당자 정보 목록  E-->
+    
+
+    <!-- 담당자 정보 목록 xml  S-->
+    <select id="selectXmlChmanList" resultClass="HashMap">				
+        SELECT C.CHMAN_NO, C.CORP_NO, D.CORP_NM,
+			NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='CHMAN_TYPE_CODE' AND CODE = C.CHMAN_TYPE_CODE),'코드값없음') CHMAN_TYPE_CODE,
+			C.CHMAN_NM AS CHMAN_NM,
+			NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='GRADE_CODE' AND CODE = C.GRADE_CODE),'코드값없음') GRADE_CODE,
+			NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='DEPT_CODE' AND CODE = C.DEPT_CODE),'코드값없음') DEPT_CODE,
+			C.CHMAN_HP,
+			C.CHMAN_EMAIL,
+			C.CHMAN_SECT_CODE, C.MEMO_CONTENTS
+		FROM CHMAN C, CORP D, TB_ADMINGROUP GR
+		WHERE C.CORP_NO = D.CORP_NO	 
+			AND D.CORP_SECT_CODE = #comT#
+			AND C.ID = GR.ADMIN_ID(+)
+			
+	
+		   <isNotEmpty property="group_id" prepend="AND">
+		   		GR.GROUP_ID = #group_id# 
+		   </isNotEmpty>
+			
+		   <isNotEmpty property="corp_no" prepend="AND">
+		   		D.CORP_NO = #corp_no#
+		   </isNotEmpty>
+			ORDER BY CHMAN_NM ASC
+	       
+	   
+	</select>
+
+   
+    <!-- 담당자 정보 수정 S-->
+	<update id="modChmanUpdate" parameterClass="HashMap">
+	 	UPDATE CHMAN SET
+   			CHMAN_NM = #chman_nm#, 
+   			CHMAN_PHONE = #chman_phone#, 
+   			CHMAN_HP = #chman_hp#, 
+   			CHMAN_EMAIL = #chman_email#, 
+   			chman_type_code = #chman_type_code#,
+   			AUTH = #auth#, 
+			DEPT_CODE = #dept_code#, 
+			GRADE_CODE = #grade_code#,
+			MEMO_CONTENTS = #memo_contents#,
+			UP_DATE= sysdate
+   		 WHERE CHMAN_NO = #chman_no#  
+		   
+	</update>
+	<!-- 담당자 정보 수정 E-->
+	
+	<!-- ***********************고객 회사정보 Start************************************************* -->
+    <!-- 담당자 회사정보 목록  S-->
+    <select id="selectChmanComListXml" resultClass="HashMap">
+		SELECT 
+					 CORP_NO AS CORP_NO,
+					 CORP_NM AS CORP_NM,
+					 REP_PHONE AS REP_PHONE,
+					 REP_FAX AS REP_FAX,
+					 ADDR1 AS ADDR1,
+					 ADDR2 AS ADDR2,
+					 CORP_SECT_CODE,
+					 USE_YN
+				FROM CORP
+				WHERE USE_YN = 'Y'
+	
+	</select>
+	
+    <!-- 담당자 회사정보 목록 수 S-->
+    <select id="selectChmanComTotCount" resultClass="Int">				
+		 SELECT count(CORP_NM) FROM CORP 
+		 	WHERE (USE_YN = 'Y' 
+					OR #groups# = 'G001')
+		  
+		<isEqual property="comT" compareValue="SG">
+       		AND CORP_SECT_CODE ='1' 
+       	</isEqual>
+       	<isNotEqual property="comT" compareValue="SG">
+       		AND CORP_SECT_CODE = '2' 
+       	</isNotEqual> 
+       	
+       	<isNotEmpty property="keyword" prepend="AND">
+		   	<isEqual property="key" compareValue="001">
+		   		CORP_NM like '%'||#keyword#||'%'  
+		   	</isEqual> 
+        </isNotEmpty>
+        
+    </select>
+    <!-- 담당자 회사정보 목록 수 E-->
+    
+    <!-- 담당자 회사정보 목록  S-->
+    <select id="selectChmanComList" resultClass="HashMap">				
+		 SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+			(SELECT 
+				 CORP_NO AS CORP_NO,
+				 CORP_NM AS CORP_NM,
+				 REP_PHONE AS REP_PHONE,
+				 REP_FAX AS REP_FAX,
+				 ADDR1 AS ADDR1,
+				 ADDR2 AS ADDR2,
+				 CORP_SECT_CODE,
+				 USE_YN
+			FROM CORP
+			WHERE (USE_YN = 'Y' 
+					OR #groups# = 'G001')
+			<isEqual property="comT" compareValue="SG">
+	       		AND CORP_SECT_CODE ='1' 
+	       	</isEqual>
+	       	<isNotEqual property="comT" compareValue="SG">
+	       		AND CORP_SECT_CODE = '2' 
+	       	</isNotEqual> 
+	       <isNotEmpty property="keyword" prepend="AND">
+			   	<isEqual property="key" compareValue="001">
+			   		CORP_NM like '%'||#keyword#||'%'  
+			   	</isEqual> 
+			   	<isEqual property="key" compareValue="002">
+			   		(ADDR1 like '%'||#keyword#||'%'  
+			   	OR ADDR2  like '%'||#keyword#||'%')
+			   	</isEqual> 
+	        </isNotEmpty>
+			
+       		<isNotEmpty property="sortKey" prepend="">
+	        	ORDER BY $sortKey$
+			   	<isEqual property="sort" compareValue="1">
+			   		ASC
+			   	</isEqual> 
+			   	<isEqual property="sort" compareValue="2">
+			   		DESC
+			   	</isEqual>
+	        </isNotEmpty>   
+	        
+	        <isEmpty property="sortKey">
+	        	ORDER BY CORP_NO DESC
+	        </isEmpty>
+			
+			) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#  
+       	 
+    </select>
+    <!-- 담당자 회사정보 목록  E-->
+    
+    <!-- 담당자 회사정보 등록  S-->
+	<insert id="insertChmanCom" parameterClass="HashMap">
+      	INSERT INTO CORP (  
+							CORP_NO,
+							CORP_NM,
+							SSN,
+							ADDR1,
+							REP_PHONE,
+							REP_FAX,
+							CR_DATE,
+							ADDR2,
+							ZIPCODE,
+							IMPTC_GRADE_CODE,
+							CORP_SECT_CODE,
+							CORP_STATUS_CODE,
+							UP_DATE,
+							USE_YN,
+							CHMAN_NO
+							 )
+						VALUES (	 
+									#corp_no#,
+									#corp_nm#,
+									#ssn#,
+									#addr1#,
+									#rep_phone#,
+									#rep_fax#,
+									sysdate,
+									#addr2#,
+									#zipcode#,
+									#imptc_grade_code#,
+									#corp_sect_code#,
+									'1',
+									sysdate,
+									'Y',
+									#chman_no#
+								)      
+    </insert> 
+    <!-- 담당자 회사정보 등록  E-->
+     
+    <!-- 담당자 회사정보 수정 S-->
+	<update id="ChmanComUpdate" parameterClass="HashMap">
+	 		UPDATE CORP
+				SET  
+				CORP_NM 					= #corp_nm#, 
+				SSN 						= #ssn#, 
+				ADDR1 						= #addr1#, 
+				REP_PHONE 					= #rep_phone#, 
+				REP_FAX 					= #rep_fax#,
+				ADDR2 						= #addr2#, 
+				ZIPCODE 					= #zipcode#, 
+				IMPTC_GRADE_CODE 			= #imptc_grade_code#,
+				UP_DATE						= sysdate
+			WHERE 
+				CORP_NO	= #corp_no#
+	 		
+	</update>
+	
+	<update id="ChmanComUseUpdate" parameterClass="HashMap">
+	 		UPDATE CORP
+				SET  
+				USE_YN 					= #use_yn#,
+				UP_DATE					= sysdate
+			WHERE 
+				CORP_NO	= #corp_no#
+	</update>
+	
+	<!-- 담당자 회사정보 삭제 S-->
+	<delete id="ChmanComDelete" parameterClass="HashMap">
+	 	DELETE FROM CORP
+	 	WHERE  CORP_NO	= #corp_no#
+	</delete>
+	<!-- 담당자 회사정보 삭제 E-->
+	
+	<!-- 담당자 회사정보 상세 보기  S-->
+    <select id="selectChmanComView" resultClass="HashMap" >
+    	  SELECT * FROM 
+			(SELECT VR_T1.* FROM 
+				(SELECT 
+					 CORP_NO AS CORP_NO,
+					 CORP_NM AS CORP_NM,
+					 REP_PHONE AS REP_PHONE,
+					 REP_FAX AS REP_FAX,
+					 ADDR1 AS ADDR1,
+					 ADDR2 AS ADDR2,
+					 ZIPCODE AS ZIPCODE,  
+					 IMPTC_GRADE_CODE AS IMPTC_GRADE_CODE,
+					 SSN AS SSN,
+					 CORP_SECT_CODE,
+					 USE_YN
+				 FROM CORP
+				 WHERE 1=1 
+					<isNotEmpty property="corp_no" prepend="AND"> 
+				   		 CORP_NO = #corp_no# 
+			        </isNotEmpty> 
+				 ) VR_T1 
+			) VR_T2
+			
+			 
+    </select>
+    
+    <delete id="deleteChman" parameterClass="HashMap">
+	 	DELETE FROM CHMAN
+	 	WHERE  CHMAN_NO	= #chman_no#
+	</delete> 
+	
+	
+	<update id="delChmanUseDelete" parameterClass="HashMap">
+	 	UPDATE CHMAN SET
+   			USE_YN = #use_yn#,
+			UP_DATE= sysdate
+   		 WHERE CHMAN_NO = #chman_no# 
+		   
+	</update>
+	
+	
+	
+    <!-- 담당자 회사정보 상세 보기  E--> 
+    
+	<!-- ***********************고객 회사정보 End************************************************* -->
+	<select id="getCode" resultClass="HashMap">
+        SELECT CODE, CODE_NM, CODE_SECT, CR_DATE, USE_YN, CODE_DETAIL
+         FROM TOT_CODE_MNG
+        WHERE CODE_SECT = #code_sect# AND USE_YN = 'Y'
+        ORDER BY TO_NUMBER(CODE) ASC
+    </select>
+		 
+	<select id="countChmanAdmin" parameterClass="HashMap" resultClass="int">
+    	SELECT COUNT(admin_id) FROM TB_ADMIN
+		WHERE admin_id = #admin_id#     
+    </select>
+	
+	<insert id="insertADMIN" parameterClass="HashMap">
+      INSERT INTO TB_ADMIN	
+				(
+					admin_id,
+					admin_nm,
+					admin_pw,
+					admin_mail,
+					cor_nm,
+					cor_number,
+					cor_regnumber,
+					sabun,
+					dept,
+					tel,
+					reg_dt
+				)
+	 VALUES (
+	 					#id#,
+						#chman_nm#,
+						#passwd#,
+						#chman_email#,
+						#corp_nm#,
+						#corp_no#,
+						'',
+						(select chman_no from chman where id = #id#),
+						#dept_code#,
+						#chman_phone#,
+						SYSDATE
+	 		)			
+    </insert>  
+      
+	<update id="updateChmanADMIN" parameterClass="HashMap">
+	 	UPDATE TB_ADMIN SET      
+			admin_nm        = #chman_nm#,
+			admin_mail      = #chman_email#, 
+			cor_number      = #corp_no#, 
+			
+			sabun			= (select chman_no from chman where id = #id#),
+			
+			dept            = #dept_code#,         
+			tel             = #chman_phone#		 
+		WHERE 	admin_id = #id#	 		
+	</update>
+	
+	 
+	<delete id="deleteChmanAdmin" parameterClass="HashMap">
+	 	DELETE FROM TB_ADMIN
+	 	WHERE  admin_id	= #id#
+	</delete> 
+
+	<!-- 담당자 회사정보 상세 보기  S-->
+     <select id="ssnCheck" resultClass="HashMap">
+		 SELECT 
+			SSN
+                  FROM CORP
+			WHERE 1=1 
+			AND SSN = #ssn#
+	
+	</select>
+	
+	<select id="chman_login_his" resultClass="HashMap" > 
+		  
+		   SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+			( 
+			   SELECT 
+						ADMIN_ID
+						GROUPS,
+						CHMAN_NO,
+						TO_CHAR(LOGIN_DATE, 'yyyy-MM-dd HH24:mi:ss') AS LOGIN_DATE, 
+						LOGIN_IP
+				  FROM LOGIN_HIS
+				  WHERE CHMAN_NO = #chman_no#
+	        
+	        	ORDER BY LOGIN_DATE DESC	         
+			
+			) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#  
+    </select>
+    
+    
+    <select id="chman_login_hisCount" parameterClass="HashMap" resultClass="int">
+    	SELECT count(*) FROM LOGIN_HIS
+		WHERE CHMAN_NO = #chman_no#   
+    </select>
+	 
+ </sqlMap>

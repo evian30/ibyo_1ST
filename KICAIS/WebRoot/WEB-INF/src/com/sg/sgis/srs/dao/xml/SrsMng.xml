@@ -1,0 +1,770 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : SrsMng.xml
+    Description : 기술지원요청정보관리
+-->
+<sqlMap namespace="SrsMng">
+
+	<!-- 기술지원요청정보목록조회 -->
+	<select id="selectSrsInfo" parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 
+                                'R' flag                                                               /*조회상태*/    
+                                ,SI.csr_id                                                           /*업무요청 ID*/            
+                                ,SI.pjt_id                                                             /*프로젝트 ID*/        
+                                ,PI.pjt_name
+                                ,SI.srs_title                                                        /*제목*/  
+                                ,SI.srs_type_code                                                    /*기술지원범부*/                
+                                ,SI.end_name                                                         /*엔드유저*/   
+                                ,SI.enduser_dept_name                                                /*엔드유저담당자부서*/         
+                                ,SI.enduser_name                                                     /*엔드유저담당자*/    
+                                ,SI.enduser_telephone                                                /*엔드유저연락처*/    
+                                ,SI.custom_name                                                      /*거래처*/           
+                                ,SI.customer_dept_name                                                /*거래처담당자부서*/ 
+                                ,SI.customer_name                                                    /*거래처담당자*/        
+                                ,SI.customer_telephone                                               /*거래처연락처*/        
+                                ,SI.srs_req_emp                                                      /*의뢰자*/  
+                                ,(select dept_name from com_dept 
+                                	where dept_code =( select dept_code from com_emp_info where emp_num = SI.srs_req_emp)
+                                 ) srs_req_emp_dept_name                               				/*의뢰자 부서명*/            
+                                ,(
+                                   SELECT C.kor_name
+                                      FROM com_emp_info C
+                                     WHERE C.emp_num = SI.srs_req_emp
+                                  ) srs_req_emp_name
+                                ,SI.srs_mgr_dept_1                                                    /*1차 승인부서 */
+                                ,(                                                                                   
+                                    SELECT B.dept_name                                              
+                                      FROM com_dept B                                               
+                                     WHERE B.dept_code = SI.srs_mgr_dept_1                          
+                                  ) srs_mgr_dept_name_1                                             /*1차 승인부서명*/
+                                ,SI.srs_mgr_1                                                        /*1차 승인자*/        
+                                ,(
+                                   SELECT C.kor_name
+                                      FROM com_emp_info C
+                                     WHERE C.emp_num = SI.srs_mgr_1
+                                  ) srs_mgr_name_1  												/*1차 승인자명*/   
+                                ,SI.sup_emp_1                                                        /*1차 지원담당자*/    
+                                ,(
+                                   SELECT C.kor_name
+                                      FROM com_emp_info C
+                                     WHERE C.emp_num = SI.sup_emp_1
+                                  ) sup_emp_name_1        
+                                ,SI.srs_mgr_dept_2                                                    /*2차 승인부서 */      
+                                ,(                                                                           
+                                    SELECT B.dept_name                                
+                                      FROM com_dept B                                    
+                                     WHERE B.dept_code = SI.srs_mgr_dept_2            
+                                  ) srs_mgr_dept_name_2                                              /*2차 승인부서명*/
+                                ,SI.srs_mgr_2                                                        /*2차 승인자*/         
+                                ,(
+                                   SELECT C.kor_name
+                                      FROM com_emp_info C
+                                     WHERE C.emp_num = SI.srs_mgr_2
+                                  ) srs_mgr_name_2    												/*2차 승인자명*/  
+                                ,SI.sup_emp_2                                                       /*2차 지원담당자*/     
+                                ,(
+                                   SELECT C.kor_name
+                                      FROM com_emp_info C
+                                     WHERE C.emp_num = SI.sup_emp_2
+                                  ) sup_emp_name_2                
+                                ,SI.srs_status                                                        /* 지원상태 */
+                                , (
+                                    SELECT A.com_code_name
+                                    FROM com_code A
+                                    WHERE A.group_code = 'SRS_STATUS_CODE' AND A.com_code = SI.srs_status
+                                    AND A.use_yn ='Y'
+                                  ) srs_status_name                                                    /*지원상태명*/                    
+                                ,TO_CHAR(TO_DATE(SI.srs_req_date,'YYYY-MM-DD'),'YYYY-MM-DD') srs_req_date                 /*의뢰요청일*/             
+                                ,TO_CHAR(TO_DATE(SI.srs_agr_date,'YYYY-MM-DD'),'YYYY-MM-DD') srs_agr_date                 /*의뢰승인일*/             
+                                ,TO_CHAR(TO_DATE(SI.target_date,'YYYY-MM-DD'),'YYYY-MM-DD')  target_date                  /*기한일*/                 
+                                ,TO_CHAR(TO_DATE(SI.plan_date_to,'YYYY-MM-DD'),'YYYY-MM-DD') plan_date_to                 /*희망처리기간 TO*/          
+                                ,SI.plan_time_to                                                    						/*희망처리시간 TO*/         
+                                ,TO_CHAR(TO_DATE(SI.plan_date_from,'YYYY-MM-DD'),'YYYY-MM-DD') plan_date_from             /*희망처리기간 FROM*/         
+                                ,SI.plan_time_from                                                  						/*희망처리시간 FROM*/         
+                                ,TO_CHAR(TO_DATE(SI.proc_date_to,'YYYY-MM-DD'),'YYYY-MM-DD') proc_date_to                 /*실제처리기간 TO*/         
+                                ,SI.proc_time_to                                                    						/*실제처리시간 TO*/         
+                                ,TO_CHAR(TO_DATE(SI.proc_date_from,'YYYY-MM-DD'),'YYYY-MM-DD') proc_date_from             /*실제처리기간 FROM*/         
+                                ,SI.proc_time_from                                                  						/*실제처리시간 FROM*/         
+                                ,TO_CHAR(TO_DATE(SI.terminate_date,'YYYY-MM-DD'),'YYYY-MM-DD') terminate_date             /*완료일*/                 
+                                ,SI.visit_navi                                                      /*방문위치정보*/
+                                ,SI.visit_navi_url                                                      /*방문위치URL*/             
+                                ,SI.srs_detail                                                      /*의뢰내역*/                 
+                                ,SI.srs_proc_detail                                                 /*처리내역*/                 
+                                ,SI.req_item                                                        /*요청사항*/                 
+                                ,SI.note                                                            /*비고*/                     
+                                ,SI.final_mod_id                                                    /*최종변경자ID*/             
+                                ,TO_CHAR(SI.final_mod_date,'YYYY-MM-DD')  final_mod_date            /*최종변경일시*/             
+                                ,SI.reg_id                                                          /*등록자ID*/                 
+                                ,TO_CHAR(SI.reg_date,'YYYY-MM-DD')  reg_date                        /*등록일시*/                 
+                            FROM SRS_INFO SI, PJT_INFO PI 
+                            WHERE SI.pjt_id = PI.pjt_id
+                            <isNotEmpty property="src_pjt_id">
+					   			AND SI.pjt_id = #src_pjt_id#
+					 		</isNotEmpty>       
+					 		<isNotEmpty property="src_end_name">
+					   			AND SI.end_name LIKE '%'||#src_end_name#||'%'
+					 		</isNotEmpty>
+					 		<isNotEmpty property="src_srs_req_emp">
+					   			AND SI.srs_req_emp = #src_srs_req_emp#
+					 		</isNotEmpty>
+					 		<isNotEmpty property="src_sup_emp">
+					   			AND ( SI.sup_emp_1 = #src_sup_emp# OR SI.sup_emp_2 = #src_sup_emp# )
+					 		</isNotEmpty>
+					 		<isNotEmpty property="src_srs_status">
+					   			AND SI.srs_status = #src_srs_status#
+					 		</isNotEmpty>
+					 		<isNotEmpty property="src_srs_dept_code">
+					   			AND ( SI.srs_mgr_dept_1 = #src_srs_dept_code#  OR SI.srs_mgr_dept_2 = #src_srs_dept_code# ) 
+					 		</isNotEmpty>
+					 		
+					 		<isNotEmpty property="src_srs_date_from">
+								AND SI.SRS_REQ_DATE  <![CDATA[>=]]>  #src_srs_date_from#
+							</isNotEmpty>
+							
+							<isNotEmpty property="src_srs_date_to">
+								AND SI.SRS_REQ_DATE  <![CDATA[<=]]>  #src_srs_date_to#
+							</isNotEmpty> 
+					 		 
+					 		 ORDER BY REG_DATE DESC  
+					 		
+					  ) A
+					  where 1=1
+					  <isEqual property="src_srs_emp_gubun" compareValue="AA">			/*의뢰자*/  
+					   		AND srs_req_emp = #session_sabun_dept_code#
+					  </isEqual>   
+					  <isEqual property="src_srs_emp_gubun" compareValue="AA_TEAM">			/*의뢰자 팀장*/  
+					   		AND srs_req_emp in( select emp_num from com_emp_info where dept_code = #session_sabun_dept_code# )
+					  </isEqual> 
+					  <isEqual property="src_srs_emp_gubun" compareValue="CC">			/*1차 지원담당자*/  
+					   		AND sup_emp_1 = #session_sabun_dept_code#
+					  </isEqual> 
+					  <isEqual property="src_srs_emp_gubun" compareValue="BB">			/*1차 지원팀장*/  
+					   		AND srs_mgr_1 in( select emp_num from com_emp_info where dept_code = #session_sabun_dept_code# )
+					  </isEqual> 
+					  <isEqual property="src_srs_emp_gubun" compareValue="EE">			/*2차 지원담당자*/  
+					   		AND sup_emp_2 = #session_sabun_dept_code#
+					  </isEqual> 
+					  <isEqual property="src_srs_emp_gubun" compareValue="DD">			/*2차 지원팀장*/  
+					   		AND srs_mgr_2 in( select emp_num from com_emp_info where dept_code = #session_sabun_dept_code# )
+					  </isEqual>
+                	  
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 기술지원요청정보관리 총갯수 -->
+	<select id="selectSrsInfoCount" parameterClass="HashMap" resultClass="int">
+		SELECT	count(*) 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 
+                                'R' flag                                                               /*조회상태*/    
+                                ,SI.csr_id                                                           /*업무요청 ID*/            
+                                ,SI.pjt_id                                                             /*프로젝트 ID*/        
+                                ,PI.pjt_name
+                                ,SI.srs_title                                                        /*제목*/   
+                                ,SI.srs_type_code                                                    /*기술지원범부*/                
+                                ,SI.end_name                                                         /*엔드유저*/            
+                                ,SI.enduser_name                                                     /*엔드유저담당자*/    
+                                ,SI.enduser_telephone                                                /*엔드유저연락처*/    
+                                ,SI.custom_name                                                      /*거래처*/            
+                                ,SI.customer_name                                                    /*거래처담당자*/        
+                                ,SI.customer_telephone                                               /*거래처연락처*/        
+                                ,SI.srs_req_emp                                                      /*의뢰자*/  
+                                ,(select dept_name from com_dept 
+                                	where dept_code =( select dept_code from com_emp_info where emp_num = SI.srs_req_emp)
+                                 ) srs_req_emp_dept_name                               				/*의뢰자 부서명*/            
+                                ,(
+                                   SELECT C.kor_name
+                                      FROM com_emp_info C
+                                     WHERE C.emp_num = SI.srs_req_emp
+                                  ) srs_req_emp_name
+                                ,SI.srs_mgr_dept_1                                                    /*1차 승인부서 */
+                                ,(                                                                                   
+                                    SELECT B.dept_name                                              
+                                      FROM com_dept B                                               
+                                     WHERE B.dept_code = SI.srs_mgr_dept_1                          
+                                  ) srs_mgr_dept_name_1                                             /*1차 승인부서명*/
+                                ,SI.srs_mgr_1                                                        /*1차 승인자*/        
+                                ,(
+                                   SELECT C.kor_name
+                                      FROM com_emp_info C
+                                     WHERE C.emp_num = SI.srs_mgr_1
+                                  ) srs_mgr_name_1  												/*1차 승인자명*/   
+                                ,SI.sup_emp_1                                                        /*1차 지원담당자*/    
+                                ,(
+                                   SELECT C.kor_name
+                                      FROM com_emp_info C
+                                     WHERE C.emp_num = SI.sup_emp_1
+                                  ) sup_emp_name_1        
+                                ,SI.srs_mgr_dept_2                                                    /*2차 승인부서 */      
+                                ,(                                                                           
+                                    SELECT B.dept_name                                
+                                      FROM com_dept B                                    
+                                     WHERE B.dept_code = SI.srs_mgr_dept_2            
+                                  ) srs_mgr_dept_name_2                                              /*2차 승인부서명*/
+                                ,SI.srs_mgr_2                                                        /*2차 승인자*/         
+                                ,(
+                                   SELECT C.kor_name
+                                      FROM com_emp_info C
+                                     WHERE C.emp_num = SI.srs_mgr_2
+                                  ) srs_mgr_name_2    												/*2차 승인자명*/  
+                                ,SI.sup_emp_2                                                       /*2차 지원담당자*/     
+                                ,(
+                                   SELECT C.kor_name
+                                      FROM com_emp_info C
+                                     WHERE C.emp_num = SI.sup_emp_2
+                                  ) sup_emp_name_2                
+                                ,SI.srs_status                                                        /* 지원상태 */
+                                , (
+                                    SELECT A.com_code_name
+                                    FROM com_code A
+                                    WHERE A.group_code = 'SRS_STATUS_CODE' AND A.com_code = SI.srs_status
+                                    AND A.use_yn ='Y'
+                                  ) srs_status_name                                                    /*지원상태명*/                    
+                                ,TO_CHAR(TO_DATE(SI.srs_req_date,'YYYY-MM-DD'),'YYYY-MM-DD') srs_req_date                 /*의뢰요청일*/             
+                                ,TO_CHAR(TO_DATE(SI.srs_agr_date,'YYYY-MM-DD'),'YYYY-MM-DD') srs_agr_date                 /*의뢰승인일*/             
+                                ,TO_CHAR(TO_DATE(SI.target_date,'YYYY-MM-DD'),'YYYY-MM-DD')  target_date                  /*기한일*/                 
+                                ,TO_CHAR(TO_DATE(SI.plan_date_to,'YYYY-MM-DD'),'YYYY-MM-DD') plan_date_to                 /*희망처리기간 TO*/          
+                                ,SI.plan_time_to                                                    						/*희망처리시간 TO*/         
+                                ,TO_CHAR(TO_DATE(SI.plan_date_from,'YYYY-MM-DD'),'YYYY-MM-DD') plan_date_from             /*희망처리기간 FROM*/         
+                                ,SI.plan_time_from                                                  						/*희망처리시간 FROM*/         
+                                ,TO_CHAR(TO_DATE(SI.proc_date_to,'YYYY-MM-DD'),'YYYY-MM-DD') proc_date_to                 /*실제처리기간 TO*/         
+                                ,SI.proc_time_to                                                    						/*실제처리시간 TO*/         
+                                ,TO_CHAR(TO_DATE(SI.proc_date_from,'YYYY-MM-DD'),'YYYY-MM-DD') proc_date_from             /*실제처리기간 FROM*/         
+                                ,SI.proc_time_from                                                  						/*실제처리시간 FROM*/         
+                                ,TO_CHAR(TO_DATE(SI.terminate_date,'YYYY-MM-DD'),'YYYY-MM-DD') terminate_date             /*완료일*/                 
+                                ,SI.visit_navi                                                      /*방문위치정보*/             
+                                ,SI.visit_navi_url                                                      /*방문위치URL*/
+                                ,SI.srs_detail                                                      /*의뢰내역*/                 
+                                ,SI.srs_proc_detail                                                 /*처리내역*/                 
+                                ,SI.req_item                                                        /*요청사항*/                 
+                                ,SI.note                                                            /*비고*/                     
+                                ,SI.final_mod_id                                                    /*최종변경자ID*/             
+                                ,TO_CHAR(SI.final_mod_date,'YYYY-MM-DD')  final_mod_date            /*최종변경일시*/             
+                                ,SI.reg_id                                                          /*등록자ID*/                 
+                                ,TO_CHAR(SI.reg_date,'YYYY-MM-DD')  reg_date                        /*등록일시*/                 
+                            FROM SRS_INFO SI, PJT_INFO PI
+                            WHERE SI.pjt_id = PI.pjt_id
+                            <isNotEmpty property="src_pjt_id">
+					   			AND SI.pjt_id = #src_pjt_id#
+					 		</isNotEmpty>       
+					 		<isNotEmpty property="src_end_name">
+					   			AND SI.end_name LIKE '%'||#src_end_name#||'%'
+					 		</isNotEmpty>
+					 		<isNotEmpty property="src_srs_req_emp">
+					   			AND SI.srs_req_emp = #src_srs_req_emp#
+					 		</isNotEmpty>
+					 		<isNotEmpty property="src_sup_emp">
+					   			AND ( SI.sup_emp_1 = #src_sup_emp# OR SI.sup_emp_2 = #src_sup_emp# )
+					 		</isNotEmpty>
+					 		<isNotEmpty property="src_srs_status">
+					   			AND SI.srs_status = #src_srs_status#
+					 		</isNotEmpty>
+					 		<isNotEmpty property="src_srs_dept_code">
+					   			AND SI.srs_mgr_dept_2 = #src_srs_dept_code#
+					 		</isNotEmpty>					 		
+					 		
+					 		<isNotEmpty property="src_srs_date_from">
+								AND SI.SRS_REQ_DATE  <![CDATA[>=]]>  #src_srs_date_from#
+							</isNotEmpty>
+							
+							<isNotEmpty property="src_srs_date_to">
+								AND SI.SRS_REQ_DATE  <![CDATA[<=]]>  #src_srs_date_to#
+							</isNotEmpty> 
+					  ) A
+					  where 1=1
+					  <isEqual property="src_srs_emp_gubun" compareValue="AA">			/*의뢰자*/  
+					   		AND srs_req_emp = #session_sabun_dept_code#
+					  </isEqual>   
+					  <isEqual property="src_srs_emp_gubun" compareValue="AA_TEAM">			/*의뢰자 팀장*/  
+					   		AND srs_req_emp in( select emp_num from com_emp_info where dept_code = #session_sabun_dept_code# )
+					  </isEqual> 
+					  <isEqual property="src_srs_emp_gubun" compareValue="CC">			/*1차 지원담당자*/  
+					   		AND sup_emp_1 = #session_sabun_dept_code#
+					  </isEqual> 
+					  <isEqual property="src_srs_emp_gubun" compareValue="BB">			/*1차 지원팀장*/  
+					   		AND srs_mgr_1 in( select emp_num from com_emp_info where dept_code = #session_sabun_dept_code# )
+					  </isEqual> 
+					  <isEqual property="src_srs_emp_gubun" compareValue="EE">			/*2차 지원담당자*/  
+					   		AND sup_emp_2 = #session_sabun_dept_code#
+					  </isEqual> 
+					  <isEqual property="src_srs_emp_gubun" compareValue="DD">			/*2차 지원팀장*/  
+					   		AND srs_mgr_2 in( select emp_num from com_emp_info where dept_code = #session_sabun_dept_code# )
+					  </isEqual>
+		       )
+	</select>
+
+  	<!-- 기술지원요청정보 등록 -->
+	<insert id="insertSrsInfo" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO SRS_INFO	 ( 			
+							CSR_ID					
+							,PJT_ID					
+							,SRS_TITLE
+							,SRS_TYPE_CODE				
+							,END_NAME				
+							,ENDUSER_DEPT_NAME
+							,ENDUSER_NAME			
+							,ENDUSER_TELEPHONE		
+							,CUSTOM_NAME
+							,CUSTOMER_DEPT_NAME				
+							,CUSTOMER_NAME			
+							,CUSTOMER_TELEPHONE		
+							,SRS_REQ_EMP				
+							,SRS_MGR_DEPT_1			
+							,SRS_MGR_1				
+							,SUP_EMP_1				
+							,SRS_MGR_DEPT_2			
+							,SRS_MGR_2				
+							,SUP_EMP_2				
+							,SRS_STATUS				
+							,SRS_REQ_DATE			
+							,SRS_AGR_DATE			
+							,TARGET_DATE				
+							,PLAN_DATE_TO			
+							,PLAN_TIME_TO         	
+							,PLAN_DATE_FROM			
+							,PLAN_TIME_FROM        	
+							,PROC_DATE_TO			
+							,PROC_TIME_TO        	
+							,PROC_DATE_FROM			
+							,PROC_TIME_FROM        	
+							,TERMINATE_DATE			
+							,VISIT_NAVI
+							,VISIT_NAVI_URL				
+							,SRS_DETAIL				
+							,SRS_PROC_DETAIL			
+							,REQ_ITEM				
+							,NOTE					
+							,FINAL_MOD_ID			
+							,FINAL_MOD_DATE			
+							,REG_ID					
+							,REG_DATE				
+						)   
+						   VALUES ( 
+									#csr_id#						/* '업무요청 ID';		*/	                  
+									,#pjt_id#					    /* '프로젝트 ID';		*/	                  
+									,#srs_title#				    /* '제목';				*/   
+									,#srs_type_code#				/* '기술지원범주';				*/                  
+									,#end_name#				        /* '엔드유저';			*/                  
+									,#enduser_dept_name#			/* '엔드유저담당자부서';	*/	       
+									,#enduser_name#			        /* '엔드유저담당자';	*/	           
+									,#enduser_telephone#		    /* '엔드유저연락처';	*/	                  
+									,#custom_name#				    /* '거래처';			*/	
+									,#customer_dept_name#			/* '거래처담당자부서';	*/	                   
+									,#customer_name#			    /* '거래처담당자';		*/                  
+									,#customer_telephone#		    /* '거래처연락처';		*/                  
+									,#srs_req_emp#				    /* '의뢰자';			*/	                  
+									,#srs_mgr_dept_1#			    /* '1차 승인부서';		*/	              
+									,#srs_mgr_1#				    /* '1차 승인자';		*/	                  
+									,#sup_emp_1#				    /* '1차 지원담당자';	*/	                  
+									,#srs_mgr_dept_2#			    /* '2차 승인부서';		*/	              
+									,#srs_mgr_2#				    /* '2차 승인부서';		*/	              
+									,#sup_emp_2#				    /* '2차 지원담당자';	*/	                  
+									,#srs_status#				    /* '상태';				*/                  
+									,#srs_req_date#			        /* '의뢰요청일';		*/	                  
+									,#srs_agr_date#			        /* '의뢰승인일';		*/	                  
+									,#target_date#				    /* '기한일';			*/	                  
+									,#plan_date_to#			        /* '희망처리기간 TO'; 	*/                  
+									,#plan_time_to#         	    /* '희망처리시간 TO';	*/	                  
+									,#plan_date_from#			    /* '희망처리기간 FROM';	*/                  
+									,#plan_time_from#        	    /* '희망처리시간 FROM';	*/                  
+									,#proc_date_to#			        /* '실제처리기간 TO';	*/	                  
+									,#proc_time_to#        	        /* '실제처리시간 TO';	*/	                  
+									,#proc_date_from#			    /* '실제처리기간 FROM';	*/                  
+									,#proc_time_from#        	    /* '실제처리시간 FROM';	*/                  
+									,#terminate_date#			    /* '완료일';			*/	                  
+									,#visit_navi#				    /* '방문위치정보';		*/                  
+									,#visit_navi_url#				/* '방문위치URL';		*/
+									,#srs_detail#				    /* '의뢰내역';			*/                  
+									,#srs_proc_detail#			    /* '처리내역';			*/                  
+									,#req_item_str#				    /* '요청사항';			*/                  
+									,#note#					        /* '비고';				*/                  
+									,#final_mod_id#                 /* '최종변경자ID';		*/                  
+								  	,SYSDATE                        /* '최종변경일시';		*/                  
+								  	,#final_mod_id#                 /* '등록자ID';			*/                  
+								  	,SYSDATE			            /* '등록일시';			*/                  
+							      )
+	]]>
+	</insert>
+	
+	<!-- 기술지원요청정보  수정_의뢰자 -->
+	<update id="updateSrsReqEmp" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE SRS_INFO
+		   SET pjt_id				=#pjt_id#					/*프로젝트 ID*/			      
+			,srs_title				=#srs_title#                /*제목*/				          
+			,srs_type_code			=#srs_type_code#            /*기술지원범주*/		
+			,end_name				=#end_name#                 /*엔드유저*/			          
+			,enduser_dept_name		=#enduser_dept_name#        /*엔드유저담당자부서*/			          
+			,enduser_name			=#enduser_name#             /*엔드유저담당자*/		      
+			,enduser_telephone		=#enduser_telephone#        /*엔드유저연락처*/		      
+			,custom_name			=#custom_name#	            /*거래처*/	
+			,customer_dept_name		=#customer_dept_name#        /*거래처담당자부서*/			      
+			,customer_name			=#customer_name#            /*거래처담당자*/		          
+			,customer_telephone		=#customer_telephone#       /*거래처연락처*/		          
+			,srs_req_emp			=#srs_req_emp#	            /*의뢰자*/				      
+			,srs_mgr_dept_1			=#srs_mgr_dept_1#           /*1차 승인부서*/			      
+			,srs_mgr_1				=#srs_mgr_1#                /*1차 승인자*/			      
+			,sup_emp_1				=#sup_emp_1#                /*1차 지원담당자*/		      
+			,srs_mgr_dept_2			=#srs_mgr_dept_2#           /*2차 승인부서*/			      
+			,srs_mgr_2				=#srs_mgr_2#                /*2차 승인부서*/			      
+			,sup_emp_2				=#sup_emp_2#                /*2차 지원담당자*/		      
+			,srs_status				=#srs_status#               /*상태*/				          
+			,srs_req_date			=#srs_req_date#             /*의뢰요청일*/			      
+			,srs_agr_date			=#srs_agr_date#             /*의뢰승인일*/			      
+			,target_date			=#target_date#	            /*기한일*/				      
+			,plan_date_to			=#plan_date_to#             /*희망처리기간 TO*/ 	          
+			,plan_time_to         	=#plan_time_to#             /*희망처리시간 TO*/		      
+			,plan_date_from			=#plan_date_from#           /*희망처리기간 FROM*/	      
+			,plan_time_from        	=#plan_time_from#           /*희망처리시간 FROM*/	      
+			,proc_date_to			=#proc_date_to#             /*실제처리기간 TO*/		      
+			,proc_time_to        	=#proc_time_to#             /*실제처리시간 TO*/		      
+			,proc_date_from			=#proc_date_from#           /*실제처리기간 FROM*/	      
+			,proc_time_from        	=#proc_time_from#           /*실제처리시간 FROM*/	      
+			,terminate_date			=#terminate_date#           /*완료일*/				      
+			,visit_navi				=#visit_navi#               /*방문위치정보*/	
+			,visit_navi_url			=#visit_navi_url#			/* '방문위치URL';		*/	          
+			,srs_detail				=#srs_detail#               /*의뢰내역*/			          
+			,srs_proc_detail		=#srs_proc_detail#	        /*처리내역*/			          
+			,req_item				=#req_item_str#                 /*요청사항*/			          
+			,note					=#note#                     /*비고*/				          
+			,final_mod_id   		=#final_mod_id#            /*최종변경자ID*/		          
+			,final_mod_date 		=SYSDATE                   /*최종변경일시*/		          
+		 WHERE csr_id       		=#csr_id#				 	/*업무요청ID*/
+	]]>
+	</update>
+	
+
+	<!-- 기술지원요청정보  수정_1차 승인자 -->
+	<update id="updateSrsMgr1" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE SRS_INFO
+		   SET srs_type_code		=#srs_type_code#            /*기술지원범주*/	
+		    ,sup_emp_1				=#sup_emp_1#                /*1차 지원담당자*/		      
+			,srs_mgr_dept_2			=#srs_mgr_dept_2#           /*2차 승인부서*/			      
+			,srs_mgr_2				=#srs_mgr_2#                /*2차 승인부서*/			      
+			,sup_emp_2				=#sup_emp_2#                /*2차 지원담당자*/		      
+			,srs_status				=#srs_status#               /*상태*/		
+			,target_date            =#target_date#               /*기한일*/			          
+			,plan_date_to			=#plan_date_to#             /*희망처리기간 TO*/ 	          
+			,plan_time_to         	=#plan_time_to#             /*희망처리시간 TO*/		      
+			,plan_date_from			=#plan_date_from#           /*희망처리기간 FROM*/	      
+			,plan_time_from        	=#plan_time_from#           /*희망처리시간 FROM*/
+			,terminate_date			=#terminate_date#           /*완료일*/					      
+			,srs_proc_detail		=#srs_proc_detail#	        /*처리내역*/	
+			,srs_agr_date			=#srs_agr_date#             /*의뢰승인일*/		          
+			,final_mod_id   		=#final_mod_id#            /*최종변경자ID*/		          
+			,final_mod_date 		=SYSDATE                   /*최종변경일시*/		          
+		 WHERE csr_id       		=#csr_id#				 	/*업무요청ID*/
+	]]>
+	</update>	
+	
+	<!-- 기술지원요청정보  수정_2차 승인자 -->
+	<update id="updateSrsMgr2" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE SRS_INFO
+		   SET srs_type_code		=#srs_type_code#            /*기술지원범주*/	 
+		    ,srs_mgr_dept_2			=#srs_mgr_dept_2#           /*2차 승인부서*/			      
+			,srs_mgr_2				=#srs_mgr_2#                /*2차 승인부서*/			      
+			,sup_emp_2				=#sup_emp_2#                /*2차 지원담당자*/		      
+			,srs_status				=#srs_status#               /*상태*/		
+			,target_date            =#target_date#               /*기한일*/		          
+			,plan_date_to			=#plan_date_to#             /*희망처리기간 TO*/ 	          
+			,plan_time_to         	=#plan_time_to#             /*희망처리시간 TO*/		      
+			,plan_date_from			=#plan_date_from#           /*희망처리기간 FROM*/	      
+			,plan_time_from        	=#plan_time_from#           /*희망처리시간 FROM*/
+			,terminate_date			=#terminate_date#           /*완료일*/					      
+			,srs_proc_detail		=#srs_proc_detail#	        /*처리내역*/	
+			,srs_agr_date			=#srs_agr_date#             /*의뢰승인일*/		          
+			,final_mod_id   		=#final_mod_id#            /*최종변경자ID*/		          
+			,final_mod_date 		=SYSDATE                   /*최종변경일시*/		          
+		 WHERE csr_id       		=#csr_id#				 	/*업무요청ID*/
+	]]>
+	</update>		
+	
+	
+	<!-- 기술지원요청정보  수정_1차 지원담당자 -->
+	<update id="updateSupEmp1" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE SRS_INFO
+		   SET srs_status			=#srs_status#               /*상태*/				          
+			,proc_date_to			=#proc_date_to#             /*실제처리기간 TO*/		      
+			,proc_time_to        	=#proc_time_to#             /*실제처리시간 TO*/		      
+			,proc_date_from			=#proc_date_from#           /*실제처리기간 FROM*/	      
+			,proc_time_from        	=#proc_time_from#           /*실제처리시간 FROM*/	      
+			,srs_proc_detail		=#srs_proc_detail#	        /*처리내역*/			          
+			,final_mod_id   		=#final_mod_id#            /*최종변경자ID*/		          
+			,final_mod_date 		=SYSDATE                   /*최종변경일시*/		          
+		 WHERE csr_id       		=#csr_id#				 	/*업무요청ID*/
+	]]>
+	</update>			
+	
+	<!-- 기술지원요청정보  수정_2차 지원담당자 -->
+	<update id="updateSupEmp2" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE SRS_INFO
+		   SET srs_status			=#srs_status#               /*상태*/				          
+			,proc_date_to			=#proc_date_to#             /*실제처리기간 TO*/		      
+			,proc_time_to        	=#proc_time_to#             /*실제처리시간 TO*/		      
+			,proc_date_from			=#proc_date_from#           /*실제처리기간 FROM*/	      
+			,proc_time_from        	=#proc_time_from#           /*실제처리시간 FROM*/	      
+			,srs_proc_detail		=#srs_proc_detail#	        /*처리내역*/			          
+			,final_mod_id   		=#final_mod_id#            /*최종변경자ID*/		          
+			,final_mod_date 		=SYSDATE                   /*최종변경일시*/		          
+		 WHERE csr_id       		=#csr_id#				 	/*업무요청ID*/
+	]]>
+	</update>	
+
+
+	<!-- 기술지원요청정보  삭제-->
+    <delete id="deleteSrsInfo" parameterClass="HashMap">
+        DELETE FROM SRS_INFO 
+        WHERE   csr_id     = #csr_id#                         
+    </delete> 
+
+
+	
+
+	<!-- 기술지원요청 관리조회 -->
+	<select id="selectSrsReview" parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 'R' flag                                              /*조회상태*/            
+	                         , CP.csr_id                                             /*업무요청ID*/
+	                         , CP.csr_info_seq                                       /*업무요청순번*/
+	                         , CP.csr_pattern_code                                   /*업무요청유형코드*/
+	                         , (
+	                               SELECT A.com_code_name
+	                                 FROM com_code A
+	                                WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CP.csr_pattern_code
+	                                AND A.use_yn ='Y'
+	                           ) csr_pattern_name                                       /*업무요청유형코드명*/
+	                         , CP.item_code                                           /*품목코드*/
+	                         , (
+	                               SELECT B.item_name
+	                                 FROM com_item B
+	                                WHERE B.item_code = CP.item_code
+	                           ) item_name                                              /*품목코드명*/
+	                         , CP.csr_note                                            /*업무요청내용*/
+	                         , CP.pjt_id                                              /*프로젝트ID*/        
+	                         , CP.pjt_info_seq                                        /*프로젝트순번*/    
+	                         , CP.csr_status_code                                     /*요청상태코드*/
+	                         , (
+	                               SELECT C.com_code_name
+	                                 FROM com_code C
+	                                WHERE C.group_code = 'REQUEST_STATUS_CODE' AND C.com_code = CP.csr_status_code
+	                                AND C.use_yn ='Y'
+	                           ) csr_status_name                                         /*요청상태코드명*/
+	                         , CP.csr_status_reason                                    /*요청상태사유*/             
+	                         , TO_CHAR(TO_DATE(CP.deal_date, 'YYYY-MM-DD'),'YYYY-MM-DD') AS deal_date        /*처리일자*/
+	                         , CP.deal_dept_code                                       /*처리부서코드*/
+	                         ,(
+	                           SELECT D.dept_name
+	                             FROM com_dept D
+	                            WHERE D.dept_code = CP.deal_dept_code
+	                           ) deal_dept_name                                         /*처리부서코드명*/
+	                         , CP.deal_emp_num                                        /*처리자사번*/
+	                         ,(
+	                           SELECT E.kor_name
+	                             FROM com_emp_info E
+	                            WHERE E.emp_num = CP.deal_emp_num
+	                           ) deal_emp_name                                           /*처리자명*/
+	                         , CP.deal_note                                            /*처리내용*/ 
+	                         , CP.deal_yn                                              /*처리완료여부*/
+	                         ,(
+	                               SELECT C.com_code_name
+	                                 FROM com_code C
+	                                WHERE C.group_code = 'SR_FLOW_CODE' AND C.com_code = CP.deal_yn
+	                                AND C.use_yn ='Y'
+	                           ) deal_yn_name                                        	    /*처리완료명*/
+	                         , CP.final_mod_id                                         /*최종변경자ID*/    
+	                         , TO_CHAR(CP.final_mod_date,'YYYY-MM-DD') final_mod_date  /*최종변경일시*/
+	                         , TO_CHAR(TO_DATE(CI.csr_date, 'YYYY-MM-DD'),'YYYY-MM-DD') csr_date   /*요청일자*/
+							 , CI.csr_dept_code  									   /*요청부서코드*/
+							 ,(
+						       SELECT B.dept_name
+						         FROM com_dept B
+						        WHERE B.dept_code = CI.csr_dept_code
+						       ) csr_dept_name											/*요청부서명*/
+							 , CI.csr_emp_num    									  	/*요청자사번*/
+							 ,(
+						       SELECT C.kor_name
+						         FROM com_emp_info C
+						        WHERE C.emp_num = CI.csr_emp_num
+						       ) csr_emp_name											/*요청자명*/
+						     , CI.csr_type_code  									/*업무요청구분코드*/
+							 , (
+							       SELECT A.com_code_name
+							         FROM com_code A
+							        WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CI.csr_type_code
+							        AND A.use_yn ='Y'
+						       ) csr_type_name  										/*업무요청구분명*/
+						      , CI.csr_title                    					/*요청제목*/ 
+	                      FROM csr_pattern_item CP, csr_info CI 	   							 	  			
+						 WHERE
+						 CI.use_yn ='Y'
+						 AND
+						 CP.csr_id       = CI.csr_id
+						 AND CI.csr_type_code = '20'
+						<isNotEmpty property="src_rw_csr_date_from">
+							AND CI.csr_date  <![CDATA[>=]]>  #src_rw_csr_date_from#
+						</isNotEmpty>
+						<isNotEmpty property="src_rw_csr_date_to">
+							AND CI.csr_date  <![CDATA[<=]]>  #src_rw_csr_date_to#
+						</isNotEmpty>
+						 <isNotEmpty property="src_csr_dept_code">
+						   AND CI.csr_dept_code = #src_csr_dept_code#
+						 </isNotEmpty>
+						 <isNotEmpty property="session_dept_code">
+						   AND CI.csr_emp_num in( select emp_num from com_emp_info where dept_code = #session_dept_code# )
+						 </isNotEmpty>  
+						 <isNotEmpty property="reg_id">
+							AND CI.REG_ID  = #reg_id#
+						 </isNotEmpty>
+						 ORDER BY CI.REG_DATE desc
+					  ) A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!--기술지원요청 관리조회 총갯수 -->
+	<select id="selectSrsReviewCount" parameterClass="HashMap" resultClass="int">
+		SELECT	count(*) 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 'R' flag                                              /*조회상태*/            
+	                         , CP.csr_id                                             /*업무요청ID*/
+	                         , CP.csr_info_seq                                       /*업무요청순번*/
+	                         , CP.csr_pattern_code                                   /*업무요청유형코드*/
+	                         , (
+	                               SELECT A.com_code_name
+	                                 FROM com_code A
+	                                WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CP.csr_pattern_code
+	                                AND A.use_yn ='Y'
+	                           ) csr_pattern_name                                       /*업무요청유형코드명*/
+	                         , CP.item_code                                           /*품목코드*/
+	                         , (
+	                               SELECT B.item_name
+	                                 FROM com_item B
+	                                WHERE B.item_code = CP.item_code
+	                           ) item_name                                              /*품목코드명*/
+	                         , CP.csr_note                                            /*업무요청내용*/
+	                         , CP.pjt_id                                              /*프로젝트ID*/        
+	                         , CP.pjt_info_seq                                        /*프로젝트순번*/    
+	                         , CP.csr_status_code                                     /*요청상태코드*/
+	                         , (
+	                               SELECT C.com_code_name
+	                                 FROM com_code C
+	                                WHERE C.group_code = 'REQUEST_STATUS_CODE' AND C.com_code = CP.csr_status_code
+	                                AND C.use_yn ='Y'
+	                           ) csr_status_name                                         /*요청상태코드명*/
+	                         , CP.csr_status_reason                                    /*요청상태사유*/             
+	                         , TO_CHAR(TO_DATE(CP.deal_date, 'YYYY-MM-DD'),'YYYY-MM-DD') deal_date      /*처리일자*/
+	                         , CP.deal_dept_code                                       /*처리부서코드*/
+	                         ,(
+	                           SELECT D.dept_name
+	                             FROM com_dept D
+	                            WHERE D.dept_code = CP.deal_dept_code
+	                           ) deal_dept_name                                         /*처리부서코드명*/
+	                         , CP.deal_emp_num                                        /*처리자사번*/
+	                         ,(
+	                           SELECT E.kor_name
+	                             FROM com_emp_info E
+	                            WHERE E.emp_num = CP.deal_emp_num
+	                           ) deal_emp_name                                           /*처리자명*/
+	                         , CP.deal_note                                            /*처리내용*/ 
+	                         , CP.deal_yn                                              /*처리완료여부*/
+	                         ,(
+	                               SELECT C.com_code_name
+	                                 FROM com_code C
+	                                WHERE C.group_code = 'SR_FLOW_CODE' AND C.com_code = CP.deal_yn
+	                                AND C.use_yn ='Y'
+	                           ) deal_yn_name                                        	    /*처리완료명*/
+	                         , CP.final_mod_id                                         /*최종변경자ID*/    
+	                         , TO_CHAR(CP.final_mod_date,'YYYY-MM-DD') final_mod_date  /*최종변경일시*/
+	                         , CI.csr_date  										   /*요청일자*/
+							 , CI.csr_dept_code  									   /*요청부서코드*/
+							 ,(
+						       SELECT B.dept_name
+						         FROM com_dept B
+						        WHERE B.dept_code = CI.csr_dept_code
+						       ) csr_dept_name											/*요청부서명*/
+							 , CI.csr_emp_num    									  	/*요청자사번*/
+							 ,(
+						       SELECT C.kor_name
+						         FROM com_emp_info C
+						        WHERE C.emp_num = CI.csr_emp_num
+						       ) csr_emp_name											/*요청자명*/
+						     , CI.csr_type_code  									/*업무요청구분코드*/
+							 , (
+							       SELECT A.com_code_name
+							         FROM com_code A
+							        WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CI.csr_type_code
+							        AND A.use_yn ='Y'
+						       ) csr_type_name  										/*업무요청구분명*/
+						      , CI.csr_title                    					/*요청제목*/ 
+	                      FROM csr_pattern_item CP, csr_info CI 	   							 	  			
+						 WHERE
+						 CI.use_yn ='Y'
+						 AND
+						 CP.csr_id       = CI.csr_id
+						 AND CI.csr_type_code = '20'
+						<isNotEmpty property="src_rw_csr_date_from">
+							AND CI.csr_date  <![CDATA[>=]]>  #src_rw_csr_date_from#
+						</isNotEmpty>
+						<isNotEmpty property="src_rw_csr_date_to">
+							AND CI.csr_date  <![CDATA[<=]]>  #src_rw_csr_date_to#
+						</isNotEmpty>
+						 <isNotEmpty property="src_csr_dept_code">
+						   AND CI.csr_dept_code = #src_csr_dept_code#
+						 </isNotEmpty>
+						 <isNotEmpty property="session_dept_code">
+						 	AND CI.csr_emp_num in( select emp_num from com_emp_info where dept_code = #session_dept_code# )
+						 </isNotEmpty>	
+						 <isNotEmpty property="reg_id">
+							AND CI.REG_ID  = #reg_id#
+						 </isNotEmpty>
+						 ORDER BY CI.final_mod_date desc
+					  ) A
+		       )
+	</select>
+
+
+	<!-- 2차 기술지원부서 -->
+	<select id="selectSrsMgrDept2" resultClass="HashMap">
+		SELECT dept_code, dept_name 
+		FROM com_dept 
+		WHERE substr(dept_code,0,1) ='3' AND dept_level ='3' and use_yn='Y'
+	</select>
+	
+	
+	<!-- 팀장 조회 -->
+	<select id="selectTeamLeader" parameterClass="HashMap" resultClass="HashMap">
+		SELECT a.emp_num, a.kor_name, a.dept_code, b.dept_name
+		FROM com_emp_info a, com_dept b
+		WHERE a.dept_code = #dept_code#
+		AND a.dept_code = b.dept_code
+		AND a.duty_code = '200'
+	</select>	
+	
+
+</sqlMap>

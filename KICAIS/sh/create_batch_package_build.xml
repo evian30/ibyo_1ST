@@ -1,0 +1,106 @@
+<project name="SigngateFrameworkBatchDistribute" default="process_build" basedir="." >
+        <property file="create_batch_package.properties"/>
+
+        <property name="POJECT.HOME.DIR" value="${PROJECT.DIR}/${PROJECT.NAME}"/>
+        <property name="PROJECT.LIB.DIR" value="${POJECT.HOME.DIR}/lib"/>
+        <property name="TEMP.CLASS.DIR" value="${PROJECT.DIR}/classes/${PROJECT.NAME}"/>
+
+        <property name="CHECKOUT.HOME.DIR" value="${PROJECT.DIR}/src"/>
+
+        <property name="SRC.HOME.DIR" value="${PROJECT.DIR}/src/${CVS.PACKAGE}"/>
+        <property name="SRC.JAVA.DIR" value="${SRC.HOME.DIR}/WEB-INF/src"/>
+        <property name="SRC.LIB.DIR" value="${SRC.HOME.DIR}/WEB-INF/lib"/>
+        <property name="SRC.PROPERTIES.DIR" value="${SRC.HOME.DIR}/${BATCH.CONFIG.DIR}"/>
+
+        <target name="process_build" depends="compile_webRoot">
+
+                <chmod perm="755">
+                        <fileset dir=".">
+                                <include name="*.sh"/>
+                        </fileset>
+                </chmod>
+        </target>
+
+        <target name="deleteDir" depends="compile_webRoot">
+                <delete dir="${TEMP.CLASS.DIR}"/>
+                <delete dir="${SRC.HOME.DIR}"/>
+        </target>
+
+        <target name="compile_webRoot" depends="sync_project">
+
+                <javac srcdir="${SRC.JAVA.DIR}" destdir="${TEMP.CLASS.DIR}" encoding="utf-8" debug="on">
+
+                        <classpath>
+                                <fileset dir="${SRC.LIB.DIR}">
+                                        <include name="*.jar" />
+                                </fileset>
+
+                                <pathelement location="${TEMP.CLASS.DIR}" />
+                        </classpath>
+
+                        <exclude name="com/signgate/core/web/**"/>
+                        <exclude name="com/signgate/sample_service/**"/>
+                </javac>
+
+                <copy todir="${TEMP.CLASS.DIR}">
+                        <fileset dir="${SRC.JAVA.DIR}">
+                                <include name="**/*.xml"/>
+		                        <exclude name="com/signgate/core/web/**"/>
+		                        <exclude name="com/signgate/sample_service/**"/>
+                        </fileset>
+                </copy>
+
+                <copy todir="${POJECT.HOME.DIR}">
+                        <fileset dir="${SRC.HOME.DIR}">
+                                <include name="batch-config-dev/**/*.xml"/>
+                                <include name="batch-config-dev/**/*.properties"/>
+                        </fileset>
+                        <fileset dir="${SRC.PROPERTIES.DIR}">
+                                <include name="**/*.xml"/>
+                                <include name="**/*.properties"/>
+                                <include name="**/*.xml"/>
+                                <include name="**/*.properties"/>
+                                <include name="**/*.sh"/>
+                        </fileset>
+                        <fileset dir="${SRC.PROPERTIES.DIR}">
+                                <include name="config/sg-common-config.xml"/>
+                        </fileset>
+                </copy>
+
+                <copy todir="${PROJECT.LIB.DIR}">
+                        <fileset dir="${SRC.LIB.DIR}">
+                                <include name="commons-*.jar"/>
+                                <exclude name="commons-fileupload.jar"/>
+                                <exclude name="commons-io-1.4.jar"/>
+                                <include name="aspectjweaver.jar"/>
+                                <include name="cglib-nodep-2.1_3.jar"/>
+                                <include name="ibatis-*.jar"/>
+                                <include name="log4j-1.2.15.jar"/>
+                                <include name="ojdbc14.jar"/>
+                                <include name="spring.jar"/>
+                                <include name="xercesImpl.jar"/>
+                                <include name="xml-apis.jar"/>
+                        </fileset>
+                </copy>
+
+                <jar destfile="${PROJECT.LIB.DIR}/${PROJECT.NAME}.jar">
+                    <fileset dir="${TEMP.CLASS.DIR}" />
+                </jar>
+        </target>
+
+        <target name="sync_project" depends="makeDir">
+                <cvs cvsRoot="${CVS.CVSROOT}"
+                        command="checkout"
+                        dest="${CHECKOUT.HOME.DIR}"
+                        package="${CVS.PACKAGE}"
+                        failonerror="true">
+                </cvs>
+        </target>
+
+        <target name="makeDir">
+            <mkdir dir="${PROJECT.DIR}"/>
+            <mkdir dir="${POJECT.HOME.DIR}"/>
+            <mkdir dir="${PROJECT.LIB.DIR}"/>
+            <mkdir dir="${TEMP.CLASS.DIR}"/>
+        </target>
+</project>

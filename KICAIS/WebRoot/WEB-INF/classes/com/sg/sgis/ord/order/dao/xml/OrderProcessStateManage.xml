@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : OrderProcessStateManage.xml
+    Description : 수주진행상태관리
+-->
+<sqlMap namespace="OrderProcessStateManage">
+
+	<!-- 수주정보진행상태 수정-->
+	<update id="updateOrderProcessStateManage" parameterClass="HashMap">
+	UPDATE ord_info
+	   SET proc_status_code = #proc_status_code#
+	     , final_mod_id     = #final_mod_id#
+		 , final_mod_date   = SYSDATE
+	 WHERE ord_id           = #ord_id#
+	</update>
+</sqlMap>

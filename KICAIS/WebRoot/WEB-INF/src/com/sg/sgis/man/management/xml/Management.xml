@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : Management.xml
+    Description : 유지보수관리
+      
+-->
+<sqlMap namespace="Management">
+
+	<select id="selectManagement" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 
+						 'R' flag    
+						 
+						 
+							,A.MAN_ID
+							
+							,A.PJT_ID
+							,(
+						        SELECT PJT_NAME
+						          FROM PJT_INFO
+						          WHERE PJT_ID = A.PJT_ID 
+						     ) PJT_NAME
+							
+							,A.SAL_ID
+							,(
+						        SELECT SAL_NAME
+						          FROM SAL_INFO
+						          WHERE SAL_ID = A.SAL_ID 
+						     ) SAL_NAME
+							
+							,A.SAL_DEPT_CODE
+							,(                                                                             
+						        SELECT dept_name                                                             
+						          FROM com_dept                                                               
+						          WHERE dept_code = A.SAL_DEPT_CODE                                      
+						     ) SAL_DEPT_NAME
+						    ,A.SAL_EMP_NUM
+						    ,(                                                                                 
+						         SELECT kor_name                                                              
+						          FROM com_emp_info                                                        
+						          WHERE emp_num = A.SAL_EMP_NUM                                          
+						     ) SAL_EMP_NAME  
+							  
+							,A.CUSTOM_CODE
+						    ,(
+						       SELECT CUSTOM_NAME
+						          FROM COM_CUSTOM
+						          WHERE CUSTOM_CODE = A.CUSTOM_CODE
+						          AND USE_YN ='Y'
+						     ) AS CUSTOM_NAME						     
+							,A.COSTOMER_NUM
+	                        ,(
+						       SELECT CUSTOMER_NAME
+						          FROM COM_CUSTOM_MEMBER
+						          WHERE CUSTOMER_NUM = A.COSTOMER_NUM
+                                  AND CUSTOM_CODE =A.CUSTOM_CODE
+						          AND USE_YN ='Y'
+						    ) AS COSTOMER_NAME	
+							
+							
+							,A.PAY_FREE_TYPE_CODE 
+							,(
+						       SELECT COM_CODE_NAME
+						          FROM COM_CODE
+						          WHERE GROUP_CODE = 'PAY_FREE_CODE' AND COM_CODE = A.PAY_FREE_TYPE_CODE
+						          AND USE_YN ='Y'
+						     ) PAY_FREE_TYPE_NAME
+							 
+							,TO_CHAR(TO_DATE(MAINTENANCE_FROM, 'YYYY-MM-DD'),'YYYY-MM-DD') AS MAINTENANCE_FROM
+					    	,TO_CHAR(TO_DATE(MAINTENANCE_TO, 'YYYY-MM-DD'),'YYYY-MM-DD') AS MAINTENANCE_TO
+							
+							,A.MAINTENANCE_AMT
+							,A.MAINTENANCE_TAX
+							
+							,A.PROC_STATUS_CODE
+							,(
+						       SELECT COM_CODE_NAME
+						          FROM COM_CODE
+						          WHERE GROUP_CODE = 'MAN_STATUS_CODE' AND COM_CODE = A.PROC_STATUS_CODE
+						          AND USE_YN ='Y'
+						     ) PROC_STATUS_NAME 
+							
+							, A.NOTE
+							
+							
+							,(select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID  
+							,TO_CHAR(A.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE
+							,TO_CHAR(A.REG_DATE,'YYYY-MM-DD') REG_DATE 
+							,(select admin_nm from tb_admin where admin_id=A.REG_ID) as REG_ID
+						 
+						FROM MAN_INFO A  
+					 			
+				  ) A 
+				WHERE 1=1
+				<isNotEmpty property="src_custom_name">
+					AND CUSTOM_NAME like '%'||#src_custom_name#||'%'   
+				</isNotEmpty> 
+				
+				<isNotEmpty property="src_pjt_id">
+					AND PJT_ID = #src_pjt_id#   
+				</isNotEmpty>
+				
+				<isNotEmpty property="src_man_id">
+					AND MAN_ID like '%'||#src_man_id#||'%'   
+				</isNotEmpty> 
+				
+				<isNotEmpty property="src_pjt_name">
+					AND PJT_NAME like '%'||#src_pjt_name#||'%'   
+				</isNotEmpty>
+				 
+				<isNotEmpty property="src_maintenance_from">
+					AND MAINTENANCE_FROM  <![CDATA[>=]]>  #src_maintenance_from#
+				</isNotEmpty>
+				
+				<isNotEmpty property="src_maintenance_to">
+					AND MAINTENANCE_TO  <![CDATA[<=]]>  #src_maintenance_to#
+				</isNotEmpty> 
+				
+				<isNotEmpty property="session_dept_code">
+					AND SAL_DEPT_CODE  = #session_dept_code#
+				</isNotEmpty>
+				<isNotEmpty property="reg_id">
+					AND REG_ID  = #reg_id#
+				</isNotEmpty>
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	 ORDER BY REG_DATE DESC, MAN_ID DESC
+	</select>
+	
+	
+	<!-- 개발프로젝트정보 총갯수 -->
+	<select id="selectManagementCount" parameterClass="HashMap" resultClass="int">
+		SELECT COUNT(MAN_ID) FROM (
+					SELECT 
+						 	'R' flag    
+						 
+						 
+							,A.MAN_ID
+							
+							,A.PJT_ID
+							,(
+						        SELECT PJT_NAME
+						          FROM PJT_INFO
+						          WHERE PJT_ID = A.PJT_ID 
+						     ) PJT_NAME
+							
+							,A.SAL_ID
+							,(
+						        SELECT SAL_NAME
+						          FROM SAL_INFO
+						          WHERE SAL_ID = A.SAL_ID 
+						     ) SAL_NAME
+							
+							,A.SAL_DEPT_CODE
+							,(                                                                             
+						        SELECT dept_name                                                             
+						          FROM com_dept                                                               
+						          WHERE dept_code = A.SAL_DEPT_CODE                                      
+						     ) AL_DEPT_NAME
+						    ,A.SAL_EMP_NUM
+						    ,(                                                                                 
+						         SELECT kor_name                                                              
+						          FROM com_emp_info                                                        
+						          WHERE emp_num = A.SAL_EMP_NUM                                          
+						     ) SAL_EMP_NAME  
+							  
+							,A.CUSTOM_CODE
+						    ,(
+						       SELECT CUSTOM_NAME
+						          FROM COM_CUSTOM
+						          WHERE CUSTOM_CODE = A.CUSTOM_CODE
+						          AND USE_YN ='Y'
+						     ) AS CUSTOM_NAME						     
+							,A.COSTOMER_NUM
+	                        ,(
+						       SELECT CUSTOMER_NAME
+						          FROM COM_CUSTOM_MEMBER
+						          WHERE CUSTOMER_NUM = A.COSTOMER_NUM
+                                  AND CUSTOM_CODE =A.CUSTOM_CODE
+						          AND USE_YN ='Y'
+						    ) AS COSTOMER_NAME	
+							
+							
+							,A.PAY_FREE_TYPE_CODE 
+							,(
+						       SELECT COM_CODE_NAME
+						          FROM COM_CODE
+						          WHERE GROUP_CODE = 'PAY_FREE_CODE' AND COM_CODE = A.PAY_FREE_TYPE_CODE
+						          AND USE_YN ='Y'
+						     ) PAY_FREE_TYPE_NAME
+							 
+							,TO_CHAR(TO_DATE(MAINTENANCE_FROM, 'YYYY-MM-DD'),'YYYY-MM-DD') AS MAINTENANCE_FROM
+					    	,TO_CHAR(TO_DATE(MAINTENANCE_TO, 'YYYY-MM-DD'),'YYYY-MM-DD') AS MAINTENANCE_TO
+							
+							,A.MAINTENANCE_AMT
+							,A.MAINTENANCE_TAX
+							
+							,A.PROC_STATUS_CODE
+							,(
+						       SELECT COM_CODE_NAME
+						          FROM COM_CODE
+						          WHERE GROUP_CODE = 'MAN_STATUS_CODE' AND COM_CODE = A.PROC_STATUS_CODE
+						          AND USE_YN ='Y'
+						     ) PROC_STATUS_NAME 
+							
+							, A.NOTE
+							
+							
+							,(select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID  
+							,TO_CHAR(A.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE
+							,TO_CHAR(A.REG_DATE,'YYYY-MM-DD') REG_DATE 
+							,(select admin_nm from tb_admin where admin_id=A.REG_ID) as REG_ID
+						 
+						FROM MAN_INFO A  
+					 			
+				  ) A 
+				WHERE 1=1
+				<isNotEmpty property="src_custom_name">
+					AND CUSTOM_NAME like '%'||#src_custom_name#||'%'   
+				</isNotEmpty> 
+				
+				<isNotEmpty property="src_pjt_id">
+					AND PJT_ID = #src_pjt_id#   
+				</isNotEmpty>
+				
+				<isNotEmpty property="src_man_id">
+					AND MAN_ID like '%'||#src_man_id#||'%'   
+				</isNotEmpty> 
+				
+				<isNotEmpty property="src_pjt_name">
+					AND PJT_NAME like '%'||#src_pjt_name#||'%'   
+				</isNotEmpty>
+				 
+				<isNotEmpty property="src_maintenance_from">
+					AND MAINTENANCE_FROM  <![CDATA[>=]]>  #src_maintenance_from#
+				</isNotEmpty>
+				
+				<isNotEmpty property="src_maintenance_to">
+					AND MAINTENANCE_TO  <![CDATA[<=]]>  #src_maintenance_to#
+				</isNotEmpty>
+				
+				<isNotEmpty property="session_dept_code">
+					AND SAL_DEPT_CODE  = #session_dept_code#
+				</isNotEmpty>
+				<isNotEmpty property="reg_id">
+					AND REG_ID  = #reg_id#
+				</isNotEmpty>
+	</select>
+
+
+	<select id="selectManID" parameterClass="HashMap" resultClass="String">
+		SELECT 
+			GET_AUTO_NUM('MAN', 'MAN', TO_CHAR(SYSDATE,'YYYYMMDD'), 4) 
+		FROM DUAL
+	</select>
+	
+	<select id="selectSalID" parameterClass="HashMap" resultClass="String">
+		SELECT sal_id FROM SAL_INFO WHERE pjt_id = #pjt_id# AND ROWNUM <![CDATA[<]]> 2
+	</select>
+		
+  	<!-- 개발프로젝트정보 등록 -->
+	<insert id="insertManagement" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO MAN_INFO (
+						 MAN_ID
+						,PJT_ID
+						,SAL_ID
+						,SAL_DEPT_CODE
+						,SAL_EMP_NUM
+						,CUSTOM_CODE
+						,COSTOMER_NUM
+						,PAY_FREE_TYPE_CODE
+						,MAINTENANCE_FROM
+						,MAINTENANCE_TO
+						,MAINTENANCE_AMT
+						,MAINTENANCE_TAX
+						,PROC_STATUS_CODE
+						,NOTE
+						,FINAL_MOD_ID
+						,FINAL_MOD_DATE
+						,REG_DATE
+						,REG_ID
+					)
+					VALUES(	 
+                 			
+                 			 #man_id#
+							,#pjt_id#
+							,#sal_id#
+							,#sal_dept_code#
+							,#sal_emp_num#
+							,#custom_code#
+							,#costomer_num#
+							,#pay_free_type_code#
+							,#maintenance_from#
+							,#maintenance_to#
+							,#maintenance_amt#
+							,#maintenance_tax#
+							,'10'
+							,#note#							
+							,#admin_id#
+							,SYSTIMESTAMP
+							,SYSTIMESTAMP
+							,#admin_id#
+					)
+	]]>
+	</insert>
+	
+	<!-- 개발프로젝트정보   수정 -->
+	<update id="updateManagement" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE MAN_INFO
+		   SET          	
+				 PJT_ID             =    #pjt_id#            
+				,SAL_ID             =    #sal_id#            
+				,SAL_DEPT_CODE      =    #sal_dept_code#     
+				,SAL_EMP_NUM        =    #sal_emp_num#       
+				,CUSTOM_CODE        =    #custom_code#       
+				,COSTOMER_NUM       =    #costomer_num#      
+				,PAY_FREE_TYPE_CODE =    #pay_free_type_code#
+				,MAINTENANCE_FROM   =    #maintenance_from#  
+				,MAINTENANCE_TO     =    #maintenance_to#    
+				,MAINTENANCE_AMT    =    #maintenance_amt#   
+				,MAINTENANCE_TAX    =    #maintenance_tax#   
+				,PROC_STATUS_CODE   =    #proc_status_code#             
+				,NOTE               =    #note#					
+				,final_mod_id   	= 	 #admin_id#
+			 	,final_mod_date 	= 	 SYSTIMESTAMP   
+		 WHERE
+		        MAN_ID	=	 #man_id# 
+	]]>
+	</update>
+ 
+    
+    <select id="selectPjtManagement" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 
+							'R' flag  
+							, A.MAN_INFO_SEQ
+							, A.MAN_ID
+							
+							, A.PJT_ID
+							,(
+						        SELECT PJT_NAME
+						          FROM PJT_INFO
+						          WHERE PJT_ID = A.PJT_ID 
+						     ) PJT_NAME
+						 
+							, (select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID  
+							, TO_CHAR(A.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE
+							, TO_CHAR(A.REG_DATE,'YYYY-MM-DD') REG_DATE 
+							, (select admin_nm from tb_admin where admin_id=A.REG_ID) as REG_ID
+					FROM MAN_PJT_INFO A
+					WHERE A.MAN_ID = #man_id#							
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<select id="selectPjtManagementCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(MAN_ID)	
+		FROM MAN_PJT_INFO                                                
+		WHERE MAN_ID = #man_id#	
+	</select>
+	
+	<insert id="insertPjtManagement" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO MAN_PJT_INFO (
+								 	  MAN_INFO_SEQ
+									, MAN_ID
+									, PJT_ID
+									, FINAL_MOD_ID
+									, FINAL_MOD_DATE
+									, REG_DATE
+									, REG_ID
+							)
+					VALUES(	 
+                 			(SELECT NVL(max(TO_NUMBER(MAN_INFO_SEQ)), 0) + 1  FROM MAN_PJT_INFO )				
+							, #man_id#
+							, #pjt_id#							
+							, #admin_id#
+							, SYSTIMESTAMP
+							, SYSTIMESTAMP
+							, #admin_id#
+						  )
+	]]>
+	</insert>
+	
+	
+	<update id="updatePjtManagement" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE MAN_PJT_INFO
+		   SET			
+				  PJT_ID            = #pjt_id#							
+				, FINAL_MOD_ID      = #admin_id#
+				, FINAL_MOD_DATE    = SYSTIMESTAMP
+				
+		 WHERE     MAN_INFO_SEQ	= 	#man_info_seq#
+		      AND  MAN_ID		=   #man_id#	 
+	]]>
+	</update>
+	
+	
+	
+	 <select id="selectManagementItem" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 
+							'R' flag  
+							,MAN_INFO_SEQ
+							,MAN_ID
+							,ITEM_CODE
+							,(
+						       SELECT ITEM_NAME
+						          FROM COM_ITEM
+						          WHERE ITEM_CODE = A.ITEM_CODE
+						     ) ITEM_NAME
+						     
+							,STANDARD
+							,UNIT
+							,CNT
+							,UNIT_PRICE
+							,AMT
+							,DISCOUNT_RATIO
+							,PAY_FREE_CODE
+							,APLY_UNIT_PRICE
+							,APLY_AMT
+							,APLY_TAX
+							,NOTE
+							
+							,(select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID  
+							,TO_CHAR(A.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE
+							,TO_CHAR(A.REG_DATE,'YYYY-MM-DD') REG_DATE 
+							,(select admin_nm from tb_admin where admin_id=A.REG_ID) as REG_ID
+							
+					FROM MAN_ITEM_INFO A
+					WHERE MAN_ID = #man_id#
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	<select id="selectManagementItemCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(MAN_INFO_SEQ)	
+		FROM MAN_ITEM_INFO
+		WHERE MAN_ID = #man_id#
+	</select>
+	
+	<insert id="insertManagementItem" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO MAN_ITEM_INFO (
+									  MAN_INFO_SEQ
+									, MAN_ID
+									, ITEM_CODE
+									, STANDARD
+									, UNIT
+									, CNT
+									, UNIT_PRICE
+									, AMT
+									, DISCOUNT_RATIO
+									, PAY_FREE_CODE
+									, APLY_UNIT_PRICE
+									, APLY_AMT
+									, APLY_TAX
+									, NOTE
+									, FINAL_MOD_ID
+									, FINAL_MOD_DATE
+									, REG_DATE
+									, REG_ID
+							)
+					VALUES(	 
+                 			
+                 			  (SELECT NVL(max(TO_NUMBER(man_info_seq)), 0) + 1  FROM PJT_SAL_ITEM )		
+							, #man_id#
+							, #item_code#
+							, #standard#
+							, #unit#
+							, #cnt#
+							, #unit_price#
+							, #amt#
+							, #discount_ratio#
+							, #pay_free_code#
+							, #aply_unit_price#
+							, #aply_amt#
+							, #aply_tax#
+							, #note#							
+							,#admin_id#
+							,SYSTIMESTAMP
+							,SYSTIMESTAMP
+							,#admin_id# 
+						  )
+	]]>
+	</insert>
+	
+	
+	<update id="updateManagementItem" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE MAN_ITEM_INFO
+		   SET        		 		
+			  ITEM_CODE         =  #item_code#      
+			, STANDARD          =  #standard#       
+			, UNIT              =  #unit#           
+			, CNT               =  #cnt#            
+			, UNIT_PRICE        =  #unit_price#     
+			, AMT               =  #amt#            
+			, DISCOUNT_RATIO    =  #discount_ratio# 
+			, PAY_FREE_CODE     =  #pay_free_code#  
+			, APLY_UNIT_PRICE   =  #aply_unit_price#
+			, APLY_AMT          =  #aply_amt#       
+			, APLY_TAX          =  #aply_tax#       
+			, NOTE              =  #note#			
+			, FINAL_MOD_ID      =  #admin_id#        
+			, FINAL_MOD_DATE    =  SYSTIMESTAMP    
+			 
+		 WHERE                                
+		        MAN_INFO_SEQ	= 	#man_info_seq#
+			AND MAN_ID 			= 	#man_id#       
+	]]>
+	</update>
+	
+	<update id="updatePjtStatusManage" parameterClass="HashMap">
+	UPDATE MAN_INFO
+	   SET proc_status_code 	= #proc_status_code#
+	   	 , final_mod_date		= SYSTIMESTAMP     
+		 , final_mod_id  		= #admin_id#
+	 WHERE MAN_ID  = #man_id# 	
+	</update>
+	
+	<select id="selectSalCheck" parameterClass="HashMap" resultClass="HashMap">
+	SELECT DECODE(COUNT(sal_id),0,'N','Y') check_use_yn
+	     , sal_id
+	  FROM SAL_INFO
+	 WHERE pjt_id = #src_pjt_id#
+	   AND sal_type_code = '10'		/*매출구분코드가 10_프로젝트*/
+	 GROUP BY sal_id
+	</select>
+	
+ </sqlMap>

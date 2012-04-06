@@ -1,0 +1,11 @@
+<%@ taglib uri="http://tiles.apache.org/tags-tiles"             prefix="tiles"      %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core"              prefix="c"          %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt"               prefix="fmt"        %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions"         prefix="fn"         %>
+<%@ taglib uri="http://jakarta.apache.org/taglibs/string-1.1"   prefix="str"        %>
+<%@ taglib uri="http://jakarta.apache.org/taglibs/datetime-1.0" prefix="dt"         %>
+<%@ taglib uri="http://www.signgate.com/sfg-msg"                prefix="msg"        %>
+<%@ taglib uri="http://www.signgate.com/sfg-str"                prefix="sgstr"      %>
+<%@ taglib uri="http://www.signgate.com/sfg-date"               prefix="sgdate"     %>
+<%@ taglib uri="http://www.signgate.com/sfg-html"               prefix="sghtml"     %>
+<%@ taglib uri="http://www.springframework.org/tags/form"       prefix="form"    %>

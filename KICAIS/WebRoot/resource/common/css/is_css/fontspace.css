@@ -1,0 +1,25 @@
+@charset "utf-8";
+
+
+.font_dotum {font-family:dotum, '돋움', Verdana, Geneva, sans-serif;}
+.font_arial {font-family:Arial, dotum, '돋움', Verdana, Geneva, sans-serif;}
+
+/***** margin *****/
+.margin5 {margin:5px;}
+.margin10 {margin:10px;}
+.margin20 {margin:20px;}
+
+.margin_tm2 {margin-top:-2px;}
+.margin_t1 {margin-top:1px;}
+.margin_t2 {margin-top:2px;}
+.margin_t3 {margin-top:3px;}
+.margin_t4 {margin-top:4px;}
+.margin_t5 {margin-top:5px;}
+
+/* kskim */
+.margin_l5 {margin-left:5px;}
+.padding_l32 { padding-left:32px;}
+.padding_l105 { padding-left:105px;}
+/* kskim */
+
+.padding_r0 {padding-right:0px;}

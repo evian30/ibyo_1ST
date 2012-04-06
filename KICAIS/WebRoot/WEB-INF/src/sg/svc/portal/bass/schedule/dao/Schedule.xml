@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Schedule">
+	<typeAlias alias="Schedule" type="sg.svc.portal.bass.schedule.domain.Schedule"/>	
+	
+    <insert id="insertSchedule" parameterClass="HashMap">
+         INSERT INTO SCHE_MNG 
+ 			(TECH_SUP_APP_NO, SCHE_NO, CHMAN_NO, ST_DATE, END_DATE, TITLE, CONTENTS, CR_DATE) 
+			      SELECT #tech_sup_app_no#,
+			             ( SELECT RETURN_NO('SCHE_MNG') FROM DUAL ) sche_no,
+			             (SELECT chman_no FROM CHMAN WHERE ID=#admin_id#), 
+			             TO_DATE(#st_date#, 'yyyy-MM-dd HH24:mi:ss'), 
+			             TO_DATE(#end_date#, 'yyyy-MM-dd HH24:mi:ss'), 
+			             #title#, #contents#, sysdate
+			       FROM DUAL           
+    </insert>
+    
+    <select id="selectSchedule" resultClass="HashMap">
+     <![CDATA[ 
+		SELECT 
+			A.SCHE_NO,
+			A.CHMAN_NO,
+			TO_CHAR(A.ST_DATE, 'yyyyMMddHH24miss') ST_DATE,
+			TO_CHAR(A.END_DATE, 'yyyyMMddHH24miss') END_DATE,
+			A.TITLE,
+			A.CONTENTS,
+			TO_CHAR(A.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') CR_DATE,
+			TO_CHAR(A.UP_DATE, 'yyyy-MM-dd HH24:mi:ss') UP_DATE,
+			A.TECH_SUP_APP_NO,
+			B.CHMAN_NM, 
+			B.DEPT_CODE
+		FROM SCHE_MNG A, CHMAN B
+		WHERE A.CHMAN_NO = B.CHMAN_NO(+) 
+		      AND TO_CHAR(A.ST_DATE, 'yyyyMM') LIKE #year# || #month# || '%'
+			
+     ]]>    						 	  
+    </select>
+    <!--(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE=B.DEPT_CODE AND CODE_SECT='DEPT_CODE') AS DEPT_NM, AND A.ST_DATE LIKE #year# || #month# || '%'-->
+    <select id="selectScheduleView" resultClass="HashMap">
+		SELECT 
+			A.SCHE_NO,
+			A.CHMAN_NO,
+			TO_CHAR(A.ST_DATE, 'yyyyMMddHH24miss') ST_DATE,
+			TO_CHAR(A.END_DATE, 'yyyyMMddHH24miss') END_DATE,
+			A.TITLE,
+			A.CONTENTS,
+			TO_CHAR(A.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') CR_DATE,
+			TO_CHAR(A.UP_DATE, 'yyyy-MM-dd HH24:mi:ss') UP_DATE,
+			A.TECH_SUP_APP_NO,
+			B.CHMAN_NM,
+			(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE=B.DEPT_CODE AND CODE_SECT='DEPT_CODE') AS DEPT_NM,
+			B.DEPT_CODE
+		FROM SCHE_MNG A, CHMAN B
+		WHERE A.CHMAN_NO = B.CHMAN_NO(+)
+			AND A.TECH_SUP_APP_NO = #tech_sup_app_no#  
+		    
+    </select>
+    
+    
+    <update id="updateSchedule" parameterClass="HashMap">
+        UPDATE SCHE_MNG 
+           SET title = #title#,
+               contents = #contents#,
+               st_date = TO_DATE(#st_date#, 'yyyy-MM-dd HH24:mi:ss'),
+               end_date = TO_DATE(#end_date#, 'yyyy-MM-dd HH24:mi:ss'), 
+               up_date = sysdate                                                    
+       	 WHERE TECH_SUP_APP_NO = #tech_sup_app_no#  
+    </update>
+    
+    <delete id="deleteSchedule" parameterClass="HashMap">
+        DELETE FROM SCHE_MNG 
+        WHERE TECH_SUP_APP_NO = #tech_sup_app_no#    
+    </delete>
+    
+    <select id="selectWeekSchedule" resultClass="HashMap">
+    <![CDATA[
+		SELECT 
+			A.SCHE_NO,
+			A.CHMAN_NO,
+			TO_CHAR(A.ST_DATE, 'yyyyMMddHH24miss') ST_DATE,
+    		TO_CHAR(A.END_DATE, 'yyyyMMddHH24miss') END_DATE,
+			A.TITLE,
+			A.CONTENTS,
+			TO_CHAR(A.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') CR_DATE,
+			TO_CHAR(A.UP_DATE, 'yyyy-MM-dd HH24:mi:ss') UP_DATE,
+			A.TECH_SUP_APP_NO,
+			B.CHMAN_NM,
+			(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE=B.DEPT_CODE AND CODE_SECT='DEPT_CODE') AS DEPT_NM,
+			B.DEPT_CODE
+		FROM SCHE_MNG A, CHMAN B
+		WHERE A.CHMAN_NO = B.CHMAN_NO(+)
+		 	  AND A.ST_DATE BETWEEN TO_DATE(#stdate#, 'yyyy-MM-dd') AND TO_DATE(#eddate#, 'yyyy-MM-dd')
+     ]]>	
+    </select>
+ </sqlMap>

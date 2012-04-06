@@ -1,0 +1,64 @@
+/* CSS Document */
+a {selector-dummy: expression(this.hideFocus=true);} /* 링크이미지테두리 점선 안생기게 */
+
+td, th {
+    font-family: verdana, sans-serif;
+	font-size: 12px;
+	margin-left: 0px;
+	margin-top: 0px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	}
+	
+	html, body, #wrapper {
+      height:90%;
+      margin: 0;
+      padding: 0;
+      border: none;
+      text-align: center;
+   }
+   #wrapper {
+      margin: 0 auto;
+      text-align:left;
+      vertical-align: middle;
+      width: 563px;
+   }
+
+	
+div {
+	 margin: 0px 0 0 0;
+    }
+	
+#content_100% {
+	float:left;
+	width:100%;
+	height:768px;	
+	margin:0 0 0 0;
+	padding: 0px;
+	text-align:left;
+	background:#cbebfb;
+	}
+
+
+
+.black_txt {font-size:12px; color:#000000;line-height:15px;}
+.black_txt A:link    {font-size:12px; color:#000000; text-decoration:none;line-height:15px;}
+.black_txt A:visited {font-size:12px; color:#000000; text-decoration:none;line-height:15px;}
+.black_txt A:hover   {font-size:12px; color:#000000; text-decoration:none;line-height:15px;}
+
+
+/* 아이핀 관리자 로그인 화면 */
+#ipin_logo                    {float:left;width:110px; height:35px;margin:20px 0 0 30px;}
+#login_top                    {float:left;width:100%; height:78px; background: url(../login/img/login_top_bg.gif);}
+#login_top_title01            {float:right;width:150px; height:39px;margin:25px 43px 0 0; text-align:right;}
+#login                        {float:left;width:563px; height:256px; background:url(../login/img/login_background01.gif) no-repeat;}
+#login_footer                 {float:left;width:100%; height:57px; vertical-align:bottom; background: url(../login/img/login_footer_bg.gif);}
+
+
+#login_form  {float:left;width:235px; height:59px; margin:120px 0 0 200px;}
+#footer_logo {float:left;width:110px; height:35px;margin:20px 0 0 30px;}
+#footer_txt           {float:right;width:150px; height:39px;margin:25px 43px 0 0; text-align:right;}
+
+
+
+

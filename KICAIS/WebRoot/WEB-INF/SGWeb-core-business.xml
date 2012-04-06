@@ -1,0 +1,309 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context-2.5.xsd
+                           http://www.springframework.org/schema/aop 
+                           http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+                           http://www.springframework.org/schema/tx 
+                           http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+   <!-- 트렌젝션 관련 -->  
+    <aop:config>
+        <aop:pointcut id="defaultBusinessOperation" expression="execution(* com.signgate..*Biz.*(..))" />
+        <aop:advisor pointcut-ref="defaultBusinessOperation" advice-ref="txAdvice" />
+
+    </aop:config>
+
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="sel*" read-only="true" propagation="SUPPORTS" />
+            <tx:method name="ins*" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="upd*" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="del*" propagation="REQUIRED" rollback-for="Exception"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!-- SGF manage business 등록  -->
+
+    <!-- 게시판 마스터 설정 -->
+    <bean id="boardMstBiz" 
+        class="com.signgate.core.web.manage.boardmst.BoardMstBiz"
+        p:boardMstDao-ref="boardMstDao" /> 
+
+    <!-- 게시판  -->    
+    <bean id="boardBiz" 
+        class="com.signgate.core.web.manage.board.BoardBiz"
+        p:boardDao-ref="boardDao" p:boardMstDao-ref="boardMstDao" /> 
+        
+    <!-- 관리자 관리 -->         
+	<bean id="suserBiz" 
+        class="com.signgate.core.web.manage.suser.SUserBiz"
+        p:suserDao-ref="suserDao" /> 
+
+	<!-- 메뉴 관리  Biz -->
+    <bean id="menuBiz"
+        class="com.signgate.core.web.manage.menu.MenuBiz"
+        p:menuDao-ref="menuDao" /> 
+
+	<!-- 그룹  관리  Biz -->
+    <bean id="groupBiz"
+        class="com.signgate.core.web.manage.group.GroupBiz"
+        p:groupDao-ref="groupDao" />
+
+    <!-- 배치  관리  Biz -->
+    <bean id="batchBiz"
+        class="com.signgate.core.web.manage.batch.BatchBiz"
+        p:batWorkDao-ref="batWorkDao" 
+        p:batHistoryDao-ref="batHistoryDao"
+        p:codeDao-ref="codeDao" />
+        
+  <!-- 코드  관리  Biz -->
+  <bean id="codeBiz"
+        class="com.signgate.core.web.manage.code.CodeBiz"
+        p:codeDao-ref="codeDao" />
+        
+	<!-- DataBase 관리  Biz -->
+    <bean id="setupBiz"
+        class="com.signgate.core.web.setup.SetupBiz"
+        p:setupDao-ref="setupDao" />
+        
+    <!-- 사용자 정의 business 등록 -->
+    <!-- 우편번호 조회   Biz -->
+    <bean id="zipBiz"
+        class="sg.svc.portal.bass.post.ZipBiz"
+        p:zipDao-ref="zipDao" />
+        
+    <!-- 담당자 Biz -->
+     <bean id="chmanBiz"
+        class="sg.svc.portal.bass.chman.ChmanBiz"
+        p:chmanDao-ref="chmanDao" 
+        p:techsupDao-ref="techsupDao"
+        />
+        
+    <!-- 기술지원 Biz -->
+     <bean id="techsupBiz"
+        class="sg.svc.portal.bass.techsup.TechsupBiz"
+        p:techsupDao-ref="techsupDao" 
+        p:productDao-ref="productDao" />
+    
+    <!-- 제품 관리 Biz -->
+     <bean id="productBiz"
+        class="sg.svc.portal.bass.product.ProdcutBiz"
+        p:productDao-ref="productDao" 
+        p:techsupDao-ref="techsupDao" />
+        
+    <!-- 공통코드 관리 Biz -->
+     <bean id="bassCodeBiz"
+        class="sg.svc.portal.bass.BassCode.BassCodeBiz"
+        p:bassCodeDao-ref="bassCodeDao" />     
+    
+    <!-- 스케줄관리 관리 Biz -->
+     <bean id="scheduleBiz"
+        class="sg.svc.portal.bass.schedule.ScheduleBiz"
+        p:scheduleDao-ref="scheduleDao"
+        p:techsupDao-ref="techsupDao"  />     
+        
+    <!-- MAIN 관리 Biz -->
+     <bean id="mainBiz"
+        class="sg.svc.portal.bass.Main.MainBiz"
+        p:mainDao-ref="mainDao"     
+        p:techsupDao-ref="techsupDao" 
+        p:chmanDao-ref="chmanDao" 
+        p:productDao-ref="productDao"
+        p:scheduleDao-ref="scheduleDao"/> 
+    
+    <bean id="cassTechsupBiz"
+        class="sg.svc.portal.cass.techsup.CassTechsupBiz"
+        p:cassTechsupDao-ref="cassTechsupDao" 
+        p:productDao-ref="productDao"  /> 
+    
+    <!-- 메인 레이아웃 	-->
+    <bean id="layoutBiz"
+        class="com.sg.sgis.layout.LayoutBiz" 
+        p:layoutDao-ref="layoutDao"
+        p:employeeDao-ref="employeeDao" />    
+   
+    <!--*************************   시스템관리        ************************* -->
+        
+	<!-- 부서정보관리 	-->
+	<bean id="deptBiz"
+		class="com.sg.sgis.com.dept.DeptBiz"
+		p:deptDao-ref="deptDao"
+		p:sgisCodeDao-ref="sgisCodeDao"  />  
+		
+	<!-- 사원정보관리 	-->
+	<bean id="employeeBiz"
+		class="com.sg.sgis.com.employee.EmployeeBiz"
+		p:employeeDao-ref="employeeDao"  /> 
+			
+	<!-- 품목정보관리 	-->
+	<bean id="itemBiz"
+		class="com.sg.sgis.com.item.ItemBiz"
+		p:itemDao-ref="itemDao"  /> 
+	
+	<bean id="itemSWBiz"
+		class="com.sg.sgis.com.item.ItemSWBiz"
+		p:itemSWDao-ref="itemSWDao"  /> 
+		
+	<bean id="itemHWBiz"
+		class="com.sg.sgis.com.item.ItemHWBiz"
+		p:itemHWDao-ref="itemHWDao"  /> 	
+		
+	<bean id="itemDeveloperBiz"
+		class="com.sg.sgis.com.item.ItemDeveloperBiz"
+		p:itemDeveloperDao-ref="itemDeveloperDao"  />					
+	
+	<!--  거래처관리 Biz -->
+	<bean id="customBiz"
+		class="com.sg.sgis.com.custom.CustomBiz"
+		p:customDao-ref="customDao"  />	
+	
+	<!--  일정 관리 Biz -->
+	<bean id="calendarBiz"
+		class="com.sg.sgis.com.calendar.CalendarBiz"
+		p:calendarDao-ref="calendarDao"  />
+	
+	<!--  코드 관리 Biz -->
+    <bean id="sgisCodeBiz"
+        class="com.sg.sgis.com.sgisCode.SgisCodeBiz"
+        p:sgisCodeDao-ref="sgisCodeDao" />
+
+	<!--  이슈 관리 Biz -->
+    <bean id="issueBiz"
+        class="com.sg.sgis.com.issue.IssueBiz"
+        p:issueDao-ref="issueDao" />
+    
+    <!--  타스크 관리 Biz -->
+    <bean id="taskBiz"
+        class="com.sg.sgis.com.task.TaskBiz"
+        p:taskDao-ref="taskDao" />    
+   	<!-- 개인별휴가정보 관리 	-->
+	<bean id="empVacInfoBiz"
+		class="com.sg.sgis.com.empVac.EmpVacInfoBiz"
+		p:empVacInfoDao-ref="empVacInfoDao"  />
+		        
+   	<!-- 개인별휴가사용  관리 	-->
+	<bean id="empVacUsedInfoBiz"
+		class="com.sg.sgis.com.empVac.EmpVacUsedInfoBiz"
+		p:empVacUsedInfoDao-ref="empVacUsedInfoDao"  />
+    <!--*************************  프로젝트관리      ************************* -->       
+	
+	<!-- 프로젝트관리 	-->
+	<bean id="pjtManageBiz"
+		class="com.sg.sgis.pjt.pjtManage.PjtManageBiz"
+		p:pjtManageDao-ref="pjtManageDao"  /> 	
+	
+	<!-- 이슈관리 -->	
+	<bean id="pjtIssueBiz"
+		class="com.sg.sgis.pjt.pjtManage.PjtIssueBiz"
+		p:pjtIssueDao-ref="pjtIssueDao"   /> 	
+		
+    <!--*************************    견적관리         ************************* --> 
+  
+    <!-- 견적정보조회	-->
+	<bean id="estimateInfoInquiryBiz"
+		class="com.sg.sgis.est.estimate.EstimateInfoInquiryBiz"
+		p:estimateInfoInquiryDao-ref="estimateInfoInquiryDao"  /> 
+
+	<!-- 견적진행상태관리	-->
+	<bean id="estimateProcessStateManageBiz"
+		class="com.sg.sgis.est.estimate.EstimateProcessStateManageBiz"
+		p:estimateProcessStateManageDao-ref="estimateProcessStateManageDao"  />
+		
+	<!-- 견적정보관리	-->
+	<bean id="estimateInfoManageBiz"
+		class="com.sg.sgis.est.estimate.EstimateInfoManageBiz"
+		p:estimateInfoManageDao-ref="estimateInfoManageDao"  />
+		
+    <!--*************************    수주관리         ************************* --> 
+   
+    <!-- 수주정보조회	-->
+	<bean id="orderInfoInquiryBiz"
+		class="com.sg.sgis.ord.order.OrderInfoInquiryBiz"
+		p:orderInfoInquiryDao-ref="orderInfoInquiryDao"  /> 
+
+	<!-- 수주진행상태관리	-->
+	<bean id="orderProcessStateManageBiz"
+		class="com.sg.sgis.ord.order.OrderProcessStateManageBiz"
+		p:orderProcessStateManageDao-ref="orderProcessStateManageDao"  />
+		
+	<!-- 수주정보관리	-->
+	<bean id="orderInfoManageBiz"
+		class="com.sg.sgis.ord.order.OrderInfoManageBiz"
+		p:orderInfoManageDao-ref="orderInfoManageDao"  />
+		
+    <!--*************************    구매관리         ************************* --> 
+   	
+   	<!-- 구매정보 관리 	-->
+	<bean id="purBiz"
+		class="com.sg.sgis.pur.PurchaseBiz"
+		p:purDao-ref="purDao"  />
+	<!-- 지출결의 관리 -->
+	<bean id="payBiz"
+		class="com.sg.sgis.pur.PayInfoBiz"
+		p:payDao-ref="payDao"  />
+
+    <!--*************************    매출관리         ************************* -->           
+   
+	<!-- 매출정보관리   -->
+	<bean id="saleInfoManageBiz"
+		class="com.sg.sgis.sal.sale.SaleInfoManageBiz"
+		p:saleInfoManageDao-ref="saleInfoManageDao"  />
+		
+ 	<!-- 리포트 관리 	-->
+	<bean id="ozBiz"
+		class="com.sg.sgis.com.oz.OzBiz"
+		p:ozDao-ref="ozDao"  />
+		
+	<!-- 수금관리   -->
+	<bean id="receiptManageBiz"
+		class="com.sg.sgis.sal.receipt.ReceiptManageBiz"
+		p:receiptManageDao-ref="receiptManageDao"  />
+
+   <!--*************************    개발관리         ************************* --> 
+   	<!-- 업무요청정보 	-->
+	<bean id="csrInfoMngBiz"
+		class="com.sg.sgis.dev.csrInfoMng.CsrInfoMngBiz"
+		p:csrInfoMngDao-ref="csrInfoMngDao"  />
+
+   	<!-- 개발프로젝트정보 	-->
+	<bean id="pjdInfoMngBiz"
+		class="com.sg.sgis.dev.pjdInfoMng.PjdInfoMngBiz"
+		p:pjdInfMngDao-ref="pjdInfMngDao"  />
+
+   	<!-- 개발일정계획 	-->
+	<bean id="scdInfoMngBiz"
+		class="com.sg.sgis.dev.scdInfoMng.ScdInfoMngBiz"
+		p:scdInfoMngDao-ref="scdInfoMngDao" 
+		p:scdDayInfoMngDao-ref="scdDayInfoMngDao"
+		p:pjdInfMngDao-ref="pjdInfMngDao" />
+		
+	
+	<!-- 유지보수관리 	-->
+	<bean id="managementBiz"
+		class="com.sg.sgis.man.management.ManagementBiz"
+		p:managementDao-ref="managementDao"  /> 	
+
+   	<!-- 개인별개발일정관리 	-->
+	<bean id="scdDayInfoMngBiz"
+		class="com.sg.sgis.dev.scdInfoMng.ScdDayInfoMngBiz"
+		p:scdDayInfoMngDao-ref="scdDayInfoMngDao"  
+		p:pjdInfMngDao-ref="pjdInfMngDao" />
+		
+		
+	<!--*************************    기술지원         ************************* --> 		
+   	<!-- 기술지원요청정보 	-->
+	<bean id="srsMngBiz"
+		class="com.sg.sgis.srs.SrsMngBiz"
+		p:srsMngDao-ref="srsMngDao"  
+		p:pjdInfMngDao-ref="pjdInfMngDao"/>		
+		
+</beans>

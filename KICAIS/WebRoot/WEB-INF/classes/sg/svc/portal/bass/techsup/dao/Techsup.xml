@@ -1,0 +1,2402 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Techsup">
+	 
+    <!--  목록 수 S-->
+    <select id="selectTechsupTotCount" resultClass="Int">				
+		SELECT COUNT(CORP_NM) FROM (
+				SELECT  
+						CORP_NM,  
+						REP_PHONE,
+						REP_FAX,  
+						ADDR1||' '||ADDR2,
+						CORP_NO 
+			FROM CORP		  
+		    WHERE 1=1 
+				<isNotEmpty property="keyword" prepend="AND">
+				   	<isEqual property="key" compareValue="001">
+				   		CORP_NM like '%'||#keyword#||'%'  
+				   	</isEqual> 
+		        </isNotEmpty>
+		)
+        
+    </select>
+    <!--  목록 수 E-->
+
+
+    <!--  목록 수 S-->
+    <select id="selectTechsupAppTotCount" resultClass="Int">				
+		
+						SELECT COUNT(TECH_SUP_APP_NO) FROM (
+								SELECT * FROM ( 
+													SELECT  TSA.TECH_SUP_APP_NO, 
+													        TSA.APP_TITLE,
+													        TSA.CONTENTS,
+														        (	SELECT 
+														        		CODE_NM 
+														        	FROM TOT_CODE_MNG 
+														        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+														        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+														       	) AS TECH_SUP_STATUS_CODE_NM,
+													        	NVL((SELECT COUNT(*) FROM TECH_SUP TS WHERE TS.TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO),0) AS TECH_SUP_APP_CNT,
+													        TSA.APP_REC_DATE,
+													        TSA.APP_NM,
+													        NVL(PJ.PJT_NAME,'프로젝트없음') AS PJT_NAME,
+														        (	SELECT  
+														        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+														        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+														        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+														        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+														        		  AND TSC.MATCH_YN='Y' 
+														        	GROUP BY TECH_SUP_APP_NO
+														        ) AS TECH_SUP_APP_NM1,
+														        <!--
+														        (	SELECT  
+														        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'2',CHMAN_NM)) 
+														        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+														        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+														        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+														        	GROUP BY TECH_SUP_APP_NO
+														        ) AS TECH_SUP_APP_NM2,
+														        -->
+														         (	SELECT  
+															        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+															        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+															        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+															        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+															        		  AND TSC.MATCH_YN='N' 
+															        	GROUP BY TECH_SUP_APP_NO
+															        ) AS TECH_SUP_APP_NM2,
+													        SUBSTR(TSA.ST_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,7,2) AS ABOUT_DATE1,
+													        SUBSTR(TSA.END_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.END_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.END_ABOUT_DATE,7,2) AS ABOUT_DATE2,
+													        TSA.CR_DATE,
+													        C.CONT_NM,
+													        P.PROD_NM||' ('||CP.CNT||')' AS PROD_NM,
+													        
+													        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) PJT_CHMAN_NM,
+													        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NO)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CL_CORP_NO,
+													        (	SELECT  
+													        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+													        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+																WHERE PJT_NO = PJ.PJT_NO 
+																  AND PC.CHMAN_NO = C.CHMAN_NO 
+															      AND C.CORP_NO=CP.CORP_NO
+															    GROUP BY PJT_NO
+															) CL_CORP_NM,
+															TSA.CR_DATE AS CR_DATE2
+													FROM
+												        TECH_SUP_APP TSA, 
+												        PJT PJ,
+												        CONTRACT C,
+												        CONT_PROD CP,
+												        PROD P,
+													   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+													WHERE TSA.PJT_NO = PJ.PJT_NO
+													      AND PJ.PJT_NO = C.PJT_NO(+)
+														  AND P.PROD_NO(+) = CP.PROD_NO
+														  AND C.CONT_NO = CP.CONT_NO(+)
+													      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+									  ) WHERE 1=1 
+									<isNotEmpty property="keyword" prepend="AND"> 
+									   	<!-- SG 담당자명 -->
+									   	<isEqual property="key" compareValue="001">
+									   		TECH_SUP_APP_NM1 like '%'||#keyword#||'%'  
+									   	</isEqual>
+									   	<!-- 고객사 담당자명 -->
+									   	<isEqual property="key" compareValue="002">
+									   		CORP_NM TECH_SUP_APP_NM2 '%'||#keyword#||'%'  
+									   	</isEqual>
+									   	<!-- 제목 -->
+									   	<isEqual property="key" compareValue="003">
+									   		APP_TITLE like '%'||#keyword#||'%'  
+									   	</isEqual>
+									   	<!-- 계약 명 -->
+									   	<isEqual property="key" compareValue="004">
+									   		CONT_NM like '%'||#keyword#||'%'  
+									   	</isEqual>
+									   	<!-- 제품 명 -->
+									   	<isEqual property="key" compareValue="005">
+									   		PROD_NM like '%'||#keyword#||'%'  
+									   	</isEqual> 
+									   	<isEqual property="key" compareValue="006">
+									   		CL_CORP_NM like '%'||#keyword#||'%'  
+									   	</isEqual> 
+							      </isNotEmpty>
+							      
+							      <isNotEmpty property="status_nm" prepend="AND"> 
+								   	<!-- 상태 명 --> 
+								   	TECH_SUP_STATUS_CODE_NM  like '%'||#status_nm#||'%'
+							      </isNotEmpty>	
+							      <isNotEmpty property="cl_corp_nm" prepend="AND"> 
+									   	<!-- 고객사 명 --> 
+									   	CL_CORP_NM  like '%'||#cl_corp_nm#||'%'
+							      </isNotEmpty>	       
+							      <isNotEmpty property="pjt_chman_nm" prepend="AND"> 
+									   	<!-- 프로젝트담당자 명 --> 
+									   	PJT_CHMAN_NM  like '%'||#pjt_chman_nm#||'%'
+							      </isNotEmpty>	 
+							      <isNotEmpty property="src_pjt_nm" prepend="AND"> 
+									   	<!-- 프로젝트명 --> 
+									   	PJT_NAME  like '%'||#src_pjt_nm#||'%'
+							      </isNotEmpty>	
+							      <isNotEmpty property="src_prod_nm" prepend="AND"> 
+									   	<!-- 제품명 --> 
+									   	PROD_NM  like '%'||#src_prod_nm#||'%'
+							      </isNotEmpty>	 
+							      <isNotEmpty property="src_title" prepend="AND"> 
+									   	<!-- 제목 --> 
+									   	APP_TITLE  like '%'||#src_title#||'%'
+							      </isNotEmpty>	 
+							      <isNotEmpty property="src_contents" prepend="AND"> 
+									   	<!-- 내용 --> 
+									   	APP_CONTENTS  like '%'||#src_contents#||'%'
+							      </isNotEmpty>	        
+							       
+							     
+							     <isNotEmpty property="mainSrc" prepend="AND">   
+								   	<isNotEqual property="groups" compareValue="G006">
+									   	<isNotEqual property="groups" compareValue="G005">
+									   			TECH_SUP_STATUS_CODE_NM  = '수행'
+									   	</isNotEqual> 
+								   	</isNotEqual> 
+							      </isNotEmpty>	 
+							     
+							      <!-- 주의 수정 할것 2010.11.02  by ibyo -->
+							      <isNotEmpty property="mainSrc" prepend="AND">   
+								   	<isEqual property="groups" compareValue="G005">
+								   		TECH_SUP_STATUS_CODE_NM  = '요청'
+								   	</isEqual> 
+								   	<isEqual property="groups" compareValue="G006">
+								   		TECH_SUP_STATUS_CODE_NM  = '요청'
+								   	</isEqual> 
+							      </isNotEmpty>
+							      
+						      	<isNotEmpty property="src_app_s" prepend="AND">  
+									TO_CHAR(CR_DATE2, 'YYYY-MM-DD') <![CDATA[>=]]> #src_app_s#
+								</isNotEmpty>
+								
+								<isNotEmpty property="src_app_e" prepend="AND">  
+									TO_CHAR(CR_DATE2, 'YYYY-MM-DD') <![CDATA[<=]]> #src_app_e#
+								</isNotEmpty> 
+				)
+		
+	</select>
+    
+    <select id="getTechsupApp" resultClass="HashMap">	 
+		SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+				(
+					
+					SELECT * FROM ( 
+									SELECT  TSA.TECH_SUP_APP_NO, PJ.PJT_NO,
+									        TSA.APP_TITLE,
+									        TSA.CONTENTS,
+										        (	SELECT 
+										        		CODE_NM 
+										        	FROM TOT_CODE_MNG 
+										        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+										        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+										       	) AS TECH_SUP_STATUS_CODE_NM,
+									        	NVL((SELECT COUNT(*) FROM TECH_SUP TS WHERE TS.TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO),0) AS TECH_SUP_APP_CNT,
+									        TSA.APP_REC_DATE,
+									        TSA.APP_NM,
+									        NVL(PJ.PJT_NAME,'프로젝트없음') AS PJT_NAME,
+										        (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='Y' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM1,
+										         <!--
+										        (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'2',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM2,
+										        -->
+										         (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='N' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM2,
+									        SUBSTR(TSA.ST_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,7,2) AS ABOUT_DATE1,
+									        SUBSTR(TSA.END_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.END_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.END_ABOUT_DATE,7,2) AS ABOUT_DATE2,
+									        TO_CHAR(TSA.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+									        C.CONT_NM,
+									        P.PROD_NM ||' ('||CP.CNT||')' AS PROD_NM,
+									        
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) PJT_CHMAN_NM,
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NO)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CL_CORP_NO,
+									        (	SELECT  
+									        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+									        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+												WHERE PJT_NO = PJ.PJT_NO 
+												  AND PC.CHMAN_NO = C.CHMAN_NO 
+											      AND C.CORP_NO=CP.CORP_NO
+											    GROUP BY PJT_NO
+											) CL_CORP_NM,
+											TSA.CHMAN_NO,
+											(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = TSA.CHMAN_NO) CHMAN_NM,
+											TSA.CR_DATE AS CR_DATE2
+									FROM
+								        TECH_SUP_APP TSA, 
+								        PJT PJ,
+								        CONTRACT C,
+								        CONT_PROD CP,
+								        PROD P,
+									   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+									WHERE TSA.PJT_NO = PJ.PJT_NO
+									      AND PJ.PJT_NO = C.PJT_NO(+)
+										  AND P.PROD_NO(+) = CP.PROD_NO
+										  AND C.CONT_NO = CP.CONT_NO(+)
+									      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+						) WHERE 1=1 
+						<isNotEmpty property="keyword" prepend="AND"> 
+						   	<!-- SG 담당자명 -->
+						   	<isEqual property="key" compareValue="001">
+						   		TECH_SUP_APP_NM1 like '%'||#keyword#||'%'  
+						   	</isEqual>
+						   	<!-- 고객사 담당자명 -->
+						   	<isEqual property="key" compareValue="002">
+						   		CORP_NM TECH_SUP_APP_NM2 '%'||#keyword#||'%'  
+						   	</isEqual>
+						   	<!-- 제목 -->
+						   	<isEqual property="key" compareValue="003">
+						   		APP_TITLE like '%'||#keyword#||'%'  
+						   	</isEqual>
+						   	<!-- 계약 명 -->
+						   	<isEqual property="key" compareValue="004">
+						   		CONT_NM like '%'||#keyword#||'%'  
+						   	</isEqual>
+						   	<!-- 제품 명 -->
+						   	<isEqual property="key" compareValue="005">
+						   		PROD_NM like '%'||#keyword#||'%'  
+						   	</isEqual> 
+						   	<isEqual property="key" compareValue="006">
+						   		CL_CORP_NM like '%'||#keyword#||'%'  
+						   	</isEqual> 
+				      </isNotEmpty>	       
+				      
+				     <isNotEmpty property="status_nm" prepend="AND"> 
+					   	<!-- 상태 명 --> 
+					   	TECH_SUP_STATUS_CODE_NM  like '%'||#status_nm#||'%'
+				      </isNotEmpty>	
+				      <isNotEmpty property="cl_corp_nm" prepend="AND"> 
+						   	<!-- 고객사 명 --> 
+						   	CL_CORP_NM  like '%'||#cl_corp_nm#||'%'
+				      </isNotEmpty>	       
+				      <isNotEmpty property="pjt_chman_nm" prepend="AND"> 
+						   	<!-- 프로젝트담당자 명 --> 
+						   	PJT_CHMAN_NM  like '%'||#pjt_chman_nm#||'%'
+				      </isNotEmpty>	 
+				      <isNotEmpty property="src_pjt_nm" prepend="AND"> 
+						   	<!-- 프로젝트명 --> 
+						   	PJT_NAME  like '%'||#src_pjt_nm#||'%'
+				      </isNotEmpty>	
+				      <isNotEmpty property="src_prod_nm" prepend="AND"> 
+						   	<!-- 제품명 --> 
+						   	PROD_NM  like '%'||#src_prod_nm#||'%'
+				      </isNotEmpty>	 
+				      <isNotEmpty property="src_title" prepend="AND"> 
+						   	<!-- 제목 --> 
+						   	APP_TITLE  like '%'||#src_title#||'%'
+				      </isNotEmpty>	 
+				      <isNotEmpty property="src_contents" prepend="AND"> 
+						   	<!-- 내용 --> 
+						   	APP_CONTENTS  like '%'||#src_contents#||'%'
+				      </isNotEmpty>	        
+				      
+				      <isNotEmpty property="mainSrc" prepend="AND">   
+					   	<isNotEqual property="groups" compareValue="G006">
+						   	<isNotEqual property="groups" compareValue="G005">
+						   			TECH_SUP_STATUS_CODE_NM  = '수행'
+						   	</isNotEqual> 
+					   	</isNotEqual> 
+				      </isNotEmpty>
+				     
+				      <!-- 주의 수정 할것 2010.11.02  by ibyo -->
+				      <isNotEmpty property="mainSrc" prepend="AND">   
+					   	<isEqual property="groups" compareValue="G005">
+					   		TECH_SUP_STATUS_CODE_NM  = '요청'
+					   	</isEqual> 
+					   	<isEqual property="groups" compareValue="G006">
+					   		TECH_SUP_STATUS_CODE_NM  = '요청'
+					   	</isEqual> 
+				      </isNotEmpty>
+				      
+				      
+				      	<isNotEmpty property="src_app_s" prepend="AND">  
+							TO_CHAR(CR_DATE2, 'YYYY-MM-DD') <![CDATA[>=]]> #src_app_s#
+						</isNotEmpty>
+						
+						<isNotEmpty property="src_app_e" prepend="AND">  
+							TO_CHAR(CR_DATE2, 'YYYY-MM-DD') <![CDATA[<=]]> #src_app_e#
+						</isNotEmpty>
+				      
+				    	ORDER BY CR_DATE DESC 	
+				    		
+				) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#  
+    	
+    	
+	</select>
+    
+    
+    <select id="getTechsupAppView" resultClass="HashMap" > 
+    	SELECT 
+					TECH_SUP_APP_NO, 
+					PJT_NO, 
+                    (SELECT PJT_NAME FROM PJT P WHERE P.PJT_NO = T.PJT_NO) AS PJT_NM, 
+					APP_NM, 
+					SUBSTR(ST_ABOUT_DATE,1,4)||'-'||SUBSTR(ST_ABOUT_DATE,5,2)||'-'||SUBSTR(ST_ABOUT_DATE,7,2) AS ST_ABOUT_DATE,
+					SUBSTR(END_ABOUT_DATE,1,4)||'-'||SUBSTR(END_ABOUT_DATE,5,2)||'-'||SUBSTR(END_ABOUT_DATE,7,2) AS END_ABOUT_DATE,
+					END_ABOUT_DATE, 
+					APP_REC_DATE,
+					APP_TITLE, 
+					APP_CONTENTS, 
+					CONTENTS,  
+					T.CR_DATE, 
+					APP_HP, 
+					APP_EMAIL, 
+					T.USE_YN,
+					T.UP_DATE,
+					T.CHMAN_NO,
+					(SELECT CHMAN_NM FROM CHMAN P WHERE P.CHMAN_NO = T.CHMAN_NO) AS SG_CHMAN_NM,
+					NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='DEPT_CODE' AND CODE = C.DEPT_CODE),'코드값없음') DEPT_CODE_NM,
+					(SELECT  
+                            MAX(DECODE(PC.CHMAN_SECT_CODE,'2',  '[' ||  CORP_NM || '] ' || '  ' || ADDR1 || '  ' ||'(tel:'|| REP_PHONE ||')' )) 
+                        FROM PJT_CHMAN PC, CHMAN CN, CORP CP 
+                        WHERE PJT_NO = T.PJT_NO 
+                          AND PC.CHMAN_NO = CN.CHMAN_NO 
+                          AND CN.CORP_NO=CP.CORP_NO
+                        GROUP BY PJT_NO
+                    ) CL_CORP_NM,
+                    (SELECT  
+                            MAX(DECODE(PC.CHMAN_SECT_CODE,'2', CP.CORP_NO )) 
+                        FROM PJT_CHMAN PC, CHMAN CN, CORP CP 
+                        WHERE PJT_NO = T.PJT_NO 
+                          AND PC.CHMAN_NO = CN.CHMAN_NO 
+                          AND CN.CORP_NO=CP.CORP_NO
+                        GROUP BY PJT_NO
+                    ) CL_CORP_NO,
+                    NVL((SELECT COUNT(*) FROM TECH_SUP TS WHERE TS.TECH_SUP_APP_NO = T.TECH_SUP_APP_NO),0) AS TECH_SUP_APP_CNT,
+                    (SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='TECH_SUP_TRAN_TYPE_CODE' AND T.TECH_SUP_TRAN_TYPE_CODE = CODE) AS SUP_METHOD, 
+					(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='TECH_SUP_TYPE_CODE' AND T.TECH_SUP_TYPE_CODE = CODE) AS SUP_TYPE,
+					T.TECH_SUP_TRAN_TYPE_CODE,
+					T.TECH_SUP_TYPE_CODE
+				FROM TECH_SUP_APP T, CHMAN C
+		 WHERE T.TECH_SUP_APP_NO  =  #tech_sup_app_no#
+               AND T.chman_no = C.CHMAN_NO(+)
+    	
+	</select>
+        
+    
+    
+    <!--  목록  S-->
+    <select id="selectTechsupList" resultClass="HashMap">	 
+    	SELECT * FROM 
+		(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+			(SELECT 
+					CORP_NM,  
+					REP_PHONE,
+					REP_FAX,  
+					ADDR1||' '||ADDR2 as ADDR,
+					CORP_NO,
+					USE_YN
+			FROM CORP	
+			WHERE (USE_YN = 'Y' 
+					OR #groups# = 'G004')
+					
+			<isNotEmpty property="keyword" prepend="AND">
+			   	<isEqual property="key" compareValue="001">
+			   		CORP_NM like '%'||#keyword#||'%'  
+			   	</isEqual> 
+	        </isNotEmpty>	 
+	        
+			 <isNotEmpty property="sortKey" prepend="">
+	        	ORDER BY $sortKey$
+			   	<isEqual property="sort" compareValue="1">
+			   		ASC
+			   	</isEqual> 
+			   	<isEqual property="sort" compareValue="2">
+			   		DESC
+			   	</isEqual>
+	        </isNotEmpty>    
+	     	
+	     	<isEmpty property="sortKey">
+	        	ORDER BY CORP_NO ASC
+	        </isEmpty> 
+							
+			) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#  
+		
+		
+
+		
+    </select>
+    <!--  목록  E-->
+     
+     <select id="supPjtListCount" resultClass="Int">				
+		SELECT COUNT(TECH_SUP_NO) FROM (	
+			SELECT 
+                   TECH_SUP_NO, 
+                   (SELECT  MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM||'('||CHMAN_HP||')')) FROM TECH_SUP_CHMAN TSC, CHMAN C WHERE TSC.TECH_SUP_APP_NO = TS.TECH_SUP_APP_NO AND TSC.CHMAN_NO = C.CHMAN_NO GROUP BY TECH_SUP_APP_NO) SG_CHMAN,
+                    ST_DATE, 
+                    CR_DATE, 
+                    UP_DATE, 
+                    TECH_SUP_TYPE_CODE, 
+                    TECH_SUP_TRAN_TYPE_CODE, 
+                    CUSTOMER_DEMAND, 
+                    TECH_SUP_NEC_TIME, 
+                    END_DATE, 
+                    CUSTOMER_SUP_CONTENTS, 
+                    TRAN_RESULT, 
+                    REVISIT_EXP_DATE, 
+                    PAY_YN, 
+                    PAYPRICE,
+                    LOC,
+                    TECH_SUP_EMAIL,
+                    TECH_SUP_PHONE,
+                    TECH_SUP_IP_ADDR,
+                    TECH_SUP_APP_NO,
+                    CHMAN_NO,
+                    TECH_SUP_HP,
+                    TECH_SUP_RESULT_CODE,
+                    USE_YN
+                    FROM TECH_SUP TS
+			WHERE TECH_SUP_APP_NO = #tech_sup_app_no#     	 	 
+		)
+        
+    </select>
+   
+    <select id="supPjtList" resultClass="HashMap"> 
+		SELECT * FROM 
+		(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+			(SELECT 
+                   TECH_SUP_NO, 
+                   (SELECT  MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM||'('||CHMAN_HP||')')) FROM TECH_SUP_CHMAN TSC, CHMAN C WHERE TSC.TECH_SUP_APP_NO = TS.TECH_SUP_APP_NO AND TSC.CHMAN_NO = C.CHMAN_NO GROUP BY TECH_SUP_APP_NO) SG_CHMAN,
+                    ST_DATE, 
+                    CR_DATE, 
+                    UP_DATE, 
+                    TECH_SUP_TYPE_CODE, 
+                    TECH_SUP_TRAN_TYPE_CODE, 
+                    CUSTOMER_DEMAND, 
+                    TECH_SUP_NEC_TIME, 
+                    END_DATE, 
+                    CUSTOMER_SUP_CONTENTS, 
+                    TRAN_RESULT, 
+                    REVISIT_EXP_DATE, 
+                    PAY_YN, 
+                    PAYPRICE,
+                    LOC,
+                    TECH_SUP_EMAIL,
+                    TECH_SUP_PHONE,
+                    TECH_SUP_IP_ADDR,
+                    TECH_SUP_APP_NO,
+                    CHMAN_NO,
+                    TECH_SUP_HP,
+                    TECH_SUP_RESULT_CODE,
+                    USE_YN,
+                    (SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='TECH_SUP_RESULT_CODE' AND TS.TECH_SUP_RESULT_CODE = CODE) AS SUP_RESULT, 
+					(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='TECH_SUP_TRAN_TYPE_CODE' AND TS.TECH_SUP_TRAN_TYPE_CODE = CODE) AS SUP_METHOD, 
+					(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='TECH_SUP_TYPE_CODE' AND TS.TECH_SUP_TYPE_CODE = CODE) AS SUP_TYPE,
+					
+					(SELECT  C.CHMAN_NM FROM CHMAN C WHERE TS.CHMAN_NO = C.CHMAN_NO ) SG
+					
+                    FROM TECH_SUP TS 
+			WHERE TECH_SUP_APP_NO = #tech_sup_app_no#   		
+			<isNotEmpty property="sortKey" prepend="">
+	        	ORDER BY $sortKey$
+			   	<isEqual property="sort" compareValue="1">
+			   		ASC
+			   	</isEqual> 
+			   	<isEqual property="sort" compareValue="2">
+			   		DESC
+			   	</isEqual>
+	        </isNotEmpty>    
+	     	
+	     	<isEmpty property="sortKey">
+	        	ORDER BY CR_DATE ASC
+	        </isEmpty> 
+							
+			) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#   
+		 
+    </select>
+    
+    
+     <select id="techSupMaxSeq" resultClass="String">
+     	<!--select nvl(max(TO_NUMBER(SUBSTR(TECH_SUP_NO, 4))), 0) as TECH_SUP_MAX FROM TECH_SUP-->
+    	SELECT RETURN_NO('TECH_SUP') FROM DUAL
+    </select>
+    
+    
+    <!--  MASTER 등록  S-->
+	<insert id="insertTechsup" parameterClass="HashMap">
+      	INSERT INTO TECH_SUP ( 
+								TECH_SUP_NO, 
+								ST_DATE, 
+								CR_DATE, 
+								UP_DATE, 
+								TECH_SUP_TYPE_CODE, 
+								TECH_SUP_TRAN_TYPE_CODE, 
+								CUSTOMER_DEMAND, 
+								TECH_SUP_NEC_TIME, 
+								END_DATE, 
+								CUSTOMER_SUP_CONTENTS, 
+								TRAN_RESULT, 
+								REVISIT_EXP_DATE, 
+								PAY_YN, 
+								PAYPRICE,
+								LOC,
+								TECH_SUP_EMAIL,
+								TECH_SUP_PHONE,
+								TECH_SUP_IP_ADDR,
+								TECH_SUP_APP_NO,
+								CHMAN_NO,
+								TECH_SUP_HP,
+								TECH_SUP_RESULT_CODE,
+								USE_YN
+							)
+						VALUES ( 
+								#tech_sup_no#,     
+								TO_DATE(#st_date#, 'yyyy-MM-dd HH24:mi:ss'),
+								sysdate, 
+								sysdate, 
+								#tech_sup_type_code#, 
+								#tech_sup_tran_type_code#, 
+								#customer_demand#, 
+								#tech_sup_nec_time#, 
+								TO_DATE(#end_date#, 'yyyy-MM-dd HH24:mi:ss'),
+								#customer_sup_contents#, 
+								#tran_result#, 
+								TO_DATE(#revisit_exp_date#, 'yyyy-MM-dd HH24:mi:ss'),
+								#pay_yn#, 
+								#payprice#,
+								#loc#,
+								#tech_sup_email#,
+								#tech_sup_phone#,
+								#tech_sup_ip_addr#,
+								#tech_sup_app_no#,
+								#chman_no#,
+								#tech_sup_hp#,
+								#tech_sup_result_code#,
+								#use_yn#
+							) 
+    </insert> 
+    <!--  MASTER 등록  E-->
+    
+    <insert id="insertTechsupSubmit" parameterClass="HashMap">
+      	INSERT INTO TECH_SUP_SUBMIT ( 
+							TECH_SUP_NO,
+							CHMAN_NO,
+							SEQ,
+							SUBMIT_YN,
+							SUBMIT_DATE )
+		VALUES ( 							 
+					#tech_sup_no#,
+					#chman_no#,
+					#seq#,
+					#submit_yn#,
+					sysdate
+  				)
+       
+    </insert>
+    <insert id="insertTechsupChman" parameterClass="HashMap">
+      	 	INSERT INTO  TECH_SUP_CHMAN ( 
+											CHMAN_NO,
+											CR_DATE,
+											CHMAN_SECT_CODE,
+											TECH_SUP_APP_NO,
+											MATCH_YN
+											)
+				VALUES (
+											#dev_chman_no#,
+											sysdate,
+											(SELECT chman_sect_code FROM CHMAN WHERE chman_no = #dev_chman_no#),
+											#tech_sup_app_no#,
+											#match_yn#
+					)
+					 
+    </insert> 
+    
+     <!--  수정 S-->
+	<update id="updateTechStatus" parameterClass="HashMap">
+	 		UPDATE TECH_SUP_SEQ_STATUS SET  
+	 							REJECT_YN = #reject_yn#
+	 		WHERE 	SEQ  =  #seq#
+	 		
+	</update>
+    
+    <delete id="TechsupChmanDelete" parameterClass="HashMap">
+	 	DELETE FROM TECH_SUP_CHMAN WHERE TECH_SUP_NO  =  #tech_sup_no#
+	</delete>
+    
+    
+	<select id="techSupappMax" resultClass="String">
+    	SELECT RETURN_NO('TECH_SUP_APP') FROM DUAL
+    </select>
+    
+    <insert id="techsupAppInsert" parameterClass="HashMap">
+     	 			  
+		INSERT INTO TECH_SUP_APP ( 
+					TECH_SUP_APP_NO, 
+					PJT_NO, 
+					APP_NM, 
+					APP_REC_DATE, 
+					ST_ABOUT_DATE, 
+					END_ABOUT_DATE, 
+					APP_TITLE, 
+					APP_CONTENTS, 
+					CONTENTS, 
+					CR_DATE, 
+					APP_HP, 
+					APP_EMAIL, 
+					USE_YN,
+					UP_DATE,
+					CHMAN_NO,
+					TECH_SUP_TRAN_TYPE_CODE,
+					TECH_SUP_TYPE_CODE
+					)
+		VALUES ( 
+					#tech_sup_app_no#,
+					#pjt_no#, 
+					#app_nm#, 
+					#app_rec_date#, 
+					#st_about_date#, 
+					#end_about_date#, 
+					#app_title#, 
+					#app_contents#, 
+					#contents#, 
+					sysdate, 
+					#app_hp#, 
+					#app_email#, 
+					'Y',
+					sysdate,
+					#chman_no#,
+					#tech_sup_tran_type_code#,
+					#tech_sup_type_code#
+  				)
+		      	 
+    </insert> 
+    
+    
+    <insert id="insertTechsupProd" parameterClass="HashMap">
+     	 			  
+		INSERT INTO TECH_SUP_PROD ( 
+					TECH_SUP_NO,
+					PROD_NO,
+					SEQ,
+					CR_DATE )
+		VALUES ( 
+							 
+					#tech_sup_no#,
+					#prod_no#,
+					#seq#,
+					sysdate
+  				)
+		      	 
+    </insert> 
+     <delete id="TechsupProdDelete" parameterClass="HashMap">
+	 	DELETE FROM TECH_SUP_PROD WHERE TECH_SUP_NO  =  #tech_sup_no#
+	</delete>
+    
+    <insert id="insertTechsupTypeEtc" parameterClass="HashMap">
+    
+   	 	INSERT INTO TECH_SUP_TYPE_ETC ( 
+					TECH_SUP_NO,
+					TYPE_ETC_NAME
+					)
+		VALUES ( 
+					#tech_sup_no#,
+					#type_etc_name#
+  				) 
+    </insert>
+    <delete id="TechsupTypeEtcDelete" parameterClass="HashMap">
+	 	DELETE FROM TECH_SUP_TYPE_ETC WHERE TECH_SUP_NO  =  #tech_sup_no#
+	</delete>
+     
+     
+     
+    <!--  수정 S-->
+	<update id="TechsupUpdate" parameterClass="HashMap">
+	 		
+	 		
+	 		UPDATE TECH_SUP SET  
+	 							ST_DATE = #st_date#,  
+								UP_DATE = sysdate, 
+								TECH_SUP_TYPE_CODE = #tech_sup_type_code#, 
+								TECH_SUP_TRAN_TYPE_CODE = #tech_sup_tran_type_code#, 
+								CUSTOMER_DEMAND = #customer_demand#, 
+								TECH_SUP_NEC_TIME = #tech_sup_nec_time#, 
+								END_DATE = #end_date#, 
+								CUSTOMER_SUP_CONTENTS = #customer_sup_contents#, 
+								TRAN_RESULT = #tran_result#, 
+								REVISIT_EXP_DATE = #revisit_exp_date#, 
+								PAY_YN = #pay_yn#, 
+								PAYPRICE = #payprice#,
+								LOC = #loc#,
+								TECH_SUP_EMAIL = #tech_sup_email#,
+								TECH_SUP_PHONE = #tech_sup_phone#,
+								TECH_SUP_IP_ADDR = #tech_sup_ip_addr#,
+								TECH_SUP_APP_NO = #tech_sup_app_no#, 
+								TECH_SUP_HP = #tech_sup_hp#,
+								TECH_SUP_RESULT_CODE = #tech_sup_result_code#,
+								USE_YN = #use_yn#
+	 		WHERE 	TECH_SUP_NO  =  #tech_sup_no#
+	 		
+	</update>
+	<!--  수정 E-->
+	
+	
+	
+	
+	<!--  삭제 S-->
+	<delete id="TechsupDelete" parameterClass="HashMap">
+	 	DELETE FROM TECH_SUP WHERE TECH_SUP_NO  =  #tech_sup_no#
+	</delete>
+	<!--  삭제 E-->
+	
+	
+	<!-- 첨부파일 등록  -->
+	 <delete id="delSupFile" parameterClass="HashMap">
+	 	DELETE FROM ADD_FILE_MNG WHERE  add_file_no  =  #add_file_no# 
+	</delete>
+    
+    <insert id="insSupFile" parameterClass="HashMap">
+    
+   	 	INSERT INTO ADD_FILE_MNG ( 
+								add_file_no	,
+								no          ,
+								file_path   ,
+								file_save_nm,
+								file_real_nm,
+								file_size   , 
+								cr_date     ,
+								chman_no      
+					)
+		VALUES ( 
+					(SELECT NVL(max(TO_NUMBER(add_file_no)), 0) + 1  from ADD_FILE_MNG ),
+					
+					#no#,             
+					#file_path#,      
+					#file_save_nm#,   
+					#file_real_nm#,   
+					#file_size#,   
+					sysdate,        
+					#chman_no#   
+  				) 
+    </insert>
+	
+	
+	 <select id="selSupFile" resultClass="HashMap" >
+    	SELECT 		ADD_FILE_NO,
+					NO,
+					FILE_PATH,
+					FILE_SAVE_NM,
+					FILE_REAL_NM,
+					FILE_SIZE,
+					UP_DATE,					 
+					CHMAN_NO,					
+					TO_CHAR(ST.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE, 
+					(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = ST.CHMAN_NO) CHMAN_NM
+		FROM ADD_FILE_MNG ST
+		WHERE  NO = #no#   
+        ORDER BY ADD_FILE_NO DESC
+    </select>
+	
+	
+	 <select id="DownselSupFile" resultClass="DownloadFileBean" >
+    	SELECT 		ADD_FILE_NO,
+					NO,
+					FILE_PATH as filePath,
+					FILE_SAVE_NM as saveFileName,
+					FILE_REAL_NM as viewFileName,
+					FILE_SIZE,
+					UP_DATE,
+					CR_DATE,
+					CHMAN_NO
+		FROM ADD_FILE_MNG
+		WHERE  NO = #no_key#  
+		   <isNotEmpty property="add_file_no_key" prepend="AND">
+		   	ADD_FILE_NO = #add_file_no_key#  
+		   </isNotEmpty>
+        ORDER BY ADD_FILE_NO DESC
+        
+    </select>
+	
+	
+	<!--  상세 보기  S-->
+    <select id="selectTechsupView" resultClass="HashMap" >
+    	SELECT 
+                   TECH_SUP_NO, 
+                   (SELECT  MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM||'('||CHMAN_HP||')')) FROM TECH_SUP_CHMAN TSC, CHMAN C WHERE TSC.TECH_SUP_APP_NO = TS.TECH_SUP_APP_NO AND TSC.CHMAN_NO = C.CHMAN_NO GROUP BY TECH_SUP_APP_NO) SG_CHMAN,
+                    DECODE(PAY_YN,'Y','유상','무상') AS PAY_YN_NM,
+                    ST_DATE, 
+                    TO_CHAR(CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+                    TO_CHAR(UP_DATE, 'yyyy-MM-dd HH24:mi:ss') AS UP_DATE,
+                    TECH_SUP_TYPE_CODE,  
+                    TECH_SUP_TRAN_TYPE_CODE, 
+                    CUSTOMER_DEMAND, 
+                    TECH_SUP_NEC_TIME, 
+                    END_DATE, 
+                    CUSTOMER_SUP_CONTENTS, 
+                    TRAN_RESULT, 
+                    REVISIT_EXP_DATE, 
+                    PAY_YN, 
+                    PAYPRICE,
+                    LOC,
+                    TECH_SUP_EMAIL,
+                    TECH_SUP_PHONE,
+                    TECH_SUP_IP_ADDR,
+                    TECH_SUP_APP_NO,
+                    CHMAN_NO,
+                    TECH_SUP_HP,
+                    TECH_SUP_RESULT_CODE,
+                    USE_YN,
+                    (SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='TECH_SUP_RESULT_CODE' AND TS.TECH_SUP_RESULT_CODE = CODE) AS SUP_RESULT, 
+					(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='TECH_SUP_TRAN_TYPE_CODE' AND TS.TECH_SUP_TRAN_TYPE_CODE = CODE) AS SUP_METHOD, 
+					(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='TECH_SUP_TYPE_CODE' AND TS.TECH_SUP_TYPE_CODE = CODE) AS SUP_TYPE,
+					
+					(SELECT  C.CHMAN_NM FROM CHMAN C WHERE TS.CHMAN_NO = C.CHMAN_NO ) SG
+										
+                    FROM TECH_SUP TS
+			WHERE TECH_SUP_NO = #tech_sup_no#  
+    	 
+    </select>
+    <!--  상세 보기  E-->  
+
+   <!--  프로젝트 목록  -->
+    <select id="pjtListXML" resultClass="HashMap">	 
+		
+       SELECT 
+				P.PJT_NO, 
+				P.PJT_NAME,
+				(SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'1',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_NM1,
+				(SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_NM2,
+				(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='PJT_STATUS_CODE' AND CODE = P.PJT_STATUS_CODE) AS PJT_STATUS,
+				(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='WORK_TYPE_CODE' AND CODE = TO_NUMBER(NVL(P.WORK_TYPE_CODE, '0'))) AS WORK_TYPE_CODE_NM,
+				P.USE_YN, 
+		         (	SELECT  
+		        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+		        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+					WHERE PJT_NO = P.PJT_NO 
+					  AND PC.CHMAN_NO = C.CHMAN_NO 
+				      AND C.CORP_NO=CP.CORP_NO
+				    GROUP BY PJT_NO
+				) CORP_NM,
+				 (	SELECT  
+		        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CP.CORP_NO)) 
+		        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+					WHERE PJT_NO = P.PJT_NO 
+					  AND PC.CHMAN_NO = C.CHMAN_NO 
+				      AND C.CORP_NO=CP.CORP_NO
+				    GROUP BY PJT_NO
+				) CORP_NO
+		        FROM PJT P 
+				WHERE  (P.USE_YN = 'Y')
+			
+			
+	</select>
+
+
+	 <!-- 프로젝트 목록 수 -->
+    <select id="selectPjtTotCount" resultClass="Int">				
+		 SELECT COUNT(*) 
+		 	FROM ( 
+					SELECT 
+					    P.PJT_NO, 
+					    P.PJT_NAME,
+					    P.PJT_ST_DATE,
+					    P.PJT_END_DATE,
+					    (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'1',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_NM1,
+					    (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_NM2,
+					    (SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='PJT_STATUS_CODE' AND CODE = P.PJT_STATUS_CODE) AS PJT_STATUS,
+					    (SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='WORK_TYPE_CODE' AND CODE = TO_NUMBER(NVL(P.WORK_TYPE_CODE, '0'))) AS WORK_TYPE_CODE_NM,
+									  
+					    P.CR_DATE,
+					    P.USE_YN, 
+					     (	SELECT  
+					            MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+					        FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+					        WHERE PJT_NO = P.PJT_NO 
+					          AND PC.CHMAN_NO = C.CHMAN_NO 
+					          AND C.CORP_NO=CP.CORP_NO
+					        GROUP BY PJT_NO
+					    ) CORP_NM,
+					     (	SELECT  
+					            MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CP.CORP_NO)) 
+					        FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+					        WHERE PJT_NO = P.PJT_NO 
+					          AND PC.CHMAN_NO = C.CHMAN_NO 
+					          AND C.CORP_NO=CP.CORP_NO
+					        GROUP BY PJT_NO
+					    ) CORP_NO 
+				    FROM PJT P 
+				    WHERE  (P.USE_YN = 'Y' 
+				            OR #groups# = 'G004')
+				)
+		 WHERE 1=1	 
+		<isNotEmpty property="keyword" prepend="AND">
+		   	<isEqual property="key" compareValue="001">
+		   		CORP_NM  like '%'||#keyword#||'%'  
+		   	</isEqual>  
+		   	<isEqual property="key" compareValue="002">
+		   		PJT_NAME like '%'||#keyword#||'%'  
+		   	</isEqual> 
+		   	<isEqual property="key" compareValue="003">
+		   		CHMAN_NM  like '%'||#keyword#||'%'  
+		   	</isEqual> 
+		</isNotEmpty>
+		
+		<isNotEmpty property="corp_no" prepend="AND">
+			CORP_NO = #corp_no#
+		</isNotEmpty>  
+		
+        
+    </select>
+
+
+   <!--  프로젝트 목록  -->
+    <select id="selectPjtList" resultClass="HashMap">	 
+		
+		SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+			(
+			
+				SELECT 
+				P.PJT_NO, 
+				P.PJT_NAME,
+				P.PJT_ST_DATE,
+				P.PJT_END_DATE,
+				(SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'1',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_NM1,
+				(SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_NM2,
+				(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='PJT_STATUS_CODE' AND CODE = P.PJT_STATUS_CODE) AS PJT_STATUS,
+				(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='WORK_TYPE_CODE' AND CODE = TO_NUMBER(NVL(P.WORK_TYPE_CODE, '0'))) AS WORK_TYPE_CODE_NM,
+				  
+		        P.CR_DATE,
+		        P.USE_YN, 
+		         (	SELECT  
+		        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+		        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+					WHERE PJT_NO = P.PJT_NO 
+					  AND PC.CHMAN_NO = C.CHMAN_NO 
+				      AND C.CORP_NO=CP.CORP_NO
+				    GROUP BY PJT_NO
+				) CORP_NM,
+				 (	SELECT  
+		        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CP.CORP_NO)) 
+		        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+					WHERE PJT_NO = P.PJT_NO 
+					  AND PC.CHMAN_NO = C.CHMAN_NO 
+				      AND C.CORP_NO=CP.CORP_NO
+				    GROUP BY PJT_NO
+				) CORP_NO
+		        
+		        
+				FROM PJT P 
+				WHERE  (P.USE_YN = 'Y' 
+						OR #groups# = 'G004')
+		  
+			
+       		<isNotEmpty property="sortKey" prepend="">
+	        	ORDER BY $sortKey$
+			   	<isEqual property="sort" compareValue="1">
+			   		ASC
+			   	</isEqual> 
+			   	<isEqual property="sort" compareValue="2">
+			   		DESC
+			   	</isEqual>
+	        </isNotEmpty>   
+	        
+	        <isEmpty property="sortKey">
+	        	ORDER BY CR_DATE DESC
+	        </isEmpty>
+			
+			) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#
+						<isNotEmpty property="keyword" prepend="AND">
+						   	<isEqual property="key" compareValue="001">
+						   		CORP_NM  like '%'||#keyword#||'%'  
+						   	</isEqual>  
+						   	<isEqual property="key" compareValue="002">
+						   		PJT_NAME like '%'||#keyword#||'%'  
+						   	</isEqual> 
+						   	<isEqual property="key" compareValue="003">
+						   		CHMAN_NM  like '%'||#keyword#||'%'  
+						   	</isEqual> 
+						</isNotEmpty> 
+						<isNotEmpty property="corp_no" prepend="AND">
+							CORP_NO = #corp_no#
+						</isNotEmpty>  
+			) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum# 
+	</select>
+    
+    <!--  프로젝트 목록  -->
+    <select id="selectPjtNo" resultClass="HashMap">	
+    	SELECT 
+			P.PJT_NO
+			FROM PJT P, PJT_CHMAN PC, CORP C ,CHMAN CH
+			WHERE PC.PJT_NO = P.PJT_NO
+			AND PC.CHMAN_NO = CH.CHMAN_NO
+			AND C.CORP_NO = CH.CORP_NO
+			AND C.CORP_NO = #corp_no#
+    
+    </select>
+
+	<!-- PJT 상세 보기 -->
+    <select id="selectPjtView" resultClass="HashMap" >
+    	 SELECT PJT_NAME, PJT_NO,
+    	#chman_no# as LCHMAN_NO,
+        CHMAN_NO,
+        (SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='CONT_TYPE_CODE' AND WORK_TYPE_CODE = CODE) AS CONT_TYPE_CODE_NM,
+		(SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'1',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_NM1,
+		(SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_NM2,
+		(SELECT  PC.CHMAN_NO FROM PJT_CHMAN PC WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_SECT_CODE = '1') CHMAN_NO1,
+        (SELECT  PC.CHMAN_NO FROM PJT_CHMAN PC WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_SECT_CODE = '2') CHMAN_NO2,
+        (SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='PJT_STATUS' AND CODE = P.PJT_STATUS_CODE) AS PJT_STATUS_NM,
+		(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='WORK_TYPE_CODE' AND CODE = to_number(P.WORK_TYPE_CODE)) AS WORK_TYPE_CODE_NM,
+		TO_CHAR(PJT_ST_DATE,'YYYY-MM-DD') AS PJT_ST_DATE,
+        TO_CHAR(PJT_END_DATE,'YYYY-MM-DD') AS PJT_END_DATE,
+		PJT_CONTENTS, PJT_STATUS_CODE,
+		to_number(WORK_TYPE_CODE) as WORK_TYPE_CODE,
+		P.USE_YN,
+		(SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_PHONE)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_PHONE,
+        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_HP)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_HP,
+		(SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_EMAIL)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CHMAN_EMAIL,
+		(SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NO)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = P.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CL_CORP_NO
+		FROM PJT P
+		 WHERE P.PJT_NO  =  #pjt_no#
+    	 
+    	 
+	</select>
+	
+	<select id="techSupPjtMax" resultClass="String">
+    	SELECT RETURN_NO('PJT') FROM DUAL
+    </select>
+
+   <!--  PJT 등록  S-->
+	<insert id="insertPjt" parameterClass="HashMap">
+      	INSERT INTO PJT ( 
+								PJT_NO,
+								PJT_NAME,
+								PJT_ST_DATE,
+								PJT_END_DATE,
+								PJT_STATUS_CODE,
+								CR_DATE,
+								WORK_TYPE_CODE,
+								PJT_CONTENTS,
+								CHMAN_NO,
+								USE_YN
+							)
+						VALUES ( 
+								#pjt_no#,
+								#pjt_name#,
+								#pjt_st_date#,
+								#pjt_end_date#,
+								#pjt_status#,
+								sysdate,
+								#work_type_code#,
+								#pjt_contents#,
+								#chman_no#,
+								'Y'
+							) 
+    </insert> 
+    
+   <!--  PJT chman 등록 -->
+	<insert id="insertPjtChman" parameterClass="HashMap">
+      	INSERT INTO PJT_CHMAN ( 
+      							PJT_NO,
+								CHMAN_NO,
+								CR_DATE,
+								CHMAN_SECT_CODE 
+							)
+						VALUES ( 
+								'PJT'||(select max(TO_NUMBER(SUBSTR(PJT_NO, 4))) FROM PJT),
+								#chman_no#,
+								sysdate,
+								#chman_sect_code# 
+								
+							) 
+    </insert> 
+    
+   <!--  PJT chman 수정 -->
+	<insert id="updatePjtChman" parameterClass="HashMap">
+      	UPDATE PJT_CHMAN
+			SET CHMAN_NO = #chman_no#
+			WHERE PJT_NO  =  #pjt_no#
+			AND CHMAN_SECT_CODE =#chman_sect_code#
+    </insert> 
+	 
+	 
+	<!--  PJT 수정-->
+	<update id="pjtUpdate" parameterClass="HashMap">
+	 		
+	 		UPDATE PJT
+	 				SET
+	 						PJT_NAME = #pjt_name#,
+							PJT_ST_DATE = #pjt_st_date#,
+							PJT_END_DATE = #pjt_end_date#,
+							PJT_STATUS_CODE = #pjt_status#,
+							WORK_TYPE_CODE = #work_type_code#,
+							PJT_CONTENTS = #pjt_contents#,
+							UP_DATE = sysdate
+				WHERE 	PJT_NO  =  #pjt_no#
+	 		
+	</update>
+	
+	<!--  삭제-->
+	<delete id="pjtDelete" parameterClass="HashMap">
+	 	DELETE FROM PJT WHERE PJT_NO  =  #pjt_no#
+	</delete>
+	 
+    
+    <!--  PJT memo 등록 -->
+	<insert id="insertPjtMemo" parameterClass="HashMap">
+      	INSERT INTO PJT_MEMO (
+      							SEQ,
+      							PJT_NO,
+								CHMAN_NO,
+								CONTENTS,
+								CR_DATE
+							)
+						VALUES ( 
+								(SELECT NVL(max(TO_NUMBER(SEQ)), 0)+1  from PJT_MEMO),
+						       	#pjt_no#,
+								#chman_no#,
+								#pjt_memo_contents#,
+								sysdate
+								
+							) 
+    </insert> 
+    
+	<!-- PJT MEMO 수정-->
+	<update id="pjtMemoUpdate" parameterClass="HashMap">
+	 		
+	 		UPDATE PJT_MEMO
+	 				SET
+	 				CONTENTS = #pjt_memo_contents#
+				WHERE 	SEQ  =  #memoSeq#
+					
+	 		
+	</update>
+	
+		
+	<!-- PJT MEMO 삭제-->
+	<delete id="pjtMemoDelete" parameterClass="HashMap">
+	 	DELETE FROM PJT_MEMO WHERE 1=1
+	 		<isNotEmpty property="pjt_no" prepend="AND">
+	 			PJT_NO  =  #pjt_no# 
+	 		</isNotEmpty>
+	 		<isNotEmpty property="memoSeq" prepend="AND">
+	 			SEQ  =  #memoSeq# 
+	 		</isNotEmpty>
+	</delete>
+	
+	<!-- PJT CHMAN 삭제-->
+	<delete id="pjtChmanDelete" parameterClass="HashMap">
+	 	DELETE FROM PJT_CHMAN WHERE 1=1
+	 		<isNotEmpty property="pjt_no" prepend="AND">
+	 			PJT_NO  =  #pjt_no# 
+	 		</isNotEmpty>
+	</delete>
+	
+	
+	<!--  PJT 삭제 -->
+	<update id="tjtUseDelete" parameterClass="HashMap">
+	 		UPDATE PJT
+	 				SET
+	 						USE_YN = #use_yn#,
+							UP_DATE = sysdate
+				WHERE 	PJT_NO  =  #pjt_no#
+	</update>
+	
+    <!-- 프로젝트 memo 목록 수 -->
+    <select id="selectPjtMemoCount" resultClass="Int">				
+		 SELECT count(PJT_NO) FROM  
+					PJT_MEMO
+					WHERE 	PJT_NO  =  #pjt_no#
+						
+	</select>
+	
+	   <!--  프로젝트 memo 정보 목록  S -->
+    <select id="selectPjtMemoList" resultClass="HashMap">	 
+		SELECT * FROM 
+		(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+			(SELECT SEQ,
+					PJT_NO, CHMAN_NO, CONTENTS, CR_DATE,
+					(SELECT CHMAN_NM FROM CHMAN C WHERE M.CHMAN_NO = C.CHMAN_NO) CHMAN_NM
+					FROM PJT_MEMO M
+                    WHERE PJT_NO = #pjt_no# 
+			) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#    
+ 
+    </select>
+	
+    
+
+   <!--  프로젝트 고객 환경 정보 목록  S -->
+    <select id="selectSupProdList" resultClass="HashMap">	 
+		SELECT * FROM 
+		(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize_prod#) PAGE,  VR_T1.* FROM 
+			(SELECT PSP.PROD_SEQ,
+					SETUP_SV_HOSTNAME,
+					SETUP_SV_IP,
+					(SELECT OS_NM ||' '||OS_VER FROM OS O WHERE O.OS_NO = PSP.SETUP_OS_NO) AS OS,
+					T1.SDK AS SDK, 
+					T1.WEB AS WEB,
+					T1.WAS AS WAS,
+					PSP.PROD_NO,
+					PSP.PJT_NO,
+					PSP.CNT,
+					(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='SV_OPER_CODE' AND PSP.SV_OPER_CODE = CODE) AS INS_TYPE    
+					 FROM PJT_SUP_PROD PSP,
+					 	(SELECT  OSS.PJT_NO,OSS.PROD_NO , 
+					 	 		 MAX(DECODE(CODE_NM,'SDK',SW_NM||' '||SW_VER,'')) AS SDK ,
+					 			 MAX(DECODE(CODE_NM,'WEB',SW_NM||' '||SW_VER,'')) AS WEB ,
+					 			 MAX(DECODE(CODE_NM,'WAS',SW_NM||' '||SW_VER,'')) AS WAS  
+							FROM OTHER_SW C , OTHER_SW_SETUP OSS, TOT_CODE_MNG TCM
+						 WHERE OSS.SW_NO = C.SW_NO
+							AND TCM.CODE_SECT ='SW_TYPE_CODE'
+							AND TCM.CODE = C.SW_TYPE_CODE 
+						GROUP BY OSS.PJT_NO,OSS.PROD_NO  ) T1
+					WHERE PSP.PJT_NO = T1.PJT_NO(+)
+					AND PSP.PROD_NO = T1.PROD_NO(+)
+					AND PSP.PJT_NO = #pjt_no# 
+					
+		       		<isNotEmpty property="sortKey" prepend="">
+			        	ORDER BY $sortKey$
+					   	<isEqual property="sort" compareValue="1">
+					   		ASC
+					   	</isEqual> 
+					   	<isEqual property="sort" compareValue="2">
+					   		DESC
+					   	</isEqual>
+			        </isNotEmpty>   
+			        
+			        <isEmpty property="sortKey">
+			        	ORDER BY PROD_SEQ DESC
+			        </isEmpty>
+					
+			) VR_T1 WHERE ROWNUM &lt;= #pageNum_prod# * #pageSize_prod#) VR_T2  
+		WHERE RNUM > 0 AND PAGE = #pageNum_prod#    
+ 
+    </select>
+	<!--  프로젝트 고객 환경 정보 목록  E -->
+	
+	<!--  프로젝트 고객 환경 정보 목록 count S -->
+    <select id="selectSupProdListCount" resultClass="Int">	 
+		 SELECT  
+		    count(SETUP_SV_HOSTNAME)
+			 FROM PJT_SUP_PROD PSP,
+			 	(SELECT  OSS.PJT_NO,OSS.PROD_NO , 
+			 	 		 MAX(DECODE(CODE_NM,'SDK',SW_NM||' '||SW_VER,'')) AS SDK ,
+			 			 MAX(DECODE(CODE_NM,'WEB',SW_NM||' '||SW_VER,'')) AS WEB ,
+			 			 MAX(DECODE(CODE_NM,'WAS',SW_NM||' '||SW_VER,'')) AS WAS  
+					FROM OTHER_SW C , OTHER_SW_SETUP OSS, TOT_CODE_MNG TCM
+				 WHERE OSS.SW_NO = C.SW_NO
+					AND TCM.CODE_SECT ='SW_TYPE_CODE'
+					AND TCM.CODE = C.SW_TYPE_CODE 
+				GROUP BY OSS.PJT_NO,OSS.PROD_NO  ) T1
+			WHERE PSP.PJT_NO = T1.PJT_NO
+			AND PSP.PROD_NO = T1.PROD_NO 
+			
+		<isNotEmpty property="pjt_no" prepend="AND">
+			PSP.PJT_NO = #pjt_no#
+        </isNotEmpty>
+			
+			
+    </select>
+	<!--  프로젝트 고객 환경 정보 목록 count  E -->
+
+   <!--  프로젝트 고객 환경 정보 View -->
+    <select id="selectSupProdView" resultClass="HashMap">	 
+		SELECT SETUP_SV_HOSTNAME,  PSP.PROD_SEQ,
+            PSP.SETUP_PATH,
+            PSP.CNT,
+            SETUP_SV_IP,
+            (SELECT OS_NM ||' '||OS_VER FROM OS O WHERE O.OS_NO = PSP.SETUP_OS_NO) AS OS,
+            SETUP_OS_NO as OS_NO,
+            T1.SDK_NM, 
+            T1.WEB_NM,
+            T1.WAS_NM,
+            T1.SDK AS SDK, 
+            T1.WEB AS WEB,
+            T1.WAS AS WAS,
+            T1.SDK_NO,
+            T1.WEB_NO,
+            T1.WAS_NO,
+            T1.SDK_PATH, 
+            T1.WEB_PATH,
+            T1.WAS_PATH,
+            (SELECT SET_FILE_PATH FROM SET_FILE_PATH SFP WHERE PSP.PROD_NO = SFP.PROD_NO AND PSP.PJT_NO = SFP.PJT_NO AND SET_FILE_CODE='1' AND ROWNUM=1) AS CAB_PATH,
+            (SELECT SET_FILE_PATH FROM SET_FILE_PATH SFP WHERE PSP.PROD_NO = SFP.PROD_NO AND PSP.PJT_NO = SFP.PJT_NO AND SET_FILE_CODE='2'AND ROWNUM=1) AS LIB_PATH,
+            (SELECT SET_FILE_PATH FROM SET_FILE_PATH SFP WHERE PSP.PROD_NO = SFP.PROD_NO AND PSP.PJT_NO = SFP.PJT_NO AND SET_FILE_CODE='3'AND ROWNUM=1) AS CONFIG_PATH,
+            (SELECT SET_FILE_PATH FROM SET_FILE_PATH SFP WHERE PSP.PROD_NO = SFP.PROD_NO AND PSP.PJT_NO = SFP.PJT_NO AND SET_FILE_CODE='4'AND ROWNUM=1) AS CERTIFICATION_PATH,
+            (SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='SV_OPER_CODE' AND PSP.SV_OPER_CODE = CODE) AS SV_OPER_CODE_NM,
+            SV_OPER_CODE,
+            (SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='PROD_USE_CODE' AND PSP.PROD_USE_CODE = CODE) AS PROD_USE_CODE_NM,
+            PROD_USE_CODE,
+            (SELECT PROD_NM FROM PROD P WHERE P.PROD_NO = PSP.PROD_NO) AS PROD_NM,
+            '' AS FILE_UPLOAD,
+            PSP.PROD_USE_ETC,   
+            PLP.LOG_PATH,
+            PLP.PROD_SEQ,
+            PSP.CHMAN_NO
+            FROM PJT_SUP_PROD PSP, 
+            PROD_LOG_PATH PLP,
+            (SELECT  OSS.PJT_NO,OSS.PROD_NO , 
+            MAX(DECODE(CODE_NM,'SDK',SW_NM,'')) AS SDK_NM ,MAX(DECODE(CODE_NM,'WEB',SW_NM,'')) AS WEB_NM ,MAX(DECODE(CODE_NM,'WAS',SW_NM,'')) AS WAS_NM,
+            MAX(DECODE(CODE_NM,'SDK',SW_NM||' '||SW_VER,'')) AS SDK ,MAX(DECODE(CODE_NM,'WEB',SW_NM||' '||SW_VER,'')) AS WEB ,MAX(DECODE(CODE_NM,'WAS',SW_NM||' '||SW_VER,'')) AS WAS  
+            ,MAX(DECODE(CODE_NM,'SDK',OSS.SW_NO,'')) AS SDK_NO ,MAX(DECODE(CODE_NM,'WEB',OSS.SW_NO,'')) AS WEB_NO ,MAX(DECODE(CODE_NM,'WAS',OSS.SW_NO,'')) AS WAS_NO 
+            ,MAX(DECODE(CODE_NM,'SDK',SW_SETUP_PATH,'')) AS SDK_PATH ,MAX(DECODE(CODE_NM,'WEB',SW_SETUP_PATH,'')) AS WEB_PATH ,MAX(DECODE(CODE_NM,'WAS',SW_SETUP_PATH,'')) AS WAS_PATH
+            FROM OTHER_SW C , OTHER_SW_SETUP OSS, TOT_CODE_MNG TCM
+            WHERE OSS.SW_NO = C.SW_NO
+            AND TCM.CODE_SECT ='SW_TYPE_CODE'
+            AND TCM.CODE = C.SW_TYPE_CODE
+            GROUP BY OSS.PJT_NO,OSS.PROD_NO  ) T1
+            WHERE PSP.PJT_NO = T1.PJT_NO(+)
+            AND PSP.PROD_NO = T1.PROD_NO(+)
+            AND PSP.PROD_NO = PLP.PROD_NO(+)
+            AND PSP.PJT_NO = PLP.PJT_NO(+)
+            AND PSP.PROD_SEQ = PLP.PROD_SEQ(+)
+            AND PSP.PROD_SEQ = #prod_seq#
+			  
+ 
+    </select>
+	
+
+   <!--  프로젝트 제품 정보 목록  S -->
+    <select id="selectProdList" resultClass="HashMap">
+    	SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+			   (  
+				SELECT  
+			        T3.CNT, T3.PJT_NO, T1.* FROM 
+					(SELECT RO.PROD_NO, 
+							PROD_NM ,
+							PROD_VER,
+							TO_CHAR(RELEASE_DATE,'YYYY-MM-DD') AS RELEASE_DATE,
+							(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='PROD_TYPE_CODE' AND P.PROD_TYPE_CODE = CODE) PROD_TYPE_CODE_NM,
+					        PROD_TYPE_CODE,
+							RECMD_CPU, 
+							RECMD_MEM, 
+							RECMD_DISK, 
+							RECMD_NIC,
+							O.OS_NM||'/'||O.OS_VER AS OS_INFO,
+							PROD_INTRO,
+							PROD_ABLE,
+							PROD_BROC,
+							PROD_MOD_CONTENTS
+						FROM PROD P, OS O, RECMD_OS RO
+						WHERE P.PROD_NO = RO.PROD_NO
+			          	AND O.OS_NO = RO.OS_NO
+			         ) T1,
+					PJT_SUP_PROD T3
+                
+				WHERE T3.PROD_NO(+) = T1.PROD_NO 
+				<!--  AND  T3.PJT_NO = #pjt_no#--> 
+				 ) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#
+			 ) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#   
+        
+        <isNotEmpty property="keyword" prepend="AND">
+		   	<isEqual property="key" compareValue="001">
+		   		PROD_NM like '%'||#keyword#||'%'  
+		   	</isEqual> 
+        </isNotEmpty>  
+    	ORDER BY PROD_NO DESC
+    </select>    
+    
+    
+   <select id="selectProdListCount" resultClass="Int">
+    	SELECT count(*) FROM (
+				SELECT  
+			        T3.CNT, T3.PJT_NO, T1.* FROM 
+					(SELECT RO.PROD_NO, 
+							PROD_NM ,
+							PROD_VER,
+							TO_CHAR(RELEASE_DATE,'YYYY-MM-DD') AS RELEASE_DATE,
+							(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='PROD_TYPE_CODE' AND P.PROD_TYPE_CODE = CODE) PROD_TYPE_CODE_NM,
+					        PROD_TYPE_CODE,
+							RECMD_CPU, 
+							RECMD_MEM, 
+							RECMD_DISK, 
+							RECMD_NIC,
+							O.OS_NM||'/'||O.OS_VER AS OS_INFO,
+							PROD_INTRO,
+							PROD_ABLE,
+							PROD_BROC,
+							PROD_MOD_CONTENTS
+						FROM PROD P, OS O, RECMD_OS RO
+						WHERE P.PROD_NO = RO.PROD_NO
+			          	AND O.OS_NO = RO.OS_NO
+			         ) T1,
+					PJT_SUP_PROD T3
+                
+				WHERE T3.PROD_NO(+) = T1.PROD_NO  
+				 
+				<isNotEmpty property="keyword" prepend="AND">
+				   	<isEqual property="key" compareValue="001">
+				   		PROD_NM like '%'||#keyword#||'%'  
+				   	</isEqual> 
+		        </isNotEmpty>  
+		)  
+        
+       
+    
+    </select>    
+    
+    
+    <select id="selectProdListCountMain" resultClass="Int">
+    	SELECT count(*) FROM PROD   
+    </select>    
+    
+    <!--  고객환경 등록 -->
+	<insert id="insertPjtSupProd" parameterClass="HashMap">
+      	INSERT INTO PJT_SUP_PROD ( 
+      						PROD_SEQ,
+      						PROD_NO,
+							PJT_NO,
+							SETUP_PATH,
+							SETUP_SV_HOSTNAME,
+							SETUP_SV_IP,
+							SERVICE_NM,
+							SETUP_OS_NO,
+							PROD_USE_ETC,
+							CNT,
+							SETUP_DATE,
+							PROD_USE_CODE,
+							SV_OPER_CODE,
+							CHMAN_NO,
+							CR_DATE
+							)
+						VALUES ( 
+							#prod_seq#,
+							#prod_no#,
+							#pjt_no#,
+							#setup_path#,
+							#setup_sv_hostname#,
+							#setup_sv_ip#,
+							#service_nm#,
+							#setup_os_no#,
+							#prod_use_etc#,
+							#cnt#,
+							sysdate,
+							#prod_use_code#,
+							#sv_oper_code#,
+							#chman_no#,
+							sysdate
+							) 
+    </insert> 
+    
+    
+    <!-- 고객환경 수정-->
+	<update id="updatePjtSupProd" parameterClass="HashMap">
+	 			
+	 		UPDATE PJT_SUP_PROD
+	 				SET
+	 					<!-- PROD_NO = #prod_no#, -->
+						SETUP_PATH = #setup_path#,
+						SETUP_SV_HOSTNAME = #setup_sv_hostname#,
+						SETUP_SV_IP = #setup_sv_ip#,
+						SERVICE_NM = #service_nm#,
+						SETUP_OS_NO = #setup_os_no#,
+						PROD_USE_ETC = #prod_use_etc#,
+						CNT = #cnt#,
+						PROD_USE_CODE = #prod_use_code#,
+						SV_OPER_CODE = #sv_oper_code#,
+						UP_DATE = sysdate
+	 				
+				WHERE 	PROD_SEQ = #prod_seq#
+					
+	 		
+	</update>
+    
+   <!-- 고객환경 삭제-->
+	<delete id="deletePjtSupProd" parameterClass="HashMap">
+	 	DELETE FROM PJT_SUP_PROD
+	 		WHERE 	PROD_NO = #prod_no#
+					<isNotEmpty property="pjt_no" prepend="AND">
+			 			PJT_NO = #pjt_no#  
+			 		</isNotEmpty>
+					<isNotEmpty property="prod_seq" prepend="AND">
+			 			PROD_SEQ = #prod_seq#  
+			 		</isNotEmpty>
+	</delete>
+	
+	
+	
+	<!--  제품로그경로 등록 -->
+	<insert id="insertProdLogPath" parameterClass="HashMap">
+      	INSERT INTO PROD_LOG_PATH ( 
+      						PROD_SEQ,
+      						PROD_NO,
+							PJT_NO,
+							SEQ,
+							LOG_PATH,
+							CR_DATE	
+							)
+						VALUES ( 
+							#prod_seq#,
+							#prod_no#,
+							#pjt_no#,
+							(SELECT NVL(max(TO_NUMBER(SEQ)), 0)+1  from PROD_LOG_PATH),
+							#log_path#,
+							sysdate
+							) 
+    </insert> 
+    
+    <!-- 제품로그경로 수정-->
+	<update id="updateProdLogPath" parameterClass="HashMap">
+	 		UPDATE PROD_LOG_PATH
+	 				SET
+	 					PROD_NO = #prod_no#,
+	 					LOG_PATH = #log_path#
+	 			WHERE 	SEQ = #seq#
+	</update>
+	
+	<!-- 제품로그경로 삭제-->
+	<delete id="deleteProdLogPath" parameterClass="HashMap">
+	 	DELETE FROM PROD_LOG_PATH
+	 		WHERE 	PROD_NO = #prod_no#
+					AND	PJT_NO = #pjt_no#
+					AND PROD_SEQ = #prod_seq#
+					<isNotEmpty property="seq" prepend="AND">
+			 			SEQ = #seq#  
+			 		</isNotEmpty>
+	</delete>
+	
+	
+	<!--  기타SW 설치 등록 -->
+	<insert id="insertOtherSwSetup" parameterClass="HashMap">
+      	INSERT INTO OTHER_SW_SETUP ( 
+      						PROD_SEQ,
+      						SW_NO,
+							PROD_NO,
+							PJT_NO,
+							SW_SETUP_PATH,
+							CR_DATE
+							)
+						VALUES ( 
+							#prod_seq#,
+							#sw_no#,
+							#prod_no#,
+							#pjt_no#,
+							#sw_setup_path#,
+							sysdate
+							) 
+    </insert> 
+    
+    <!-- 기타SW 설치 수정-->
+	<update id="updateOtherSwSetup" parameterClass="HashMap">
+	 		
+	 		UPDATE OTHER_SW_SETUP
+	 				SET
+	 					SW_SETUP_PATH = #sw_setup_path#,
+	 					SW_NO = #sw_no#
+					WHERE 	PJT_NO = #pjt_no#
+						AND	PROD_NO = #prod_no#
+						AND PROD_SEQ = #prod_seq#
+						AND SW_NO = #o_sw_no#
+						
+	</update>
+	
+	<!-- 기타SW 설치 삭제-->
+	<delete id="deleteOtherSwSetup" parameterClass="HashMap">
+	 	DELETE FROM OTHER_SW_SETUP
+					WHERE 	SW_NO = #sw_no#
+						AND	PJT_NO = #pjt_no#
+						AND	PROD_NO = #prod_no#
+						AND PROD_SEQ = #prod_seq#
+						
+	</delete>
+	
+	<!-- SO 정보  -->
+	<select id="getOsList" resultClass="HashMap">
+        SELECT 	*
+		FROM OS
+         ORDER BY OS_NM ASC
+    </select>
+  
+  	<!-- 기타 SW 정보  -->
+	<select id="getOtherSwList" resultClass="HashMap">
+        SELECT * FROM OTHER_SW
+            WHERE SW_TYPE_CODE = #sw_type_code#
+    </select>  
+    
+    
+    
+   <!--  설정파일 경로 등록 -->
+	<insert id="insertSetFilePath" parameterClass="HashMap">
+      	INSERT INTO SET_FILE_PATH ( 
+      						PROD_SEQ,
+      						PROD_NO, 
+      						PJT_NO,
+							SET_FILE_PATH,
+							CR_DATE,
+							SET_FILE_CODE
+							)
+						VALUES ( 
+							#prod_seq#,
+							#prod_no#,
+							#pjt_no#,
+							#set_file_path#,
+							sysdate,
+							#set_file_code#) 
+    </insert> 
+    
+    <!-- 설정파일 경로 수정-->
+	<update id="updateSetFilePath" parameterClass="HashMap">
+	 		
+	 		UPDATE SET_FILE_PATH
+	 				SET
+	 					PROD_NO = #prod_no#,
+						SET_FILE_PATH = #set_file_path#
+					WHERE 	
+							PROD_SEQ = #prod_seq#
+						AND SET_FILE_CODE = #set_file_code#
+						
+	</update>
+	
+	<!-- 설정파일 경로 삭제-->
+	<delete id="deleteSetFilePath" parameterClass="HashMap">
+	 	DELETE FROM SET_FILE_PATH
+					WHERE 	PROD_NO = #prod_no#
+      					AND	PJT_NO = #pjt_no#
+						AND	PROD_SEQ = #prod_seq#
+						AND SET_FILE_CODE = #set_file_code#
+	</delete>
+	
+	
+	<select id="techSupProdMaxSeq" resultClass="Int">
+    	SELECT NVL(max(TO_NUMBER(PROD_SEQ)), 0) + 1 AS TECH_SUP_MAX FROM PJT_SUP_PROD
+    </select>
+
+	<!--  **************************계약정보  Start************************** -->
+	 <select id="dealPjtMaxSeq" resultClass="String">
+    	select NVL(max(TO_NUMBER(SUBSTR(CONT_NO, 4))), 0) as DEAL_PJT_MAX FROM CONTRACT
+    </select>
+	
+	<select id="selectDealPjtCount" resultClass="Int">
+        select count(*) from (
+        
+        	SELECT    
+				    C.CONT_NO
+					FROM
+					CONTRACT C, 
+					(SELECT CP.CONT_NO, P.PROD_NM, P.PROD_VER, CP.CNT FROM  CONT_PROD CP , PROD P
+					WHERE CP.PROD_NO = P.PROD_NO) T1
+			WHERE 	C.CONT_NO = T1.CONT_NO
+					<isNotEmpty property="corp_no" prepend="AND">
+						C.NEED_CORP_NO = #corp_no#
+		        	</isNotEmpty> 
+        )
+    </select>
+	
+	<select id="selectDealPjtList" resultClass="HashMap">
+       SELECT * FROM 
+		(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+			
+			(SELECT 
+					 
+        			CHMAN_NO,
+				    C.CONT_NO AS CONT_NO,
+					(SELECT  MAX(DECODE(CC.CHMAN_SECT_CODE,'1',CHMAN_NM)) FROM CONT_CHMAN CC, CHMAN C WHERE CC.CHMAN_NO = C.CHMAN_NO AND CC.CONT_NO = C.CONT_NO GROUP BY CONT_NO) SG,
+					(SELECT  MAX(DECODE(CC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM CONT_CHMAN CC, CHMAN C WHERE CC.CHMAN_NO = C.CHMAN_NO AND CC.CONT_NO = C.CONT_NO GROUP BY CONT_NO) CU,
+			
+					T1.PROD_NM,
+					T1.PROD_VER,
+					TO_CHAR(CONT_DATE,'YYYY-MM-DD')  AS CONT_DATE,
+					C.USE_YN
+					FROM
+					CONTRACT C, 
+					(SELECT CP.CONT_NO, P.PROD_NM, P.PROD_VER, CP.CNT FROM  CONT_PROD CP , PROD P
+					WHERE CP.PROD_NO = P.PROD_NO) T1
+			WHERE 	(USE_YN = 'Y' 
+					OR #groups# = 'G004')
+					AND C.CONT_NO = T1.CONT_NO
+					AND C.NEED_CORP_NO = #need_corp_no#
+					AND C.PJT_NO = #pjt_no#
+		    <isNotEmpty property="keyword" prepend="AND">
+			   	<isEqual property="key" compareValue="001">
+			   		CONT_NM like '%'||#keyword#||'%'  
+			   	</isEqual> 
+	        </isNotEmpty>
+	        
+       		<isNotEmpty property="sortKey" prepend="">
+	        	ORDER BY $sortKey$
+			   	<isEqual property="sort" compareValue="1">
+			   		ASC
+			   	</isEqual> 
+			   	<isEqual property="sort" compareValue="2">
+			   		DESC
+			   	</isEqual>
+	        </isNotEmpty>   
+	        
+	        <isEmpty property="sortKey">
+	        	ORDER BY CONT_DATE DESC
+	        </isEmpty>
+	          					 
+			) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2  
+		WHERE RNUM > 0 AND PAGE = #pageNum#    
+    </select>
+	
+	<insert id="dealPjtInsert" parameterClass="HashMap"> 
+	 		 
+			INSERT INTO CONTRACT ( 
+										CONT_NO			,
+										SUP_CORP_NO     ,
+										NEED_CORP_NO    ,
+										CONT_NM         ,
+										CONT_DATE       ,
+										ST_DATE         ,
+										CR_DATE         ,
+										CONT_TYPE_CODE  ,
+										END_DATE        ,
+										PJT_NO          ,
+										cont_contents,
+										CHMAN_NO,
+										USE_YN,
+										UP_DATE
+									)
+				VALUES(		 
+								(SELECT RETURN_NO('CONTRACT') FROM DUAL),
+								#sup_corp_no#     ,
+								#need_corp_no#    ,
+								#cont_nm#         ,
+								TO_DATE(#cont_date#, 'yyyy-MM-dd HH24:mi:ss')       ,
+								#st_date#         ,
+								SYSDATE		      ,
+								#cont_type_code#  ,
+								#end_date#        ,
+								#pjt_no#		  ,
+								#cont_contents#	  ,
+								#chman_no#,
+								'Y',
+								sysdate
+					  )
+	</insert> 
+	<insert id="dealPjtChmanInsert" parameterClass="HashMap"> 
+	 		INSERT INTO CONT_CHMAN ( 
+									CONT_NO			,
+									CHMAN_NO        ,
+									CR_DATE         ,
+									CHMAN_SECT_CODE 
+								)
+					VALUES(		 
+								#cont_no#,
+								#chman_no#,
+								SYSDATE,
+								#chman_sect_code#
+					      ) 
+	</insert> 
+	<insert id="dealPjtProdInsert" parameterClass="HashMap"> 
+	 		 INSERT INTO CONT_PROD ( 
+										CONT_NO			,
+										PROD_NO         ,
+										CR_DATE         ,
+										CNT 
+									)
+					VALUES(		 
+								#cont_no#,
+								#prod_no#,
+								SYSDATE,
+								TO_NUMBER(#cnt#)
+							)
+ 
+	</insert> 
+	
+	<update id="dealPjtUpdate" parameterClass="HashMap"> 
+ 		 UPDATE CONTRACT SET   		
+					CONT_NM          = #cont_nm#        ,    
+					CONT_DATE        = TO_DATE(#cont_date#, 'yyyy-MM-dd HH24:mi:ss'),      
+					ST_DATE          = #st_date#        , 
+					CONT_TYPE_CODE   = #cont_type_code# ,      
+					END_DATE         = #end_date#  		,
+					cont_contents    = #cont_contents#,
+					PJT_NO          = #pjt_no#        , 
+					UP_DATE			 = sysdate
+		WHERE 	CONT_NO	 = #cont_no# 
+				<!-- AND SUP_CORP_NO      = #sup_corp_no# -->      
+				AND NEED_CORP_NO     = #need_corp_no#     			
+	</update>
+	
+	<delete id="dealPjtDelete" parameterClass="HashMap"> 
+	 	DELETE FROM CONTRACT	
+	 	WHERE 	CONT_NO	 = #cont_no#	  
+	</delete>
+	<delete id="dealPjtChmanDelete" parameterClass="HashMap"> 
+	 	DELETE FROM CONT_CHMAN	
+	 	WHERE 	CONT_NO	 = #cont_no#	
+			 
+	</delete>
+	<delete id="dealPjtProdDelete" parameterClass="HashMap"> 
+	 	DELETE FROM CONT_PROD	
+	 	WHERE 	CONT_NO	 = #cont_no#	  	 
+	</delete>
+	
+	<update id="dealPjtUseDelete" parameterClass="HashMap"> 
+ 		 UPDATE CONTRACT SET   		
+					USE_YN    = #use_yn#,
+					UP_DATE			 = sysdate
+		WHERE 	CONT_NO	 = #cont_no# 
+				<!-- AND SUP_CORP_NO      = #sup_corp_no# -->      
+				AND NEED_CORP_NO     = #need_corp_no#     			
+	</update>
+	
+		
+	<select id="selectDealPjtView" resultClass="HashMap">
+    SELECT
+        C.CONT_NO ,
+		T1.PROD_NO ,
+		(SELECT  MAX(DECODE(CC.CHMAN_SECT_CODE,'1',CHMAN_NM)) FROM CONT_CHMAN CC, CHMAN C WHERE CC.CHMAN_NO = C.CHMAN_NO AND CC.CONT_NO = C.CONT_NO GROUP BY CONT_NO) SG,
+		(SELECT  MAX(DECODE(CC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM CONT_CHMAN CC, CHMAN C WHERE CC.CHMAN_NO = C.CHMAN_NO AND CC.CONT_NO = C.CONT_NO GROUP BY CONT_NO) CU,
+		
+		(SELECT  MAX(DECODE(CC.CHMAN_SECT_CODE,'1',CC.CHMAN_NO)) FROM CONT_CHMAN CC, CHMAN C WHERE CC.CHMAN_NO = C.CHMAN_NO AND CC.CONT_NO = C.CONT_NO GROUP BY CONT_NO) SG_NO,
+		(SELECT  MAX(DECODE(CC.CHMAN_SECT_CODE,'2',CC.CHMAN_NO)) FROM CONT_CHMAN CC, CHMAN C WHERE CC.CHMAN_NO = C.CHMAN_NO AND CC.CONT_NO = C.CONT_NO GROUP BY CONT_NO) CU_NO,
+		C.PJT_NO,
+		(SELECT PJ.PJT_NAME FROM PJT PJ WHERE PJ.PJT_NO = C.PJT_NO) AS PJT_NM,
+		(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='CONT_TYPE_CODE' AND C.CONT_TYPE_CODE = CODE) AS CONT_TYPE_CODE_NM,
+		T1.PROD_NM,
+		T1.PROD_VER,
+		T1.PROD_TYPE,
+		T1.CNT,
+		C.ST_DATE,
+		C.END_DATE, 
+		C.CONT_CONTENTS,
+		TO_CHAR(CONT_DATE,'YYYY-MM-DD') AS CONT_DATE,
+		C.CONT_TYPE_CODE,
+		C.CONTRACT_PRICE,
+		C.CONT_CONTENTS,
+		C.USE_YN
+	FROM
+		CONTRACT C, 
+		(SELECT CP.CONT_NO, P.PROD_NM, P.PROD_VER, CP.CNT, P.PROD_NO,
+		(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='PROD_TYPE_CODE' AND P.PROD_TYPE_CODE = CODE) AS PROD_TYPE 
+		 FROM  CONT_PROD CP , PROD P
+		WHERE CP.PROD_NO = P.PROD_NO) T1
+	WHERE 	C.CONT_NO = T1.CONT_NO
+	    	<isNotEmpty property="need_corp_no" prepend="AND">
+			   	C.NEED_CORP_NO = #need_corp_no#
+	        </isNotEmpty>
+	        <isNotEmpty property="cont_no" prepend="AND">
+			   	C.CONT_NO=#cont_no#
+	        </isNotEmpty>
+	        <isNotEmpty property="pjt_no" prepend="AND">
+			   	C.PJT_NO=#pjt_no#
+	        </isNotEmpty>		
+         
+    </select>   
+    <!--  **************************계약정보  End************************** --> 
+
+    <insert id="insertTechStatus" parameterClass="HashMap">
+      	INSERT INTO TECH_SUP_SEQ_STATUS ( 
+      						TECH_SUP_APP_NO, 
+      						TECH_SUP_STATUS_CODE, 
+      						SEQ, 
+      						CR_DATE, 
+      						CONTENTS, 
+      						REJECT_YN, 
+      						REJECT_CONTENTS,
+      						CHMAN_NO
+      						)
+						VALUES ( 
+      						#tech_sup_app_no#, 
+      						#tech_sup_status_code#, 
+      						(SELECT NVL(max(TO_NUMBER(SEQ)), 0) + 1  from TECH_SUP_SEQ_STATUS ),
+      						sysdate, 
+      						#contents#, 
+      						#reject_yn#, 
+      						#reject_contents#,
+      						#chman_no#
+							) 
+    </insert> 
+
+
+
+    <select id="techAppStatus" resultClass="HashMap">
+    	SELECT * FROM
+		(
+	    	SELECT 
+	    			(SELECT CHMAN_NM FROM TECH_SUP_APP T, CHMAN C WHERE T.TECH_SUP_APP_NO = ST.TECH_SUP_APP_NO AND C.CHMAN_NO = T.CHMAN_NO) AS APP_NM,
+				    TECH_SUP_APP_NO,
+					TECH_SUP_STATUS_CODE, 
+					SEQ, 
+					TO_CHAR(CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE, 
+					CONTENTS, 
+					REJECT_YN, 
+					REJECT_CONTENTS,
+					CHMAN_NO
+					FROM TECH_SUP_SEQ_STATUS ST
+			WHERE TECH_SUP_APP_NO  =  #tech_sup_app_no#
+	    	 	<isNotEmpty property="tech_sup_status_code" prepend="AND">
+				   	TECH_SUP_STATUS_CODE = #tech_sup_status_code#
+		        </isNotEmpty>
+		 ORDER BY CR_DATE DESC
+        ) WHERE ROWNUM &lt; 2
+    	 	
+   	</select>
+
+	<!-- 개발담당자 --> 
+	<select  id="techSupChman" parameterClass="HashMap" resultClass="HashMap">
+		SELECT 
+            T.CHMAN_NO,
+            T.CR_DATE,
+            T.CHMAN_SECT_CODE,
+            T.TECH_SUP_APP_NO,
+            T.MATCH_YN,
+ 		  	C.CHMAN_NM,
+            NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='CHMAN_TYPE_CODE' AND CODE = C.CHMAN_TYPE_CODE),'코드값없음') CHMAN_TYPE_CODE,
+			C.CHMAN_NM AS CHMAN_NM,
+			NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='GRADE_CODE' AND CODE = C.GRADE_CODE),'코드값없음') GRADE_CODE,
+			NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='DEPT_CODE' AND CODE = C.DEPT_CODE),'코드값없음') DEPT_CODE
+		FROM TECH_SUP_CHMAN T, CHMAN C
+            WHERE T.CHMAN_NO(+) = C.CHMAN_NO
+            
+             <isNotEmpty property="tech_sup_app_no" prepend="AND">
+                 TECH_SUP_APP_NO  =  #tech_sup_app_no#
+             </isNotEmpty>
+	</select>
+
+    <delete id="deleteTechSupChman" parameterClass="HashMap">
+	 	DELETE FROM TECH_SUP_CHMAN
+ 		WHERE TECH_SUP_APP_NO = #tech_sup_app_no#
+	 		<isNotEmpty property="chman_no" prepend="AND">
+                 CHMAN_NO  =  #chman_no#
+            </isNotEmpty>
+	</delete>
+
+	<update id="techsupAppUpdate" parameterClass="HashMap">
+	 		
+	 		UPDATE TECH_SUP_APP
+				SET
+					PJT_NO = #pjt_no#, 
+					APP_NM = #app_nm#, 
+					APP_REC_DATE = #app_rec_date#, 
+					ST_ABOUT_DATE = #st_about_date#, 
+					END_ABOUT_DATE = #end_about_date#, 
+					APP_TITLE = #app_title#, 
+					APP_CONTENTS = #app_contents#, 
+					CONTENTS = #contents#, 
+					APP_HP = #app_hp#, 
+					APP_EMAIL = #app_email#,
+					UP_DATE = sysdate,
+					tech_sup_tran_type_code = #tech_sup_tran_type_code#,
+					tech_sup_type_code = #tech_sup_type_code#
+					
+				WHERE 	TECH_SUP_APP_NO  =  #tech_sup_app_no#
+					
+	 		
+	</update>
+	
+	
+	
+	
+	<!--  목록 수 S-->
+    <select id="selectTechsupAppTotCountMain1" resultClass="Int">				
+		
+						SELECT COUNT(TECH_SUP_APP_NO) FROM (
+								SELECT * FROM ( 
+													SELECT  TSA.TECH_SUP_APP_NO, 
+													        TSA.APP_TITLE,
+													        TSA.APP_CONTENTS,
+														        (	SELECT 
+														        		CODE_NM 
+														        	FROM TOT_CODE_MNG 
+														        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+														        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+														       	) AS TECH_SUP_STATUS_CODE_NM,
+													        	NVL((SELECT COUNT(*) FROM TECH_SUP TS WHERE TS.TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO),0) AS TECH_SUP_APP_CNT,
+													        TSA.APP_REC_DATE,
+													        TSA.APP_NM,
+													        NVL(PJ.PJT_NAME,'프로젝트없음') AS PJT_NAME,
+														        (	SELECT  
+														        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+														        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+														        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+														        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+														        		  AND TSC.MATCH_YN='Y' 
+														        	GROUP BY TECH_SUP_APP_NO
+														        ) AS TECH_SUP_APP_NM1,
+														        <!--
+														        (	SELECT  
+														        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'2',CHMAN_NM)) 
+														        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+														        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+														        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+														        	GROUP BY TECH_SUP_APP_NO
+														        ) AS TECH_SUP_APP_NM2,
+														        -->
+														         (	SELECT  
+															        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+															        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+															        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+															        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+															        		  AND TSC.MATCH_YN='N' 
+															        	GROUP BY TECH_SUP_APP_NO
+															        ) AS TECH_SUP_APP_NM2,
+													        SUBSTR(TSA.ST_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,7,2) AS ABOUT_DATE1,
+													        SUBSTR(TSA.END_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.END_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.END_ABOUT_DATE,7,2) AS ABOUT_DATE2,
+													        TSA.CR_DATE,
+													        C.CONT_NM,
+													        P.PROD_NM||' ('||CP.CNT||')' AS PROD_NM,
+													        
+													        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) PJT_CHMAN_NM,
+													        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NO)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CL_CORP_NO,
+													        (	SELECT  
+													        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+													        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+																WHERE PJT_NO = PJ.PJT_NO 
+																  AND PC.CHMAN_NO = C.CHMAN_NO 
+															      AND C.CORP_NO=CP.CORP_NO
+															    GROUP BY PJT_NO
+															) CL_CORP_NM
+													FROM
+												        TECH_SUP_APP TSA, 
+												        PJT PJ,
+												        CONTRACT C,
+												        CONT_PROD CP,
+												        PROD P,
+													   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+													WHERE TSA.PJT_NO = PJ.PJT_NO
+													      AND PJ.PJT_NO = C.PJT_NO(+)
+														  AND P.PROD_NO(+) = CP.PROD_NO
+														  AND C.CONT_NO = CP.CONT_NO(+)
+													      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+									  ) WHERE  	TECH_SUP_STATUS_CODE_NM = '수행'
+							      
+				)
+		
+	</select> 
+	  
+    <select id="getTechsupAppMain1" resultClass="HashMap">	 
+		SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+				(
+					
+					SELECT * FROM ( 
+									SELECT  TSA.TECH_SUP_APP_NO, PJ.PJT_NO,
+									        TSA.APP_TITLE,
+									        TSA.APP_CONTENTS,
+										        (	SELECT 
+										        		CODE_NM 
+										        	FROM TOT_CODE_MNG 
+										        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+										        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+										       	) AS TECH_SUP_STATUS_CODE_NM,
+									        	NVL((SELECT COUNT(*) FROM TECH_SUP TS WHERE TS.TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO),0) AS TECH_SUP_APP_CNT,
+									        TSA.APP_REC_DATE,
+									        TSA.APP_NM,
+									        NVL(PJ.PJT_NAME,'프로젝트없음') AS PJT_NAME,
+										        (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='Y' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM1,
+										         <!--
+										        (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'2',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM2,
+										        -->
+										         (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='N' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM2,
+									        SUBSTR(TSA.ST_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,7,2) AS ABOUT_DATE1,
+									        SUBSTR(TSA.END_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.END_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.END_ABOUT_DATE,7,2) AS ABOUT_DATE2,
+									        TO_CHAR(TSA.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+									        C.CONT_NM,
+									        P.PROD_NM||' ('||CP.CNT||')' AS PROD_NM,
+									        
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) PJT_CHMAN_NM,
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NO)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CL_CORP_NO,
+									        (	SELECT  
+									        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+									        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+												WHERE PJT_NO = PJ.PJT_NO 
+												  AND PC.CHMAN_NO = C.CHMAN_NO 
+											      AND C.CORP_NO=CP.CORP_NO
+											    GROUP BY PJT_NO
+											) CL_CORP_NM,
+											TSA.CHMAN_NO,
+											(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = TSA.CHMAN_NO) CHMAN_NM
+									FROM
+								        TECH_SUP_APP TSA, 
+								        PJT PJ,
+								        CONTRACT C,
+								        CONT_PROD CP,
+								        PROD P,
+									   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+									WHERE TSA.PJT_NO = PJ.PJT_NO
+									      AND PJ.PJT_NO = C.PJT_NO(+)
+										  AND P.PROD_NO(+) = CP.PROD_NO
+										  AND C.CONT_NO = CP.CONT_NO(+)
+									      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+						) WHERE  	TECH_SUP_STATUS_CODE_NM = '수행'
+				    	
+				    	ORDER BY CR_DATE DESC 	
+				    		
+				) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#   
+	</select>
+ 
+	 
+	<!--  목록 수 S-->
+    <select id="selectTechsupAppTotCountMain2" resultClass="Int">				
+		
+						SELECT COUNT(TECH_SUP_APP_NO) FROM (
+								SELECT * FROM ( 
+													SELECT  TSA.TECH_SUP_APP_NO, 
+													        TSA.APP_TITLE,
+													        TSA.APP_CONTENTS,
+														        (	SELECT 
+														        		CODE_NM 
+														        	FROM TOT_CODE_MNG 
+														        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+														        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+														       	) AS TECH_SUP_STATUS_CODE_NM,
+													        	NVL((SELECT COUNT(*) FROM TECH_SUP TS WHERE TS.TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO),0) AS TECH_SUP_APP_CNT,
+													        TSA.APP_REC_DATE,
+													        TSA.APP_NM,
+													        NVL(PJ.PJT_NAME,'프로젝트없음') AS PJT_NAME,
+														        (	SELECT  
+														        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+														        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+														        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+														        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+														        		  AND TSC.MATCH_YN='Y' 
+														        	GROUP BY TECH_SUP_APP_NO
+														        ) AS TECH_SUP_APP_NM1, 
+														         (	SELECT  
+															        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+															        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+															        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+															        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+															        		  AND TSC.MATCH_YN='N' 
+															        	GROUP BY TECH_SUP_APP_NO
+															        ) AS TECH_SUP_APP_NM2,
+													        SUBSTR(TSA.ST_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,7,2) AS ABOUT_DATE1,
+													        SUBSTR(TSA.END_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.END_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.END_ABOUT_DATE,7,2) AS ABOUT_DATE2,
+													        TSA.CR_DATE,
+													        C.CONT_NM,
+													        P.PROD_NM||' ('||CP.CNT||')' AS PROD_NM,
+													        
+													        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) PJT_CHMAN_NM,
+													        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NO)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CL_CORP_NO,
+													        (	SELECT  
+													        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+													        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+																WHERE PJT_NO = PJ.PJT_NO 
+																  AND PC.CHMAN_NO = C.CHMAN_NO 
+															      AND C.CORP_NO=CP.CORP_NO
+															    GROUP BY PJT_NO
+															) CL_CORP_NM
+													FROM
+												        TECH_SUP_APP TSA, 
+												        PJT PJ,
+												        CONTRACT C,
+												        CONT_PROD CP,
+												        PROD P,
+													   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+													WHERE TSA.PJT_NO = PJ.PJT_NO
+													      AND PJ.PJT_NO = C.PJT_NO(+)
+														  AND P.PROD_NO(+) = CP.PROD_NO
+														  AND C.CONT_NO = CP.CONT_NO(+)
+													      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+									  ) WHERE  	TECH_SUP_STATUS_CODE_NM = '요청'
+							      
+				)
+		
+	</select> 
+	  
+    <select id="getTechsupAppMain2" resultClass="HashMap">	 
+		SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+				(
+					
+					SELECT * FROM ( 
+									SELECT  TSA.TECH_SUP_APP_NO, PJ.PJT_NO,
+									        TSA.APP_TITLE,
+									        TSA.APP_CONTENTS,
+										        (	SELECT 
+										        		CODE_NM 
+										        	FROM TOT_CODE_MNG 
+										        	WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+										        		  AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+										       	) AS TECH_SUP_STATUS_CODE_NM,
+									        	NVL((SELECT COUNT(*) FROM TECH_SUP TS WHERE TS.TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO),0) AS TECH_SUP_APP_CNT,
+									        TSA.APP_REC_DATE,
+									        TSA.APP_NM,
+									        NVL(PJ.PJT_NAME,'프로젝트없음') AS PJT_NAME,
+										        (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='Y' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM1, 
+										         (	SELECT  
+										        		MAX(DECODE(TSC.CHMAN_SECT_CODE,'1',CHMAN_NM)) 
+										        	FROM TECH_SUP_CHMAN TSC, CHMAN C 
+										        	WHERE TECH_SUP_APP_NO = TSA.TECH_SUP_APP_NO 
+										        		  AND TSC.CHMAN_NO = C.CHMAN_NO 
+										        		  AND TSC.MATCH_YN='N' 
+										        	GROUP BY TECH_SUP_APP_NO
+										        ) AS TECH_SUP_APP_NM2,
+									        SUBSTR(TSA.ST_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.ST_ABOUT_DATE,7,2) AS ABOUT_DATE1,
+									        SUBSTR(TSA.END_ABOUT_DATE,1,4)||'-'||SUBSTR(TSA.END_ABOUT_DATE,5,2)||'-'||SUBSTR(TSA.END_ABOUT_DATE,7,2) AS ABOUT_DATE2,
+									        TO_CHAR(TSA.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE,
+									        C.CONT_NM,
+									        P.PROD_NM||' ('||CP.CNT||')' AS PROD_NM,
+									        
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CHMAN_NM)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) PJT_CHMAN_NM,
+									        (SELECT  MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NO)) FROM PJT_CHMAN PC, CHMAN C WHERE PJT_NO = PJ.PJT_NO AND PC.CHMAN_NO = C.CHMAN_NO GROUP BY PJT_NO) CL_CORP_NO,
+									        (	SELECT  
+									        		MAX(DECODE(PC.CHMAN_SECT_CODE,'2',CORP_NM)) 
+									        	FROM PJT_CHMAN PC, CHMAN C, CORP CP 
+												WHERE PJT_NO = PJ.PJT_NO 
+												  AND PC.CHMAN_NO = C.CHMAN_NO 
+											      AND C.CORP_NO=CP.CORP_NO
+											    GROUP BY PJT_NO
+											) CL_CORP_NM,
+											TSA.CHMAN_NO,
+											(SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = TSA.CHMAN_NO) CHMAN_NM
+									FROM
+								        TECH_SUP_APP TSA, 
+								        PJT PJ,
+								        CONTRACT C,
+								        CONT_PROD CP,
+								        PROD P,
+									   (SELECT TECH_SUP_APP_NO, MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ FROM  TECH_SUP_SEQ_STATUS GROUP BY TECH_SUP_APP_NO ) TSSS
+									WHERE TSA.PJT_NO = PJ.PJT_NO
+									      AND PJ.PJT_NO = C.PJT_NO(+)
+										  AND P.PROD_NO(+) = CP.PROD_NO
+										  AND C.CONT_NO = CP.CONT_NO(+)
+									      AND TSA.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+)
+						) WHERE  	TECH_SUP_STATUS_CODE_NM = '요청'
+				    	
+				    	ORDER BY CR_DATE DESC 	
+				    		
+				) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#   
+	</select>
+ 
+ 
+     <select id="selectScheduleView" resultClass="HashMap">
+		SELECT 
+			A.SCHE_NO,
+			A.CHMAN_NO,
+			TO_CHAR(A.ST_DATE, 'yyyyMMddHH24miss') ST_DATE,
+			TO_CHAR(A.END_DATE, 'yyyyMMddHH24miss') END_DATE,
+			A.TITLE,
+			A.CONTENTS,
+			TO_CHAR(A.CR_DATE, 'yyyy-MM-dd HH24:mi:ss') CR_DATE,
+			TO_CHAR(A.UP_DATE, 'yyyy-MM-dd HH24:mi:ss') UP_DATE,
+			A.TECH_SUP_APP_NO,
+			B.CHMAN_NM,
+			(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE=B.DEPT_CODE AND CODE_SECT='DEPT_CODE') AS DEPT_NM,
+			B.DEPT_CODE
+		FROM SCHE_MNG A, CHMAN B
+		WHERE A.CHMAN_NO = B.CHMAN_NO(+)
+			AND A.TECH_SUP_APP_NO = #tech_sup_app_no#    
+    </select>
+	
+	 
+	
+	 <select id="getTechSupAppTalk" resultClass="HashMap">	 
+		
+		SELECT * FROM ( 
+					SELECT  (SELECT  CHMAN_NM FROM CHMAN PC WHERE PC.CHMAN_NO = TSA.CHMAN_NO) CHMAN_NM,
+							TA.TECH_SUP_APP_NO,
+							TA.CHMAN_NO,
+							TA.SEQ,
+							TA.CR_DATE,
+							TA.CONTENTS
+					FROM
+				        TECH_SUP_APP TSA, 
+				        TECH_SUP_APP_MEMO TA 
+					WHERE TSA.TECH_SUP_APP_NO(+) = TA.TECH_SUP_APP_NO
+					AND TA.TECH_SUP_APP_NO = #tech_sup_app_no#
+		) ORDER BY CR_DATE DESC 	
+				     
+	</select>
+	
+	<insert id="insertTechSupAppTalk" parameterClass="HashMap">
+	 	INSERT INTO TECH_SUP_APP_MEMO
+							 		(SEQ,
+									CHMAN_NO,
+									TECH_SUP_APP_NO,
+									CR_DATE,
+									CONTENTS)
+	 	VALUES (
+		 			(select nvl(max(TO_NUMBER(seq)), 0)+1 as seq FROM TECH_SUP_APP_MEMO),
+					#chman_no#,
+					#tech_sup_app_no#,
+					sysdate,
+					#contents#
+	 			)	 	
+	</insert>
+	
+	<delete id="deleteTechSupAppTalk" parameterClass="HashMap">
+	 	DELETE  FROM TECH_SUP_APP_MEMO
+		 		WHERE TECH_SUP_APP_NO = #tech_sup_app_no#
+		 			  AND SEQ = #seq#
+	</delete>
+	
+  <select id="techSupAppTot" resultClass="HashMap">	  	    
+	    SELECT  TECH_SUP_APP_NO,
+	            TECH_SUP_STATUS_CODE,
+	            maxcode,
+	            maxcode_nm,
+	            COUNT(TECH_SUP_STATUS_CODE) AS codecnt,
+	            TO_CHAR(CR_DATE, 'yyyy-MM-dd HH24:mi:ss') AS CR_DATE
+	     FROM ( 
+	                  SELECT  ST.TECH_SUP_APP_NO, ST.TECH_SUP_STATUS_CODE,
+	                   (	SELECT 
+	                          CODE_NM 
+	                      FROM TOT_CODE_MNG 
+	                      WHERE CODE_SECT='TECH_SUP_STATUS_CODE' 
+	                            AND TSSS.TECH_SUP_STATUS_CODE = CODE  
+	                  ) AS maxcode_nm,
+	                  TSSS.TECH_SUP_STATUS_CODE AS maxcode,
+	                  ST.CR_DATE
+	
+	                  FROM TECH_SUP_SEQ_STATUS ST,
+	                  (	SELECT TECH_SUP_APP_NO, 
+	                              MAX(TECH_SUP_STATUS_CODE) TECH_SUP_STATUS_CODE,  
+	                              MAX(SEQ) KEEP(DENSE_RANK LAST ORDER BY TECH_SUP_STATUS_CODE) AS SEQ 
+	                      FROM  TECH_SUP_SEQ_STATUS 
+	                      GROUP BY TECH_SUP_APP_NO ) TSSS
+	                  WHERE 1=1 
+	                  AND ST.TECH_SUP_APP_NO = TSSS.TECH_SUP_APP_NO(+) 
+	                 
+	    )	    
+	    WHERE TECH_SUP_APP_NO = #tech_sup_app_no#
+	    GROUP BY TECH_SUP_APP_NO, TECH_SUP_STATUS_CODE, maxcode, cr_date
+	    
+	   ORDER BY  CR_DATE DESC, TECH_SUP_APP_NO, TECH_SUP_STATUS_CODE	
+  </select>
+	
+
+ </sqlMap>

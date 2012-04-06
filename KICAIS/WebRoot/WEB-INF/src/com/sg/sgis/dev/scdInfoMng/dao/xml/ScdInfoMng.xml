@@ -1,0 +1,958 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : ScdInfoMng.xml
+    Description : 개발일정계획관리
+-->
+<sqlMap namespace="ScdInfoMng">
+
+	<!--  프로젝트 목록조회 -->
+	<select id="selectScdPjdInfo" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					select 
+				    max(flag) AS flag                  
+				    ,pjt_id                
+				    ,max(pjt_info_seq)  AS pjt_info_seq         
+				    ,max(csr_type_code) AS csr_type_code         
+				    ,max(csr_id) AS csr_id                 
+				    ,max(csr_info_seq)  AS csr_info_seq         
+				    ,max(sal_pjt_id)  AS sal_pjt_id           
+				    ,max(csr_type_name) AS csr_type_name         
+				    ,item_code              
+				    ,max(item_name)  AS item_name            
+				    ,max(pjt_name)  AS pjt_name             
+				    ,max(proc_status_code) AS proc_status_code      
+				    ,max(proc_status_name)  AS proc_status_name     
+				    ,max(final_mod_id)   AS final_mod_id       
+				    ,max(final_mod_date)  AS final_mod_dat
+				    from
+				    (
+				                    SELECT
+				                    'R' flag                          /*조회상태*/                                         ,
+				                    PDI.pjt_id                      /* 프로젝트ID            */                               ,
+				                    PDI.pjt_info_seq                /*개발프로젝트순번                    */                             ,
+				                    PDI.csr_type_code               /*업무요청유형코드        */                             ,
+				                    PDI.csr_id                      /*업무요청ID            */                             ,
+				                    PDI.csr_info_seq                /*업무요청순번            */                             ,
+				                    PDI.sal_pjt_id                  /*영업 프로젝트ID       */                             ,
+				                    (                                 
+					                    SELECT
+					                        com_code_name                                 
+					                    FROM
+					                        com_code                                  
+					                    WHERE
+					                        group_code = 'SR_TYPE_CODE' 
+					                        AND com_code = PDI.csr_type_code                                 
+					                        AND use_yn ='Y'                               
+				                    ) csr_type_name                  /*업무요청구분명*/                             ,
+				                    CPI.item_code                  /*제품코드*/                             ,
+				                    CC.item_name                   /*제품명*/                             ,
+				                    (                                
+					                    SELECT
+					                        pjt_name 
+					                    from
+					                        pjt_info 
+					                    where
+					                        pjt_id = PDI.pjt_id                                 
+				                    ) pjt_name                  /*프로젝트명*/                             ,
+				                    PI.proc_status_code                                    /* 진행상태코드                */                             ,
+				                    (                                 
+					                    SELECT
+					                        A.com_code_name                                   
+					                    FROM
+					                        com_code A                                   
+					                    WHERE
+					                        A.group_code = 'FLOW_STATUS_CODE' 
+					                        AND A.com_code = PI.proc_status_code                                   
+					                        AND A.use_yn ='Y'                              
+				                    )proc_status_name                                             /*진행상태명*/                             ,
+				                    PDI.final_mod_id                /*최종변경자ID            */                             ,
+				                    PDI.final_mod_date              /*최종변경일시            */ 
+			                    FROM pjt_dev_info PDI, csr_pattern_item CPI, com_item CC, pjt_info PI
+			                    WHERE
+			                        PDI.pjt_id = PI.pjt_id 
+			                    AND PDI.csr_id = CPI.csr_id                        
+			                    AND PDI.csr_info_seq = CPI.csr_info_seq                
+			                    AND CPI.item_code  = CC.item_code 
+			                    AND (PI.proc_status_code !='G90' AND PI.proc_status_code !='G00')	/* G90-프로젝트 완료, G00-프로잭트DROP  */
+			 					<isNotEmpty property="search_pjt_id">
+				   					AND PI.pjt_id LIKE '%'||#search_pjt_id#||'%'  
+				 				</isNotEmpty>                    
+			 					<isNotEmpty property="src_pjt_name">
+				   					AND PI.pjt_name LIKE '%'||#src_pjt_name#||'%'  
+				 				</isNotEmpty>
+								<isNotEmpty property="src_pjt_date_from">
+									AND PI.PJT_DATE_FROM  <![CDATA[>=]]>  #src_pjt_date_from#
+								</isNotEmpty>
+								<isNotEmpty property="src_pjt_date_to">
+									AND PI.PJT_DATE_TO  <![CDATA[<=]]>  #src_pjt_date_to#
+								</isNotEmpty>
+								<isNotEmpty property="session_dept_code">
+			            			AND PI.pjt_reg_emp_num in( select emp_num from com_emp_info where dept_code = #session_dept_code# ) 
+			        			</isNotEmpty> 
+			        			<isNotEmpty property="reg_id">
+									AND PI.pjt_reg_emp_num  = #reg_id#
+						 		</isNotEmpty>
+					)
+				    group by pjt_id, item_code
+				    order by pjt_id desc, csr_id desc    					
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!--  프로젝트 총갯수 -->
+	<select id="selectScdPjdInfoCount" parameterClass="HashMap" resultClass="int">
+	SELECT	count(*) 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					select 
+				    max(flag) AS flag                  
+				    ,pjt_id                
+				    ,max(pjt_info_seq)  AS pjt_info_seq         
+				    ,max(csr_type_code) AS csr_type_code         
+				    ,max(csr_id) AS csr_id                 
+				    ,max(csr_info_seq)  AS csr_info_seq         
+				    ,max(sal_pjt_id)  AS sal_pjt_id           
+				    ,max(csr_type_name) AS csr_type_name         
+				    ,item_code              
+				    ,max(item_name)  AS item_name            
+				    ,max(pjt_name)  AS pjt_name             
+				    ,max(proc_status_code) AS proc_status_code      
+				    ,max(proc_status_name)  AS proc_status_name     
+				    ,max(final_mod_id)   AS final_mod_id       
+				    ,max(final_mod_date)  AS final_mod_dat
+				    from
+				    (
+				                    SELECT
+				                    'R' flag                          /*조회상태*/                                         ,
+				                    PDI.pjt_id                      /* 프로젝트ID            */                               ,
+				                    PDI.pjt_info_seq                /*개발프로젝트순번                    */                             ,
+				                    PDI.csr_type_code               /*업무요청유형코드        */                             ,
+				                    PDI.csr_id                      /*업무요청ID            */                             ,
+				                    PDI.csr_info_seq                /*업무요청순번            */                             ,
+				                    PDI.sal_pjt_id                  /*영업 프로젝트ID       */                             ,
+				                    (                                 
+					                    SELECT
+					                        com_code_name                                 
+					                    FROM
+					                        com_code                                  
+					                    WHERE
+					                        group_code = 'SR_TYPE_CODE' 
+					                        AND com_code = PDI.csr_type_code                                 
+					                        AND use_yn ='Y'                               
+				                    ) csr_type_name                  /*업무요청구분명*/                             ,
+				                    CPI.item_code                  /*제품코드*/                             ,
+				                    CC.item_name                   /*제품명*/                             ,
+				                    (                                
+					                    select
+					                        pjt_name 
+					                    from
+					                        pjt_info 
+					                    where
+					                        pjt_id = PDI.pjt_id                                 
+				                    ) pjt_name                  /*프로젝트명*/                             ,
+				                    PI.proc_status_code                                    /* 진행상태코드                */                             ,
+				                    (                                
+					                     SELECT
+					                        A.com_code_name                                   
+					                    FROM
+					                        com_code A                                   
+					                    WHERE
+					                        A.group_code = 'FLOW_STATUS_CODE' 
+					                        AND A.com_code = PI.proc_status_code                                   
+					                        AND A.use_yn ='Y'                              
+				                    )proc_status_name                                             /*진행상태명*/                             ,
+				                    PDI.final_mod_id                /*최종변경자ID            */                             ,
+				                    PDI.final_mod_date              /*최종변경일시            */ 
+			                    FROM pjt_dev_info PDI, csr_pattern_item CPI, com_item CC, pjt_info PI
+			                    WHERE
+			                        PDI.pjt_id = PI.pjt_id 
+			                    AND PDI.csr_id = CPI.csr_id                        
+			                    AND PDI.csr_info_seq = CPI.csr_info_seq                
+			                    AND CPI.item_code  = CC.item_code
+			 					AND (PI.proc_status_code !='G90' AND PI.proc_status_code !='G00')	/* G90-프로젝트 완료, G00-프로잭트DROP  */
+			 					<isNotEmpty property="search_pjt_id">
+				   					AND PI.pjt_id LIKE '%'||#search_pjt_id#||'%'  
+				 				</isNotEmpty>                      
+			 					<isNotEmpty property="src_pjt_name">
+				   					AND PI.pjt_name LIKE '%'||#src_pjt_name#||'%'  
+				 				</isNotEmpty>
+								<isNotEmpty property="src_pjt_date_from">
+									AND PI.PJT_DATE_FROM  <![CDATA[>=]]>  #src_pjt_date_from#
+								</isNotEmpty>
+								<isNotEmpty property="src_pjt_date_to">
+									AND PI.PJT_DATE_TO  <![CDATA[<=]]>  #src_pjt_date_to#
+								</isNotEmpty>
+								<isNotEmpty property="session_dept_code">
+			            			AND PI.pjt_reg_emp_num in( select emp_num from com_emp_info where dept_code = #session_dept_code# )
+			        			</isNotEmpty> 
+			        			<isNotEmpty property="reg_id">
+									AND PI.pjt_reg_emp_num  = #reg_id#
+						 		</isNotEmpty>
+					)
+				    group by pjt_id, item_code
+				    order by pjt_id desc, csr_id desc    					
+				  ) A
+	       )
+	</select>
+
+
+	<!-- 일정계획 목록조회[타스크정보] -->
+	<select id="selectScdPlanInfo" parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 'R' flag               /*조회상태*/
+						        ,SPI.scd_plan_seq         /*일정계획순번        */
+						        ,rownum scd_plan_seq_tmp  /* 화면상 임시순번 */    
+						        ,SPI.scd_type_code         /*일정구분코드        */
+						        ,SPI.scd_plan_from_date     /*계획시작일자        */            
+						        ,SPI.scd_plan_to_date     /*계획종료일자        */            
+						        ,SPI.scd_dept             /*타스크책임자 부서            */            
+						        ,SPI.scd_reg_emp_num     /*타스크책임자 사번    */                
+						        ,SPI.scd_content         /*계획내용            */                
+						        ,SPI.pjt_id              /*프로젝트ID        */                
+						        ,SPI.task_group_code     /*타스크그룹코드    */                
+						        ,SPI.task_code             /*타스크 코드        */                
+						        ,SPI.note                 /*비고                */            
+						        ,SPI.final_mod_id         /*최종변경자ID        */            
+						        ,SPI.final_mod_date         /*최종변경일시        */    
+						        ,(                                                                                                                     
+						              SELECT A.com_code_name                                                        
+						            FROM com_code A                                                             
+						            WHERE A.group_code = 'SCD_TYPE_CODE' AND A.com_code = SPI.scd_type_code
+						            AND A.use_yn ='Y'                                                           
+						         )scd_type_name                                             /*일정구분코드명*/    
+						         ,(                                                                                                             		
+						          	SELECT B.task_name                                                        
+						            FROM com_task_info B                                                             
+						            WHERE B.task_code = SPI.task_code
+						            AND B.use_yn ='Y'                                                           
+						         )task_name 												 /*타스크명*/
+						         ,(
+                                     SELECT C.kor_name
+                                     FROM com_emp_info C
+                                     WHERE C.emp_num = SPI.scd_reg_emp_num
+                                 ) scd_reg_em_name                                                /*타스크책임자명*/     
+						FROM scd_plan_info SPI
+						WHERE 
+							SPI.scd_type_code = #scd_type_code#
+	                    AND
+	                    	SPI.pjt_id = #pjt_id#
+	                    order by SPI.task_code asc						
+					  ) A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 일정계획 총갯수 -->
+	<select id="selectScdPlanInfoCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(scd_plan_seq)	
+          FROM scd_plan_info 
+		  WHERE scd_type_code = #scd_type_code#
+          AND pjt_id = #pjt_id#	
+	</select>
+
+	<!-- 일정계획의 일정계획순번  -->
+	<select id="selectScdPlanSeq"  resultClass="int">
+		SELECT NVL(max(TO_NUMBER(scd_plan_seq)), 0) + 1  FROM scd_plan_info 
+	</select>
+
+  	<!-- 일정계획 [타스크정보] 등록 -->
+	<insert id="insertScdPlanInfo" parameterClass="HashMap">
+	<![CDATA[
+			INSERT INTO scd_plan_info(
+							scd_plan_seq		 /*일정계획순번		*/
+							,scd_type_code		 /*일정구분코드		*/	
+							,scd_plan_from_date	 /*계획시작일자		*/
+							,scd_plan_to_date	 /*계획종료일자		*/
+							,scd_dept			 /*계획부서			*/
+							,scd_reg_emp_num		 /*계획등록자사번	*/	
+							,scd_content			 /*계획내용			*/				
+							,pjt_id				 /*프로젝트ID		*/				
+							,task_group_code		 /*타스크그룹코드	*/				
+							,task_code			 /*타스크 코드		*/				
+							,note				 /*비고		    	*/			
+							,final_mod_id		 /*최종변경자ID		*/			
+							,final_mod_date		 /*최종변경일시	    */
+							,reg_id		 		 /*등록자ID		*/			
+							,reg_date			 /*등록일시	    */
+						)
+					VALUES(
+							#scd_plan_seq#		 
+							,#scd_type_code#		 
+							,#scd_plan_from_date#	 
+							,#scd_plan_to_date#	 
+							,#scd_dept#			 
+							,#scd_reg_emp_num#		 
+							,#scd_content#			 	
+							,#pjt_id#				 	
+							,#task_group_code#		 	
+							,#task_code#			 	
+							,#note#				 
+							,#final_mod_id#		 
+							,SYSDATE		 
+							,#final_mod_id#		 
+							,SYSDATE	
+					)	
+	]]>
+	</insert>
+	
+	<!--  일정계획 [타스크정보]   수정 -->
+	<update id="updateScdPlanInfo" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE scd_plan_info                                                                        
+		   SET  scd_plan_from_date	=#scd_plan_from_date#	 	/*계획시작일자		*/           
+				,scd_plan_to_date	=#scd_plan_to_date#	 		/*계획종료일자		*/           
+				,scd_dept			=#scd_dept#	 				/*계획부서			*/           
+				,scd_reg_emp_num	=#scd_reg_emp_num#		 	/*계획등록자사번	*/	     
+				,scd_content		=#scd_content#		 		/*계획내용			*/		 
+				,pjt_id				=#pjt_id#	 				/*프로젝트ID		*/			 
+				,task_group_code	=#task_group_code#			/*타스크그룹코드	*/		 
+				,task_code			=#task_code#	 			/*타스크 코드		*/			 
+				,note				=#note#						/*비고		    	*/			 
+			 	,final_mod_id   	= #final_mod_id#            /*최종변경자ID			    */  
+			 	,final_mod_date = SYSDATE                        /*최종변경일시			    */  
+		 WHERE                                                                                      
+	        scd_plan_seq  = #scd_plan_seq#				 		                                    
+         AND 
+        	scd_type_code = #scd_type_code#  
+	]]>
+	</update>
+
+
+	<!--  일정계획 [타스크정보]   삭제 -->
+    <delete id="deleteScdPlanInfo" parameterClass="HashMap">
+        DELETE FROM scd_plan_info 
+        WHERE 
+        	scd_plan_seq  = #scd_plan_seq#				 		
+        AND 
+        	scd_type_code = #scd_type_code#	                    
+    </delete> 
+
+
+
+	<!-- 타스크담당자정보 [일정별담당자배정]목록조회[타스크정보] -->
+	<select id="selectScdDutyAssign" parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 'R' flag                 /*조회상태*/                     
+						       ,SDA.scd_plan_seq            /*일정계획순번 */
+						       ,SDA.scd_duty_seq            /*순번         */
+						       ,rownum scd_duty_seq_tmp  /* 화면상 임시순번 */
+						       ,SDA.dept_code                /*담당부서코드 */
+						       ,SDA.emp_num                    /*담당자사번   */
+						       ,SDA.scd_plan_from_date        /*계획시작일자 */
+						       ,SDA.scd_plan_to_date        /*계획종료일자 */
+						       ,SDA.note                    /*비고         */
+						       ,SDA.final_mod_id            /*최종변경자ID */
+						       ,SDA.final_mod_date            /*최종변경일시 */   
+						       ,(                                                                                 
+						            SELECT A.dept_name                                                             
+						              FROM com_dept A                                                               
+						              WHERE A.dept_code = SDA.dept_code                                      
+						         ) dept_name                                                /*담당부서명*/
+						        ,(                                                                                 
+						             SELECT B.kor_name                                                              
+						              FROM com_emp_info B                                                           
+						              WHERE B.emp_num = SDA.emp_num                                          
+						         ) emp_name                                                /*담당자명*/ 
+						        ,SDA.task_code            				/*타스크 코드 */    
+						FROM scd_duty_assign SDA
+						WHERE SDA.scd_plan_seq = #scd_plan_seq#       
+					  ) A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 타스크담당자정보 [일정별담당자배정] 총갯수 -->
+	<select id="selectScdDutyAssignCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(scd_duty_seq)	
+          FROM scd_duty_assign 
+		  WHERE scd_plan_seq = #scd_plan_seq# 
+	</select>
+
+
+  	<!-- 타스크담당자정보 [일정별담당자배정] 등록 -->
+	<insert id="insertScdDutyAssign" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO scd_duty_assign(
+			scd_plan_seq			/*일정계획순번(FK)	*/
+			,scd_duty_seq			/*순번              */
+			,dept_code				/*담당부서코드      */
+			,emp_num				/*담당자사번        */
+			,scd_plan_from_date		/*계획시작일자      */
+			,scd_plan_to_date		/*계획종료일자      */
+			,note					/*비고              */
+			,final_mod_id			/*최종변경자ID      */
+			,final_mod_date			/*최종변경일시      */
+			,reg_id		 		 /*등록자ID		*/			
+			,reg_date			 /*등록일시	    */
+			,task_code				/*타스크 코드      */
+			)
+			VALUES(	
+				#scd_plan_seq#			
+				,SQ_SCD_DUTY_SEQ.nextval			
+				,#dept_code#				
+				,#emp_num#				
+				,#scd_plan_from_date#		
+				,#scd_plan_to_date#		
+				,#note#					
+				,#final_mod_id#			
+				,SYSDATE
+				,#final_mod_id#			
+				,SYSDATE
+				,#task_code#	
+			)
+	]]>
+	</insert>
+	
+	<!--  타스크담당자정보 [일정별담당자배정]   수정 -->
+	<update id="updateScdDutyAssign" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE scd_duty_assign                                                                        
+		   SET   dept_code		=#dept_code#		 				/*담당부서코드	*/		 
+				,emp_num		=#emp_num#	 						/*담당자사번		*/			 
+				,scd_plan_from_date	=#scd_plan_from_date#			/*계획시작일자	*/		 
+				,scd_plan_to_date	=#scd_plan_to_date#	 			/*계획종료일자		*/			 
+				,note				=#note#							/*비고		    	*/			 
+			 	,final_mod_id   	= #final_mod_id#            	/*최종변경자ID	    */  
+			 	,final_mod_date = SYSDATE                        	/*최종변경일시	    */  
+			 	,task_code   	= #task_code#            			/*타스크 코드	    */  
+		 WHERE                                                                                      
+	        scd_plan_seq  = #scd_plan_seq#				 		
+         AND 
+         	scd_duty_seq = #scd_duty_seq#	
+	]]>
+	</update>
+
+
+	<!--  타스크담당자정보 [일정별담당자배정]   삭제 -->
+    <delete id="deleteScdDutyAssign" parameterClass="HashMap">
+        DELETE FROM scd_duty_assign 
+        WHERE
+		<isNotEmpty property="scd_plan_seq">
+			scd_plan_seq  = #scd_plan_seq#
+		</isNotEmpty>  
+		<isNotEmpty property="scd_duty_seq">
+			scd_duty_seq  = #scd_duty_seq#
+		</isNotEmpty>		      
+    </delete> 
+
+
+
+	<!-- 일정관리(개인별) 타스크조회 목록조회 -->
+	<select id="selectScdDayTaskInfo" parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 'R' flag                 /*조회상태*/         
+							,SPI.scd_plan_seq
+							,SPI.pjt_id
+							,(SELECT pjt_name from pjt_info where pjt_id=SPI.pjt_id) pjt_name
+							,PDI.item_code
+							,(
+							    SELECT A.item_name
+							    FROM com_item A
+							    WHERE A.item_code = PDI.item_code
+							) item_name                                              	/*품목코드명*/	
+							,SPI.task_code
+							,(                                                                                                                     
+							    SELECT B.task_name                                                        
+							    FROM com_task_info B                                                             
+							    WHERE B.task_code = SPI.task_code
+							    AND B.use_yn ='Y'                                                           
+							)task_name 		
+							,SPI.scd_plan_from_date
+							,SPI.scd_plan_to_date
+						FROM scd_plan_info SPI, scd_duty_assign SDA, pjt_dev_info PDI
+						WHERE 
+							SPI.scd_plan_seq = SDA.scd_plan_seq
+						AND
+							PDI.pjt_id = SPI.pjt_id 
+						AND 
+							SDA.emp_num =#emp_num#   
+					  ) A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 일정관리(개인별) 타스크조회 총갯수 -->
+	<select id="selectScdDayTaskInfoCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(SPI.scd_plan_seq)	
+          FROM scd_plan_info SPI, scd_duty_assign SDA, pjt_dev_info PDI
+		  WHERE 
+			SPI.scd_plan_seq = SDA.scd_plan_seq
+		  AND
+			PDI.pjt_id = SPI.pjt_id 
+		  AND 
+			SDA.emp_num =#emp_num# 
+	</select>
+	
+	
+
+	<!-- 일정관리(개인별) 목록조회 -->
+	<select id="selectScdDayInfo" parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 'R' flag                     /*조회상태*/                         
+						    ,SDI.scd_day_seq                    /*일정관리순번            */        
+						    ,SDI.scd_type_code                    /*일정구분코드            */
+						    ,SDI.proc_type_code                    /*계획수행구분코드        */
+						    ,SDI.scd_day_reg_dept                /*일정등록부서            */
+						    ,SDI.scd_day_reg_emp_num            /*일정등록자사원번호    */
+						    ,SDI.status_val                        /*일정상태값            */        
+						    ,SDI.work_pattern_code                /*내근/외근구분코드        */
+						    ,SDI.scd_time_from                    /*시작시간                */
+						    ,SDI.scd_time_to                    /*종료시간                */    
+						    ,SDI.scd_time                        /*총소요시간            */        
+						    ,SDI.labor_cost                        /*인건비                */            
+						    ,SDI.pjt_id                            /*프로젝트ID            */            
+						    ,SDI.task_group_code                /*타스크그룹코드        */
+						    ,SDI.task_code                        /*타스크 코드            */        
+						    ,SDI.pay_no                            /*지출결의서번호        */            
+						    ,SDI.visit_report_no                /*방문일지번호            */
+						    ,SDI.scd_proc_res_content            /*수행결과내용            */
+						    ,SDI.note                            /*비고                    */                
+						    ,SDI.pjt_status                        /*현재프로젝트상태코드  */
+						    ,SDI.final_mod_id                    /*최종변경자ID            */
+						    ,SDI.final_mod_date                    /*최종변경일시            */
+						    ,SDI.task_end_yn                       /*타스크완료여부        */
+						    ,SDI.task_chk_res_code                 /*타스크검토결과코드    */
+						FROM scd_day_info SDI
+					  ) A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 일정관리(개인별) 총갯수 -->
+	<select id="selectScdDayInfoCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(scd_day_seq)	
+          FROM scd_day_info 
+	</select>
+
+
+  	<!-- 일정관리(개인별) 등록 -->
+	<insert id="insertScdDayInfo" parameterClass="HashMap">
+	<![CDATA[
+			INSERT INTO scd_day_info(
+					 scd_day_seq                    /*일정관리순번            */        
+				    ,scd_type_code                    /*일정구분코드            */
+				    ,proc_type_code                    /*계획수행구분코드        */
+				    ,scd_day_reg_dept                /*일정등록부서            */
+				    ,scd_day_reg_emp_num            /*일정등록자사원번호    */
+				    ,status_val                        /*일정상태값            */        
+				    ,work_pattern_code                /*내근/외근구분코드        */
+				    ,scd_time_from                    /*시작시간                */
+				    ,scd_time_to                    /*종료시간                */    
+				    ,scd_time                        /*총소요시간            */        
+				    ,labor_cost                        /*인건비                */            
+				    ,pjt_id                            /*프로젝트ID            */            
+				    ,task_group_code                /*타스크그룹코드        */
+				    ,task_code                        /*타스크 코드            */        
+				    ,pay_no                            /*지출결의서번호        */            
+				    ,visit_report_no                /*방문일지번호            */
+				    ,scd_proc_res_content            /*수행결과내용            */
+				    ,note                            /*비고                    */                
+				    ,pjt_status                        /*현재프로젝트상태코드  */
+				    ,final_mod_id                    /*최종변경자ID            */
+				    ,final_mod_date                    /*최종변경일시            */
+				    ,reg_id                    			/*등록자ID            */
+				    ,reg_date                    		/*등록일시            */
+				    ,task_end_yn                       /*타스크완료여부        */
+				    ,task_chk_res_code                 /*타스크검토결과코드    */
+					)
+					VALUES(	
+						(SELECT NVL(max(TO_NUMBER(scd_day_seq)), 0) + 1  FROM scd_day_info )	                        
+					    ,#scd_type_code#                    	
+					    ,#proc_type_code#                    	
+					    ,#scd_day_reg_dept#                	
+					    ,#scd_day_reg_emp_num#            	
+					    ,#status_val#                        	
+					    ,#work_pattern_code#                	
+					    ,#scd_time_from#                    	
+					    ,#scd_time_to#                    	
+					    ,#scd_time#                        	
+					    ,#labor_cost#                        	
+					    ,#pjt_id#                            	
+					    ,#task_group_code#                	
+					    ,#task_code#                        	
+					    ,#pay_no#                            	
+					    ,#visit_report_no#                	
+					    ,#scd_proc_res_content#            	
+					    ,#note#                            	   
+					    ,#pjt_status#                        	
+					    ,#final_mod_id#                    	
+					    ,SYSDATE                    		
+					    ,#final_mod_id#                    	
+					    ,SYSDATE                    		
+					    ,#task_end_yn#                       	
+					    ,#task_chk_res_code#    
+					)
+	]]>
+	</insert>
+	
+	<!-- 일정관리(개인별)   수정 -->
+	<update id="updateScdDayInfo" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE scd_day_info
+			SET scd_day_reg_dept      = #scd_day_reg_dept#         				 /*일정등록부서            */
+			    ,scd_day_reg_emp_num  = #scd_day_reg_emp_num#      				 /*일정등록자사원번호    */
+			    ,status_val           = #status_val#               				    /*일정상태값            */        
+			    ,work_pattern_code    = #work_pattern_code#        				   /*내근/외근구분코드        */
+			    ,scd_time_from        = #scd_time_from#            				   /*시작시간                */
+			    ,scd_time_to          = #scd_time_to#              				 /*종료시간                */    
+			    ,scd_time             = #scd_time#                 				  /*총소요시간            */        
+			    ,labor_cost           = #labor_cost#               				    /*인건비                */            
+			    ,pjt_id               = #pjt_id#                   				    /*프로젝트ID            */            
+			    ,task_group_code      = #task_group_code#          				 /*타스크그룹코드        */
+			    ,task_code            = #task_code#                				   /*타스크 코드            */        
+			    ,pay_no               = #pay_no#                   				    /*지출결의서번호        */            
+			    ,visit_report_no      = #visit_report_no#          				 /*방문일지번호            */
+			    ,scd_proc_res_content = #scd_proc_res_content#     				  /*수행결과내용            */
+			    ,note                 = #note#                     				  /*비고                    */                
+			    ,pjt_status           = #pjt_status#               				    /*현재프로젝트상태코드  */
+			    ,final_mod_id         = #final_mod_id#             				  /*최종변경자ID            */
+			    ,final_mod_date       = SYSDATE                  				    /*최종변경일시            */
+			    ,task_end_yn          = #task_end_yn#             				    /*타스크완료여부        */
+			    ,task_chk_res_code    = #task_chk_res_code#        				    /*타스크검토결과코드    */
+			WHERE 
+		       	scd_day_seq  = #scd_day_seq#				 		
+		    AND 
+		       	scd_type_code = #scd_type_code#	  
+		    AND 
+		       	proc_type_code = #proc_type_code#
+	]]>
+	</update>
+
+
+	<!-- 일정관리(개인별)   삭제 -->
+    <delete id="deleteScdDayInfo" parameterClass="HashMap">
+        DELETE FROM scd_day_info 
+        WHERE 
+        	scd_day_seq  = #scd_day_seq#				 		
+        AND 
+        	scd_type_code = #scd_type_code#	  
+        AND 
+        	proc_type_code = #proc_type_code#	                   
+    </delete> 
+
+
+	<!-- 일정수행산출물관리 목록조회 -->
+	<select id="selectScdExecPrpdInfo" parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+							SELECT 'R' flag                     /*조회상태*/     
+								,SEPI.scd_exec_prpd_seq			/*일정수행산출물순번 */
+								,SEPI.scd_day_seq				/*일정관리순번       */
+								,SEPI.task_group_code			/*타스크그룹코드     */
+								,SEPI.task_code					/*타스크 코드        */
+								,(                                                                                                             		
+									SELECT A.task_name                                                        
+									FROM com_task_info A                                                             
+									WHERE A.task_code = SEPI.task_code
+									AND A.use_yn ='Y'                                                           
+								)task_name						/*타스크 명        */
+								,SEPI.task_info_seq				/*타스크산출물순번   */
+								,TO_CHAR(TO_DATE(SEPI.prod_reg_date, 'YYYY-MM-DD'),'YYYY-MM-DD') AS prod_reg_date			/*산출물등록일자     */
+								,SEPI.prod_reg_emp_num			/*산출물등록자사번   */
+								,(
+				                  SELECT B.kor_name
+				                  FROM com_emp_info B
+				                  WHERE B.emp_num = SEPI.prod_reg_emp_num	/*산출물등록자명   */
+				                ) prod_reg_emp_name  
+								,SEPI.prod_file_name				/*산출물파일명       */
+								,SEPI.prod_fil_path				/*산출물저장파일경로 */
+								,SEPI.note						/*비고               */
+								,SEPI.final_mod_id				/*최종변경자ID       */
+								,SEPI.final_mod_date				/*최종변경일시       */
+								,SEPI.reg_date  				/*등록자ID	          */   
+								,SEPI.reg_id     			/*등록일시	          */ 
+								,SEPI.saved_file_name		/*서버등록파일명 */
+							FROM
+								SCD_EXEC_PRPD_INFO SEPI
+							WHERE 1=1
+								<isNotEmpty property="scd_exec_prpd_seq">
+				        			AND scd_exec_prpd_seq = #scd_exec_prpd_seq#	
+								</isNotEmpty> 
+								<isNotEmpty property="scd_day_seq">
+				        			AND scd_day_seq = #scd_day_seq#	
+								</isNotEmpty> 
+								<isNotEmpty property="prod_file_name">
+		   							AND prod_file_name  LIKE '%'||#prod_file_name#||'%'
+		 						</isNotEmpty>
+					  ) A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 일정수행산출물관리 총갯수 -->
+	<select id="selectScdExecPrpdInfoCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(scd_exec_prpd_seq)	
+          FROM
+			SCD_EXEC_PRPD_INFO 
+		  WHERE 1=1
+			<isNotEmpty property="scd_exec_prpd_seq">
+				AND scd_exec_prpd_seq = #scd_exec_prpd_seq#	
+			</isNotEmpty> 
+			<isNotEmpty property="scd_day_seq">
+				AND scd_day_seq = #scd_day_seq#	
+			</isNotEmpty> 
+			<isNotEmpty property="prod_file_name">
+		   		AND prod_file_name  LIKE '%'||#prod_file_name#||'%'
+		 	</isNotEmpty>			
+	</select>
+
+
+  	<!-- 일정수행산출물관리 등록 -->
+	<insert id="insertScdExecPrpdInfo" parameterClass="HashMap">
+	<![CDATA[
+			INSERT INTO	scd_exec_prpd_info(
+				scd_exec_prpd_seq			/*일정수행산출물순번 */
+				,scd_day_seq					/*일정관리순번       */
+				,task_group_code				/*타스크그룹코드     */
+				,task_code					/*타스크 코드        */
+				,task_info_seq				/*타스크산출물순번   */
+				,prod_reg_date				/*산출물등록일자     */
+				,prod_reg_emp_num			/*산출물등록자사번   */
+				,prod_file_name				/*산출물파일명       */
+				,prod_fil_path				/*산출물저장파일경로 */
+				,final_mod_id				/*최종변경자ID       */
+				,final_mod_date				/*최종변경일시       */
+				,reg_id   				/*등록자ID	          */     
+				,reg_date     			/*등록일시	          */
+				,saved_file_name     			/*서버등록파일명	          */      	 
+				)
+				VALUES(	
+					(SELECT NVL(max(TO_NUMBER(scd_exec_prpd_seq)), 0) + 1  FROM scd_exec_prpd_info )
+					,#scd_day_seq#		
+					,#task_group_code#	
+					,#task_code#			
+					,(
+						select NVL(max(rk),1) from ( SELECT RANK() OVER  (PARTITION BY scd_day_seq   ORDER BY scd_exec_prpd_seq asc ) rk  FROM scd_exec_prpd_info WHERE scd_day_seq = #scd_day_seq#	 )
+					 )
+					,(to_char(sysdate,'YYYYMMDD'))		
+					,#prod_reg_emp_num#	
+					,#prod_file_name#		
+					,#prod_fil_path#		
+					,#final_mod_id#		
+					,SYSDATE
+					,#final_mod_id#		
+					,SYSDATE	
+					,#saved_file_name#		
+				)
+	]]>
+	</insert>
+	
+	<!-- 일정수행산출물관리   수정 -->
+	<update id="updateScdExecPrpdInfo" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE	scd_exec_prpd_info
+				SET task_group_code	=#task_group_code#						/*타스크그룹코드     */
+				,task_code			=#task_code#					/*타스크 코드        */
+				,prod_reg_date		=#prod_reg_date#				/*산출물등록일자     */
+				,prod_reg_emp_num	=#prod_reg_emp_num#			/*산출물등록자사번   */
+				,prod_file_name		=#prod_file_name#				/*산출물파일명       */
+				,prod_fil_path		=#prod_fil_path#				/*산출물저장파일경로 */
+				,note				=#note#						/*비고               */
+				,final_mod_id		=#final_mod_id#				/*최종변경자ID       */
+				,final_mod_date		=SYSDATE				/*최종변경일시       */
+			WHERE 
+        		scd_exec_prpd_seq  = #scd_exec_prpd_seq#				 		
+        	AND 
+        		scd_day_seq = #scd_day_seq#	
+	]]>
+	</update>
+
+
+	<!-- 일정수행산출물관리   삭제 -->
+    <delete id="deleteScdExecPrpdInfo" parameterClass="HashMap">
+        DELETE FROM scd_exec_prpd_info 
+        WHERE 
+        	scd_exec_prpd_seq  = #scd_exec_prpd_seq#				 		
+    </delete>
+
+
+	<!-- 일정별담당자배정에 따라 등록된  일정관리(개인별) 총갯수 -->
+	<select id="selectScdDaySeqCount" parameterClass="HashMap" resultClass="int">
+		SELECT COUNT(scd_day_seq) FROM SCD_DAY_INFO WHERE scd_duty_seq = #scd_duty_seq#	
+	</select>
+	
+
+
+	<!-- 일정수행산출물관리 목록팝업조회 -->
+	<select id="selectScdExecPrpdInfoPop" parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+							SELECT 'R' flag                     /*조회상태*/     
+								,SEPI.scd_exec_prpd_seq			/*일정수행산출물순번 */
+								,SEPI.scd_day_seq				/*일정관리순번       */
+								,SEPI.task_group_code			/*타스크그룹코드     */
+								,SEPI.task_code					/*타스크 코드        */
+								,(                                                                                                             		
+									SELECT A.task_name                                                        
+									FROM com_task_info A                                                             
+									WHERE A.task_code = SEPI.task_code
+									AND A.use_yn ='Y'                                                           
+								)task_name						/*타스크 명        */
+								,SEPI.task_info_seq				/*타스크산출물순번   */
+								,TO_CHAR(TO_DATE(SEPI.prod_reg_date, 'YYYY-MM-DD'),'YYYY-MM-DD') AS prod_reg_date			/*산출물등록일자     */
+								,SEPI.prod_reg_emp_num			/*산출물등록자사번   */
+								,(
+				                  SELECT B.kor_name
+				                  FROM com_emp_info B
+				                  WHERE B.emp_num = SEPI.prod_reg_emp_num	/*산출물등록자명   */
+				                ) prod_reg_emp_name  
+								,SEPI.prod_file_name				/*산출물파일명       */
+								,SEPI.prod_fil_path				/*산출물저장파일경로 */
+								,SEPI.note						/*비고               */
+								,SEPI.final_mod_id				/*최종변경자ID       */
+								,SEPI.final_mod_date				/*최종변경일시       */
+								,SEPI.reg_date  				/*등록자ID	          */   
+								,SEPI.reg_id     			/*등록일시	          */ 
+								,SEPI.saved_file_name		/*서버등록파일명 */
+							FROM
+								SCD_EXEC_PRPD_INFO SEPI
+							WHERE 1=1 
+							<isNotEmpty property="src_scd_day_seq">
+								AND SEPI.scd_day_seq = #src_scd_day_seq# 
+							</isNotEmpty>
+							<isNotEmpty property="prod_file_name">
+		   						AND SEPI.prod_file_name  LIKE '%'||#prod_file_name#||'%'
+		 					</isNotEmpty> 
+								AND SEPI.prod_reg_emp_num IN ( select emp_num from com_emp_info where dept_code = #scd_day_reg_dept# )
+					  ) A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 일정수행산출물관리 팝업 총갯수 -->
+	<select id="selectScdExecPrpdInfoPopCount" parameterClass="HashMap" resultClass="int">
+		SELECT	COUNT(*) 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+							SELECT 'R' flag                     /*조회상태*/     
+								,SEPI.scd_exec_prpd_seq			/*일정수행산출물순번 */
+								,SEPI.scd_day_seq				/*일정관리순번       */
+								,SEPI.task_group_code			/*타스크그룹코드     */
+								,SEPI.task_code					/*타스크 코드        */
+								,(                                                                                                             		
+									SELECT A.task_name                                                        
+									FROM com_task_info A                                                             
+									WHERE A.task_code = SEPI.task_code
+									AND A.use_yn ='Y'                                                           
+								)task_name						/*타스크 명        */
+								,SEPI.task_info_seq				/*타스크산출물순번   */
+								,TO_CHAR(TO_DATE(SEPI.prod_reg_date, 'YYYY-MM-DD'),'YYYY-MM-DD') AS prod_reg_date			/*산출물등록일자     */
+								,SEPI.prod_reg_emp_num			/*산출물등록자사번   */
+								,(
+				                  SELECT B.kor_name
+				                  FROM com_emp_info B
+				                  WHERE B.emp_num = SEPI.prod_reg_emp_num	/*산출물등록자명   */
+				                ) prod_reg_emp_name  
+								,SEPI.prod_file_name				/*산출물파일명       */
+								,SEPI.prod_fil_path				/*산출물저장파일경로 */
+								,SEPI.note						/*비고               */
+								,SEPI.final_mod_id				/*최종변경자ID       */
+								,SEPI.final_mod_date				/*최종변경일시       */
+								,SEPI.reg_date  				/*등록자ID	          */   
+								,SEPI.reg_id     			/*등록일시	          */ 
+								,SEPI.saved_file_name		/*서버등록파일명 */
+							FROM
+								SCD_EXEC_PRPD_INFO SEPI
+							WHERE 1=1 
+							<isNotEmpty property="src_scd_day_seq">
+								AND SEPI.scd_day_seq = #src_scd_day_seq# 
+							</isNotEmpty>
+							<isNotEmpty property="prod_file_name">
+		   						AND SEPI.prod_file_name  LIKE '%'||#prod_file_name#||'%'
+		 					</isNotEmpty> 
+								AND SEPI.prod_reg_emp_num IN ( select emp_num from com_emp_info where dept_code = #scd_day_reg_dept# )
+					  ) A
+		       )		
+		       
+	</select>
+	
+	<!-- 일정관리에 등록된 타스크수  -->
+	<select id="selectScdDayInfoTaskCnt"  resultClass="int">
+		SELECT count(*) FROM scd_day_info
+		WHERE pjt_id = #checkPjtId#	
+		AND
+		task_code= #checkTaskCode#	
+	</select>
+
+	<!-- 일정관리에 등록된 담당자 수 -->
+	<select id="selectScdDayInfoRegEmpCnt"  resultClass="int">
+		SELECT count(*) FROM scd_day_info
+		WHERE pjt_id = #checkPjtId#	
+		AND
+		task_code = #checkTaskCode#	
+		AND
+		scd_day_reg_emp_num =#checkRegEmpNum#	
+	</select>	
+	
+	
+	<!-- 산출물다운로드 -->
+	<select id="DownselSupFile" resultClass="DownloadFileBean" >
+		SELECT
+		    SEPI.scd_exec_prpd_seq     AS ADD_FILE_NO        /*일정수행산출물순번 */                     
+		    ,SEPI.task_info_seq         AS NO                    /*타스크산출물순번   */                     
+		    ,TO_CHAR(TO_DATE(SEPI.prod_reg_date, 'YYYY-MM-DD'),'YYYY-MM-DD') AS CR_DATE            /*산출물등록일자     */                     
+		    ,SEPI.prod_reg_emp_num    AS CHMAN_NO        /*산출물등록자사번   */                     
+		    ,SEPI.prod_file_name     AS viewFileName                /*산출물파일명       */                     
+		    ,SEPI.prod_fil_path     AS filePath                /*산출물저장파일경로 */                     
+		    ,TO_CHAR(SEPI.final_mod_date,'YYYY-MM-DD')      AS UP_DATE                /*최종변경일시       */                     
+		    ,SEPI.saved_file_name     AS saveFileName        /*서버등록파일명 */                     
+		FROM                         
+			SCD_EXEC_PRPD_INFO SEPI 
+		WHERE 1=1
+		<isNotEmpty property="scd_exec_prpd_seq">
+		   	AND scd_exec_prpd_seq = #scd_exec_prpd_seq#	
+		</isNotEmpty> 	
+    </select>  	
+	
+</sqlMap>

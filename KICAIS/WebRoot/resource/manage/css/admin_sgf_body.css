@@ -1,0 +1,202 @@
+@charset "utf-8";
+
+
+/* ------------------------------------------------------------
+ * Name      : about.css
+ * Desc       : hanuritien site / about 
+ * Created   : 2009/03/02 hanuritien by greenqueen
+ * Updated  : 
+ ------------------------------------------------------------ */
+ 
+
+img{border:none}
+a {text-decoration:none;}
+
+ 
+a {selector-dummy: expression(this.hideFocus=true);} /* 링크이미지테두리 점선 안생기게 */
+
+body {
+ margin-left: 0px;
+ margin-top: 0px;
+ margin-right: 0px;
+ margin-bottom: 0px;
+ 
+ scrollbar-face-color: #d6eff5;
+ scrollbar-shadow-color: #bbbbbb;
+ scrollbar-highlight-color: #ffffff;
+ scrollbar-3dlight-color: #66cccc;
+ scrollbar-darkshadow-color: #bbbbbb;
+ scrollbar-track-color: #f8fafa;
+ scrollbar-arrow-color: #66cccc;}
+
+
+table  {
+    background: #ffffff;
+    color:#5e95a7;
+    text-align:left;
+    font-size: 12px; 
+    border-spacing: 4px;
+    width:100%;
+    
+}
+
+textarea,select{
+    color:#333333;
+    font-family:굴림,Gulim,sans-serif;
+     font-size: 12px; 
+}
+
+table a, table, tbody, tfoot, tr, th, td {
+    font-family:굴림,Gulim,sans-serif;
+}
+
+table, {
+    border-left:3px solid #ffffff;
+    border-right:3px solid #ffffff;
+    padding: 3px;
+}
+
+table a {
+    text-decoration: none;
+    background: inherit;
+    color: #30abce; 
+    font-weight:bold;
+    
+}
+
+table a:link {
+    text-decoration: none;
+    font-weight: bold;
+}
+
+table a:visited {
+    background: inherit;
+    color: #0093ad;
+}
+
+table a:hover {
+    background: inherit;
+    color: #00cccc;
+    position: relative;
+    top: 1px;
+    left: 1px;
+    text-decoration: none;
+    
+    
+}
+
+table caption {
+    
+    border-bottom:1px solid #669;
+    text-align: left;
+    padding:20px 5px 10px 20px; 
+    color: #405757;
+    font-family:굴림,Gulim,sans-serif; 
+    font-size: 14px; 
+    font-weight:bold;
+    background: #ffffff url(/resource/images/admin/img/tt_i.jpg) no-repeat 10px 60%;
+}
+
+thead th, tfoot th {
+  border: 1px solid #c2c2c2c;
+  text-align: left;
+  font-size: 12px; 
+  font-weight: bold;
+  color: #1b7c7c;
+  background: #ecf0f0;
+  }
+
+table, td, th {
+    margin:0px;
+    padding:5px;
+    border-left:1px solid #c2c2c2;
+    border-right:1px solid #c2c2c2;
+    border-bottom:1px solid #c2c2c2;
+}
+
+
+table, tr{
+   background:#f8fafa;color:#47555a;hover:expression(this.onmouseover==new Function("this.style.background='#d7ffff';"),this.onmouseout==new Function("this.style.background='#f8fafa';"));
+   }
+
+td, th {
+    height:30px;
+    border-top:1px solid #ffffff;
+    border-left:1px solid #ffffff;
+    border-right:1px solid #c2c2c2;
+    border-bottom:1px solid #c2c2c2;
+}
+
+col {
+     background: #b0f0f0;
+     }
+
+tr.odd {
+    color: inherit;
+    background: #d6eff5;
+}
+
+col{
+    border-right: 1px solid #e5e5e5;
+    
+}
+
+input {
+    font-family:굴림,Gulim,sans-serif; 
+    font-size: 12px; 
+    line-height:135%; 
+    color:#656a6b;
+    align:absmiddle;
+    BACKGROUND-COLOR:#ffffff;
+    border-right: #a9a9a9 1px solid; 
+    border-top: #a9a9a9 1px solid;
+    border-left: #a9a9a9 1px solid;
+    border-bottom: #a9a9a9 1px solid;  
+ }
+
+form {
+    font-family: "굴림", "Gulim", "sans-serif"; 
+    background-color: #f7f7f7; 
+    border-right: #a9a9a9 1px solid; 
+    border-top: #a9a9a9 1px solid;
+    border-left: #a9a9a9 1px solid;
+    border-bottom: #a9a9a9 1px solid;  
+    padding-left: 5px; 
+    font-size: 9pt; 
+    color: #474747;     
+}
+
+.input_popup {
+             BORDER-RIGHT: #d5d5d5 1px solid; 
+             BORDER-TOP: #d5d5d5 1px solid;
+             PADDING-LEFT: 3px; FONT-SIZE: 9pt; 
+             BORDER-LEFT: #d5d5d5 1px solid;
+             COLOR: #464646; 
+             BORDER-BOTTOM: #d5d5d5 1px solid; 
+             BACKGROUND-COLOR:#d1fefe;
+}
+
+.keyword    {font-family:굴림,Gulim,sans-serif;  font-size: 12px; LINE-HEIGHT:135%; COLOR:#656a6b;align:absmiddle; width:200px;height:20px;}
+
+.button {
+background:url(/resource/images/admin/img/bg_b02.gif);  
+border:1x solid #66cccc; 
+background-Color:#ECF0F0;  
+font:12px 굴림;     
+font-weight:bold;   
+color:#0093ad;    
+width:80;height:25;  
+margin-left:5px;margin-right:5px;
+}
+
+.button02 { 
+background:url(/resource/images/admin/img/bg_b02.gif);   
+border:1x solid #dcdbdb; 
+background-Color:#ECF0F0;  
+font:12px 굴림;     
+font-weight:bold;   
+color:#666666;    
+width:80px;height:25px;  
+margin-left:5px;margin-right:5px;
+}
+

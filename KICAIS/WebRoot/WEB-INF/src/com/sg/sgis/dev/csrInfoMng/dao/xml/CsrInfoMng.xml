@@ -1,0 +1,664 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : CsrInfo.xml
+    Description : 업무요청정보관리
+-->
+<sqlMap namespace="CsrInfo">
+
+	<!-- 업무요청정보목록조회 -->
+	<select id="selectCsrInfo" parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 'R' flag			   	   							 /*조회상태*/			
+							 , CI.csr_id  										 /*업무요청ID*/
+							 , CI.csr_type_code  								 /*업무요청구분코드*/
+							 , (
+							       SELECT A.com_code_name
+							         FROM com_code A
+							        WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CI.csr_type_code
+							        AND A.use_yn ='Y'
+						       ) csr_type_name									/*업무요청구분명*/	
+							 , TO_CHAR(TO_DATE(CI.csr_date, 'YYYY-MM-DD'),'YYYY-MM-DD') AS csr_date  										 	/*요청일자*/
+							 , CI.csr_dept_code  										/*요청부서코드*/
+							 ,(
+						       SELECT B.dept_name
+						         FROM com_dept B
+						        WHERE B.dept_code = CI.csr_dept_code
+						       ) csr_dept_name											/*요청부서명*/
+							 , CI.csr_emp_num    									  	/*요청자사번*/
+							 ,(
+						       SELECT C.kor_name
+						         FROM com_emp_info C
+						        WHERE C.emp_num = CI.csr_emp_num
+						       ) csr_emp_name											/*요청자명*/
+							 , CI.csr_title                    							/*요청제목*/        
+							 , CI.final_mod_id                  						/*최종변경자ID*/    
+							 , TO_CHAR(CI.final_mod_date,'YYYY-MM-DD') final_mod_date 	/*최종변경일시*/
+						  FROM csr_info CI 	   							 	  			/*업무요청정보관리*/
+						 WHERE CI.use_yn ='Y'
+						<isNotEmpty property="src_csr_date_from">
+							AND CI.csr_date  <![CDATA[>=]]>  #src_csr_date_from#
+						</isNotEmpty>
+						<isNotEmpty property="src_csr_date_to">
+							AND CI.csr_date  <![CDATA[<=]]>  #src_csr_date_to#
+						</isNotEmpty>
+						 <isNotEmpty property="src_csr_type_code">
+						   AND CI.csr_type_code = #src_csr_type_code#
+						 </isNotEmpty>
+						 <isNotEmpty property="src_csr_dept_code">
+						   AND CI.csr_dept_code = #src_csr_dept_code#
+						 </isNotEmpty>
+						 <isNotEmpty property="session_dept_code">
+						   AND CI.csr_emp_num in( select emp_num from com_emp_info where dept_code = #session_dept_code# )
+						 </isNotEmpty>
+						 <isNotEmpty property="reg_id">
+							AND CI.csr_emp_num  = #reg_id#
+						</isNotEmpty>
+						 ORDER BY CI.final_mod_date desc          
+					  ) A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 업무요청정보관리 총갯수 -->
+	<select id="selectCsrInfoCount" parameterClass="HashMap" resultClass="int">
+		SELECT	count(*) 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 'R' flag			   	   							 /*조회상태*/			
+							 , CI.csr_id  										 /*업무요청ID*/
+							 , CI.csr_type_code  								 /*업무요청구분코드*/
+							 , (
+							       SELECT A.com_code_name
+							         FROM com_code A
+							        WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CI.csr_type_code
+							        AND A.use_yn ='Y'
+						       ) csr_type_name									/*업무요청구분명*/	
+							 , TO_CHAR(TO_DATE(CI.csr_date, 'YYYY-MM-DD'),'YYYY-MM-DD') AS csr_date  										 	/*요청일자*/
+							 , CI.csr_dept_code  										/*요청부서코드*/
+							 ,(
+						       SELECT B.dept_name
+						         FROM com_dept B
+						        WHERE B.dept_code = CI.csr_dept_code
+						       ) csr_dept_name											/*요청부서명*/
+							 , CI.csr_emp_num    									  	/*요청자사번*/
+							 ,(
+						       SELECT C.kor_name
+						         FROM com_emp_info C
+						        WHERE C.emp_num = CI.csr_emp_num
+						       ) csr_emp_name											/*요청자명*/
+							 , CI.csr_title                    							/*요청제목*/        
+							 , CI.final_mod_id                  						/*최종변경자ID*/    
+							 , TO_CHAR(CI.final_mod_date,'YYYY-MM-DD') final_mod_date 	/*최종변경일시*/
+						  FROM csr_info CI 	   							 	  			/*업무요청정보관리*/
+						 WHERE CI.use_yn ='Y'
+						<isNotEmpty property="src_csr_date_from">
+							AND CI.csr_date  <![CDATA[>=]]>  #src_csr_date_from#
+						</isNotEmpty>
+						<isNotEmpty property="src_csr_date_to">
+							AND CI.csr_date  <![CDATA[<=]]>  #src_csr_date_to#
+						</isNotEmpty>
+						 <isNotEmpty property="src_csr_type_code">
+						   AND CI.csr_type_code = #src_csr_type_code#
+						 </isNotEmpty>
+						 <isNotEmpty property="src_csr_dept_code">
+						   AND CI.csr_dept_code = #src_csr_dept_code#
+						 </isNotEmpty>
+						 <isNotEmpty property="session_dept_code">
+						   AND CI.csr_emp_num in( select emp_num from com_emp_info where dept_code = #session_dept_code# )
+						 </isNotEmpty>
+						 <isNotEmpty property="reg_id">
+							AND CI.csr_emp_num  = #reg_id#
+						</isNotEmpty>
+						 ORDER BY CI.final_mod_date desc          
+					  ) A
+		       )
+	</select>
+
+  	<!-- 업무요청정보 등록 -->
+	<insert id="insertCsrInfo" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO csr_info	 ( csr_id				  	/*업무요청ID*/
+								  , csr_type_code           /*업무요청구분코드*/
+								  , csr_date           		/*요청일자*/
+								  , csr_dept_code           /*요청부서코드*/
+								  , csr_emp_num             /*요청자사번*/
+								  , csr_title               /*요청제목*/
+								  , final_mod_id            /*최종변경자ID*/
+								  , final_mod_date          /*최종변경일시*/
+								  ,reg_id     			/*등록일시	          */   	
+								  ,reg_date  				/*등록자ID	          */  
+								  ,use_yn  				/*사용유무	          */
+								  )
+						   VALUES ( #csr_id#				  
+								  , #csr_type_code#        
+								  , #csr_date#       
+								  , #csr_dept_code#               
+								  , #csr_emp_num#              
+								  , #csr_title#                   
+								  , #final_mod_id#            
+								  , SYSDATE                  
+								  , #final_mod_id#            
+								  , SYSDATE
+								  , 'Y'
+							      )
+	]]>
+	</insert>
+	
+	<!-- 업무요청정보  수정 -->
+	<update id="updateCsrInfo" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE csr_info
+		   SET csr_type_code = #csr_type_code#           /*업무요청구분코드*/
+			 , csr_date       = #csr_date#               /*요청일자*/    
+			 , csr_dept_code  = #csr_dept_code#          /*요청부서코드*/  
+			 , csr_emp_num    = #csr_emp_num#            /*요청자사번*/        
+			 , csr_title      = #csr_title#              /*요청제목*/    
+			 , final_mod_id   = #final_mod_id#           /*최종변경자ID*/
+			 , final_mod_date = SYSDATE                  /*최종변경일시*/
+		 WHERE csr_id       = #csr_id#				 	 /*업무요청ID*/
+	]]>
+	</update>
+	
+	<!-- 업무요청정보  사용유무 N  -->
+	<update id="updateCsrInfoUseYn" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE csr_info
+		   SET use_yn = #csrInfoYn#           /*사용유무*/
+			 , final_mod_id   = #final_mod_id#           /*최종변경자ID*/
+			 , final_mod_date = SYSDATE                  /*최종변경일시*/
+		 WHERE csr_id       = #csr_id#				 	 /*업무요청ID*/
+	]]>
+	</update>	
+
+
+	<!-- 업무요청정보  삭제-->
+    <delete id="deleteCsrInfo" parameterClass="HashMap">
+        DELETE FROM csr_info 
+        WHERE   csr_id     = #csr_id#                         
+    </delete> 
+
+
+	
+	
+	<!-- 업무요청유형_상세(제품)조회 -->
+	<select id="selectCsrPatternItem" parameterClass="HashMap" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag                                                                           /*조회상태*/            
+                         , CP.csr_id                                               /*업무요청ID*/
+                         , CP.csr_info_seq                                      /*업무요청순번*/
+                         , CP.csr_pattern_code                                  /*업무요청유형코드*/
+                         , (
+                               SELECT A.com_code_name
+                                 FROM com_code A
+                                WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CP.csr_pattern_code
+                                AND A.use_yn ='Y'
+                           ) csr_pattern_name                                        /*업무요청유형코드명*/
+                         , CP.item_code                                           /*품목코드*/
+                         , (
+                               SELECT B.item_name
+                                 FROM com_item B
+                                WHERE B.item_code = CP.item_code
+                           ) item_name                                            /*품목코드명*/
+                         , CP.csr_note                                            /*업무요청내용*/
+                         , CP.pjt_id                                            /*프로젝트ID*/        
+                         , CP.pjt_info_seq                                        /*프로젝트순번*/    
+                         , CP.csr_status_code                                    /*요청상태코드*/
+                         , (
+                               SELECT C.com_code_name
+                                 FROM com_code C
+                                WHERE C.group_code = 'REQUEST_STATUS_CODE' AND C.com_code = CP.csr_status_code
+                                AND C.use_yn ='Y'
+                           ) csr_status_name                                        /*요청상태코드명*/
+                         , CP.csr_status_reason                                    /*요청상태사유*/             
+                         ,TO_CHAR(TO_DATE(CP.deal_date, 'YYYY-MM-DD'),'YYYY-MM-DD') deal_date                                          /*처리일자*/
+                         , CP.deal_dept_code                                      /*처리부서코드*/
+                         ,(
+                           SELECT D.dept_name
+                             FROM com_dept D
+                            WHERE D.dept_code = CP.deal_dept_code
+                           ) deal_dept_name                                        /*처리부서코드명*/
+                         , CP.deal_emp_num                                        /*처리자사번*/
+                         ,(
+                           SELECT E.kor_name
+                             FROM com_emp_info E
+                            WHERE E.emp_num = CP.deal_emp_num
+                           ) deal_emp_name                                        /*처리자명*/
+                         , CP.deal_note                                            /*처리내용*/ 
+                         , CP.deal_yn                                            /*처리완료코드*/
+                         ,(
+                               SELECT C.com_code_name
+                                 FROM com_code C
+                                WHERE C.group_code = 'SR_FLOW_CODE' AND C.com_code = CP.deal_yn
+                                AND C.use_yn ='Y'
+                           ) deal_yn_name                                        /*처리완료명*/
+                         , CP.final_mod_id                                          /*최종변경자ID*/    
+                         , TO_CHAR(CP.final_mod_date,'YYYY-MM-DD') final_mod_date     /*최종변경일시*/
+                      FROM csr_pattern_item CP       
+					 WHERE CP.csr_id       = #csr_id#	
+					 ORDER BY   CP.pjt_id, CP.item_code ASC
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!-- 업무요청유형_제품 총갯수 -->
+	<select id="selectCsrPatternItemCount" parameterClass="HashMap" resultClass="int">
+	SELECT	count(*) 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag                                                                           /*조회상태*/            
+                         , CP.csr_id                                               /*업무요청ID*/
+                         , CP.csr_info_seq                                      /*업무요청순번*/
+                         , CP.csr_pattern_code                                  /*업무요청유형코드*/
+                         , (
+                               SELECT A.com_code_name
+                                 FROM com_code A
+                                WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CP.csr_pattern_code
+                                AND A.use_yn ='Y'
+                           ) csr_pattern_name                                        /*업무요청유형코드명*/
+                         , CP.item_code                                           /*품목코드*/
+                         , (
+                               SELECT B.item_name
+                                 FROM com_item B
+                                WHERE B.item_code = CP.item_code
+                           ) item_name                                            /*품목코드명*/
+                         , CP.csr_note                                            /*업무요청내용*/
+                         , CP.pjt_id                                            /*프로젝트ID*/        
+                         , CP.pjt_info_seq                                        /*프로젝트순번*/    
+                         , CP.csr_status_code                                    /*요청상태코드*/
+                         , (
+                               SELECT C.com_code_name
+                                 FROM com_code C
+                                WHERE C.group_code = 'REQUEST_STATUS_CODE' AND C.com_code = CP.csr_status_code
+                                AND C.use_yn ='Y'
+                           ) csr_status_name                                        /*요청상태코드명*/
+                         , CP.csr_status_reason                                    /*요청상태사유*/             
+                         , CP.deal_date                                          /*처리일자*/
+                         , CP.deal_dept_code                                      /*처리부서코드*/
+                         ,(
+                           SELECT D.dept_name
+                             FROM com_dept D
+                            WHERE D.dept_code = CP.deal_dept_code
+                           ) deal_dept_name                                        /*처리부서코드명*/
+                         , CP.deal_emp_num                                        /*처리자사번*/
+                         ,(
+                           SELECT E.kor_name
+                             FROM com_emp_info E
+                            WHERE E.emp_num = CP.deal_emp_num
+                           ) deal_emp_name                                        /*처리자명*/
+                         , CP.deal_note                                            /*처리내용*/ 
+                         , CP.deal_yn                                            /*처리완료코드*/
+                         ,(
+                               SELECT C.com_code_name
+                                 FROM com_code C
+                                WHERE C.group_code = 'SR_FLOW_CODE' AND C.com_code = CP.deal_yn
+                                AND C.use_yn ='Y'
+                           ) deal_yn_name                                        /*처리완료명*/
+                         , CP.final_mod_id                                          /*최종변경자ID*/    
+                         , TO_CHAR(CP.final_mod_date,'YYYY-MM-DD') final_mod_date     /*최종변경일시*/
+                      FROM csr_pattern_item CP       
+					 WHERE CP.csr_id       = #csr_id#	
+					 ORDER BY   CP.pjt_id, CP.item_code ASC
+				  ) A
+	       )
+	</select>
+
+  	<!-- 업무요청유형_제품 등록 -->
+	<insert id="insertCsrPatternItem" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO csr_pattern_item( csr_id				  	/*업무요청ID		*/      
+										,csr_info_seq		    /*업무요청순번	    */      
+										,csr_pattern_code	    /*업무요청유형코드  */      
+										,item_code			    /*품목코드		    */      
+										,csr_note			    /*업무요청내용	    */      
+										,pjt_id				    /*프로젝트ID		*/      
+										,pjt_info_seq		    /*프로젝트순번	    */      
+										,csr_status_code	    /*요청상태코드	    */      
+										,csr_status_reason	    /*요청상태사유	    */      
+										,deal_date			    /*처리일자		    */      
+										,deal_dept_code		    /*처리부서코드	    */      
+										,deal_emp_num		    /*처리자사번		*/      
+										,deal_note			    /*처리내용		    */      
+										,deal_yn			    /*처리완료여부  10-요청중 50-요청처리중  90-요청처리완료		    */  
+										,final_mod_id			/*최종변경자ID	    */  
+										,final_mod_date			/*최종변경일시	    */  
+										,reg_id     			/*등록일시	          */   	
+									    ,reg_date  				/*등록자ID	          */      
+							  )
+					   VALUES ( #csr_id#						
+					            ,SQ_CSR_INFO_SEQ.NEXTVAL                
+					   			,#csr_pattern_code#	            
+					   			,#item_code#			        
+					   			,#csr_note#			            
+					   			,#pjt_id#				        
+					   			,#pjt_info_seq#		            
+					   			,#csr_status_code#	            
+					   			,#csr_status_reason#            
+					   			,#deal_date#			        
+					   			,#deal_dept_code#		        
+					   			,#deal_emp_num#		            
+					   			,#deal_note#			        
+					   			,'10'			            
+							    ,#final_mod_id#                 
+							    ,SYSDATE  
+							    ,#final_mod_id#                 
+							    ,SYSDATE                      
+						      )
+	]]>
+	</insert>
+	
+	<!-- 업무요청유형_제품  수정 -->
+	<update id="updateCsrPatternItem" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE csr_pattern_item
+		   SET csr_pattern_code = #csr_pattern_code#           	/*업무요청구분코드*/
+			 , item_code       = #item_code#               		/*품목코드*/    
+			 , csr_note  = #csr_note#          					/*업무요청내용*/  
+			 , pjt_id    = #pjt_id#            					/*프로젝트ID*/        
+			 , pjt_info_seq      = #pjt_info_seq#              	/*프로젝트순번*/   
+			 , csr_status_code      = #csr_status_code#         /*요청상태코드*/
+			 , csr_status_reason      = #csr_status_reason#     /*요청상태사유*/
+			 , deal_date      = #deal_date#              		/*처리일자*/
+			 , deal_dept_code      = #deal_dept_code#           /*처리부서코드*/
+			 , deal_emp_num      = #deal_emp_num#              	/*처리자사번*/
+			 , deal_note      = #deal_note#              		/*처리내용*/
+			 , deal_yn      = #deal_yn#              			/*처리완료여부*/
+			 , final_mod_id   = #final_mod_id#           		/*최종변경자ID*/
+			 , final_mod_date = SYSDATE                  		/*최종변경일시*/
+		 WHERE csr_id       = #csr_id#				 	 		/*업무요청ID*/
+		 AND csr_info_seq   = #csr_info_seq#				 	/*업무요청순번*/
+	]]>
+	</update>	
+	
+	<!-- 업무요청유형_제품삭제-->
+    <delete id="deleteCsrPatternItem" parameterClass="HashMap">
+        DELETE FROM csr_pattern_item 
+         WHERE csr_id       = #csr_id#				 	 	/*업무요청ID*/
+	 	 AND csr_info_seq   = #csr_info_seq#				 	/*업무요청순번*/                
+    </delete> 	
+    
+    
+	<!-- 업무요청검토 관리조회 -->
+	<select id="selectCsrReview" parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 'R' flag                                              /*조회상태*/            
+	                         , CP.csr_id                                             /*업무요청ID*/
+	                         , CP.csr_info_seq                                       /*업무요청순번*/
+	                         , CP.csr_pattern_code                                   /*업무요청유형코드*/
+	                         , (
+	                               SELECT A.com_code_name
+	                                 FROM com_code A
+	                                WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CP.csr_pattern_code
+	                                AND A.use_yn ='Y'
+	                           ) csr_pattern_name                                       /*업무요청유형코드명*/
+	                         , CP.item_code                                           /*품목코드*/
+	                         , (
+	                               SELECT B.item_name
+	                                 FROM com_item B
+	                                WHERE B.item_code = CP.item_code
+	                           ) item_name                                              /*품목코드명*/
+	                         , CP.csr_note                                            /*업무요청내용*/
+	                         , CP.pjt_id                                              /*프로젝트ID*/        
+	                         , CP.pjt_info_seq                                        /*프로젝트순번*/    
+	                         , CP.csr_status_code                                     /*요청상태코드*/
+	                         , (
+	                               SELECT C.com_code_name
+	                                 FROM com_code C
+	                                WHERE C.group_code = 'REQUEST_STATUS_CODE' AND C.com_code = CP.csr_status_code
+	                                AND C.use_yn ='Y'
+	                           ) csr_status_name                                         /*요청상태코드명*/
+	                         , CP.csr_status_reason                                    /*요청상태사유*/             
+	                         , TO_CHAR(TO_DATE(CP.deal_date, 'YYYY-MM-DD'),'YYYY-MM-DD') AS deal_date        /*처리일자*/
+	                         , CP.deal_dept_code                                       /*처리부서코드*/
+	                         ,(
+	                           SELECT D.dept_name
+	                             FROM com_dept D
+	                            WHERE D.dept_code = CP.deal_dept_code
+	                           ) deal_dept_name                                         /*처리부서코드명*/
+	                         , CP.deal_emp_num                                        /*처리자사번*/
+	                         ,(
+	                           SELECT E.kor_name
+	                             FROM com_emp_info E
+	                            WHERE E.emp_num = CP.deal_emp_num
+	                           ) deal_emp_name                                           /*처리자명*/
+	                         , CP.deal_note                                            /*처리내용*/ 
+	                         , CP.deal_yn                                              /*처리완료여부*/
+	                         ,(
+	                               SELECT C.com_code_name
+	                                 FROM com_code C
+	                                WHERE C.group_code = 'SR_FLOW_CODE' AND C.com_code = CP.deal_yn
+	                                AND C.use_yn ='Y'
+	                           ) deal_yn_name                                        	    /*처리완료명*/
+	                         , CP.final_mod_id                                         /*최종변경자ID*/    
+	                         , TO_CHAR(CP.final_mod_date,'YYYY-MM-DD') final_mod_date  /*최종변경일시*/
+	                         , TO_CHAR(TO_DATE(CI.csr_date, 'YYYY-MM-DD'),'YYYY-MM-DD') csr_date   /*요청일자*/
+							 , CI.csr_dept_code  									   /*요청부서코드*/
+							 ,(
+						       SELECT B.dept_name
+						         FROM com_dept B
+						        WHERE B.dept_code = CI.csr_dept_code
+						       ) csr_dept_name											/*요청부서명*/
+							 , CI.csr_emp_num    									  	/*요청자사번*/
+							 ,(
+						       SELECT C.kor_name
+						         FROM com_emp_info C
+						        WHERE C.emp_num = CI.csr_emp_num
+						       ) csr_emp_name											/*요청자명*/
+						     , CI.csr_type_code  									/*업무요청구분코드*/
+							 , (
+							       SELECT A.com_code_name
+							         FROM com_code A
+							        WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CI.csr_type_code
+							        AND A.use_yn ='Y'
+						       ) csr_type_name  										/*업무요청구분명*/
+						      , CI.csr_title                    					/*요청제목*/ 
+	                      FROM csr_pattern_item CP, csr_info CI 	   							 	  			
+						 WHERE
+						 CI.use_yn ='Y'
+						 AND
+						 CP.csr_id       = CI.csr_id
+						 AND CI.csr_type_code != '20'
+						<isNotEmpty property="src_rw_csr_date_from">
+							AND CI.csr_date  <![CDATA[>=]]>  #src_rw_csr_date_from#
+						</isNotEmpty>
+						<isNotEmpty property="src_rw_csr_date_to">
+							AND CI.csr_date  <![CDATA[<=]]>  #src_rw_csr_date_to#
+						</isNotEmpty>
+						 <isNotEmpty property="src_csr_type_code">
+						   AND CI.csr_type_code = #src_csr_type_code#
+						 </isNotEmpty>
+						 <isNotEmpty property="src_csr_dept_code">
+						   AND CI.csr_dept_code = #src_csr_dept_code#
+						 </isNotEmpty>
+						 <isNotEmpty property="session_dept_code">
+						   AND CI.csr_emp_num in( select emp_num from com_emp_info where dept_code = #session_dept_code# )
+						 </isNotEmpty>
+						 <isNotEmpty property="reg_id">
+							AND CI.csr_emp_num  = #reg_id#
+						</isNotEmpty>
+						 ORDER BY CI.final_mod_date desc
+					  ) A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	
+	<!--업무요청검토 관리조회 총갯수 -->
+	<select id="selectCsrReviewCount" parameterClass="HashMap" resultClass="int">
+		SELECT	count(*) 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 'R' flag                                              /*조회상태*/            
+	                         , CP.csr_id                                             /*업무요청ID*/
+	                         , CP.csr_info_seq                                       /*업무요청순번*/
+	                         , CP.csr_pattern_code                                   /*업무요청유형코드*/
+	                         , (
+	                               SELECT A.com_code_name
+	                                 FROM com_code A
+	                                WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CP.csr_pattern_code
+	                                AND A.use_yn ='Y'
+	                           ) csr_pattern_name                                       /*업무요청유형코드명*/
+	                         , CP.item_code                                           /*품목코드*/
+	                         , (
+	                               SELECT B.item_name
+	                                 FROM com_item B
+	                                WHERE B.item_code = CP.item_code
+	                           ) item_name                                              /*품목코드명*/
+	                         , CP.csr_note                                            /*업무요청내용*/
+	                         , CP.pjt_id                                              /*프로젝트ID*/        
+	                         , CP.pjt_info_seq                                        /*프로젝트순번*/    
+	                         , CP.csr_status_code                                     /*요청상태코드*/
+	                         , (
+	                               SELECT C.com_code_name
+	                                 FROM com_code C
+	                                WHERE C.group_code = 'REQUEST_STATUS_CODE' AND C.com_code = CP.csr_status_code
+	                                AND C.use_yn ='Y'
+	                           ) csr_status_name                                         /*요청상태코드명*/
+	                         , CP.csr_status_reason                                    /*요청상태사유*/             
+	                         , TO_CHAR(TO_DATE(CP.deal_date, 'YYYY-MM-DD'),'YYYY-MM-DD') deal_date      /*처리일자*/
+	                         , CP.deal_dept_code                                       /*처리부서코드*/
+	                         ,(
+	                           SELECT D.dept_name
+	                             FROM com_dept D
+	                            WHERE D.dept_code = CP.deal_dept_code
+	                           ) deal_dept_name                                         /*처리부서코드명*/
+	                         , CP.deal_emp_num                                        /*처리자사번*/
+	                         ,(
+	                           SELECT E.kor_name
+	                             FROM com_emp_info E
+	                            WHERE E.emp_num = CP.deal_emp_num
+	                           ) deal_emp_name                                           /*처리자명*/
+	                         , CP.deal_note                                            /*처리내용*/ 
+	                         , CP.deal_yn                                              /*처리완료여부*/
+	                         ,(
+	                               SELECT C.com_code_name
+	                                 FROM com_code C
+	                                WHERE C.group_code = 'SR_FLOW_CODE' AND C.com_code = CP.deal_yn
+	                                AND C.use_yn ='Y'
+	                           ) deal_yn_name                                        	    /*처리완료명*/
+	                         , CP.final_mod_id                                         /*최종변경자ID*/    
+	                         , TO_CHAR(CP.final_mod_date,'YYYY-MM-DD') final_mod_date  /*최종변경일시*/
+	                         , CI.csr_date  										   /*요청일자*/
+							 , CI.csr_dept_code  									   /*요청부서코드*/
+							 ,(
+						       SELECT B.dept_name
+						         FROM com_dept B
+						        WHERE B.dept_code = CI.csr_dept_code
+						       ) csr_dept_name											/*요청부서명*/
+							 , CI.csr_emp_num    									  	/*요청자사번*/
+							 ,(
+						       SELECT C.kor_name
+						         FROM com_emp_info C
+						        WHERE C.emp_num = CI.csr_emp_num
+						       ) csr_emp_name											/*요청자명*/
+						     , CI.csr_type_code  									/*업무요청구분코드*/
+							 , (
+							       SELECT A.com_code_name
+							         FROM com_code A
+							        WHERE A.group_code = 'SR_TYPE_CODE' AND A.com_code = CI.csr_type_code
+							        AND A.use_yn ='Y'
+						       ) csr_type_name  										/*업무요청구분명*/
+						      , CI.csr_title                    					/*요청제목*/ 
+	                      FROM csr_pattern_item CP, csr_info CI 	   							 	  			
+						 WHERE
+						 CI.use_yn ='Y'
+						 AND
+						 CP.csr_id       = CI.csr_id
+						 AND CI.csr_type_code != '20'
+						<isNotEmpty property="src_rw_csr_date_from">
+							AND CI.csr_date  <![CDATA[>=]]>  #src_rw_csr_date_from#
+						</isNotEmpty>
+						<isNotEmpty property="src_rw_csr_date_to">
+							AND CI.csr_date  <![CDATA[<=]]>  #src_rw_csr_date_to#
+						</isNotEmpty>
+						 <isNotEmpty property="src_csr_type_code">
+						   AND CI.csr_type_code = #src_csr_type_code#
+						 </isNotEmpty>
+						 <isNotEmpty property="src_csr_dept_code">
+						   AND CI.csr_dept_code = #src_csr_dept_code#
+						 </isNotEmpty>
+						 <isNotEmpty property="session_dept_code">
+						   AND CI.csr_emp_num in( select emp_num from com_emp_info where dept_code = #session_dept_code# )
+						 </isNotEmpty>
+						 <isNotEmpty property="reg_id">
+							AND CI.csr_emp_num  = #reg_id#
+						</isNotEmpty>
+						 ORDER BY CI.final_mod_date desc
+					  ) A
+		       )
+	</select>
+
+ 	
+	<!-- 업무요청검토 관리 수정 -->
+	<update id="updateCsrReview" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE csr_pattern_item
+		   SET csr_status_code      = #csr_status_code#         /*요청상태코드*/
+			 , csr_status_reason      = #csr_status_reason#     /*요청상태사유*/
+			 , deal_date      =	to_char(sysdate,'YYYYMMDD')		/*처리일자*/
+			 , deal_dept_code =	#deal_dept_code# 				/*처리부서코드*/	
+			 , deal_emp_num   =	#deal_emp_num# 					/*처리자사번*/	
+			 , final_mod_id   = #final_mod_id#           		/*최종변경자ID*/
+			 , final_mod_date = SYSDATE                  		/*최종변경일시*/
+		 WHERE csr_id       = #csr_id#				 	 		/*업무요청ID*/
+		 AND csr_info_seq   = #csr_info_seq#				 	/*업무요청순번*/
+	]]>
+	</update>	    
+    
+
+	<!-- 프로젝트 제품 -->
+	 <select id="selectPjtItem" parameterClass="HashMap" resultClass="HashMap">
+		SELECT 
+				'R' flag  
+				,A.PJT_INFO_SEQ 
+				,TO_CHAR(TO_DATE(A.PJT_REG_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS PJT_REG_DATE
+				,A.PJT_ID
+				,B.PJT_NAME
+				,A.ITEM_CODE
+				,(
+			       SELECT ITEM_NAME
+			          FROM COM_ITEM
+			          WHERE ITEM_CODE = A.ITEM_CODE
+			     ) ITEM_NAME
+				,A.CPU_CNT
+				,A.CORE_CNT
+				,A.CNT
+				,A.UNIT_PRICE
+				,A.AMT
+				,A.TAX
+				,A.NOTE
+				,(select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID  
+				,TO_CHAR(A.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE
+				,TO_CHAR(A.REG_DATE,'YYYY-MM-DD') REG_DATE 
+				,(select admin_nm from tb_admin where admin_id=A.REG_ID) as REG_ID
+		FROM PJT_SAL_ITEM A, PJT_INFO B
+		WHERE
+		A.PJT_ID = B.PJT_ID
+		AND A.PJT_ID = #pjt_id#							
+	</select>
+	
+</sqlMap>

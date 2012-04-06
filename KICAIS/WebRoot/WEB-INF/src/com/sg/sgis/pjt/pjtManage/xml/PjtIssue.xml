@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : PjtIssue.xml
+    Description : 프로젝트 이슈관리
+    
+-->
+<sqlMap namespace="PjtIssue">
+
+	<select id="selectPjtIssue" parameterClass="HashMap" resultClass="HashMap"> 
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT * FROM(	
+									SELECT 
+										 'R' FLAG 
+										, A.ISSUE_INFO_SEQ
+										, TO_CHAR(TO_DATE(A.PJT_REG_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS PJT_REG_DATE
+										, A.PJT_ID
+										,(  SELECT PJT_DATE_FROM FROM PJT_INFO WHERE PJT_ID = A.PJT_ID ) PJT_DATE_FROM
+										,(  SELECT PJT_DATE_TO FROM PJT_INFO WHERE PJT_ID = A.PJT_ID ) PJT_DATE_TO
+									    ,(
+									        SELECT PJT_NAME
+									          FROM PJT_INFO
+									          WHERE PJT_ID = A.PJT_ID 
+									     ) PJT_NAME  
+									          
+										, A.ISSUE_TYPE_CODE
+										, A.ISSUE_CODE
+										  
+										, A.ISSUE_REG_DEPT_CODE
+										,(                                                                             
+									        SELECT B.DEPT_NAME                                                             
+									          FROM COM_DEPT B                                                               
+									          WHERE B.DEPT_CODE = A.ISSUE_REG_DEPT_CODE                                      
+									     ) ISSUE_REG_DEPT_NM   
+										
+										, A.ISSUE_REG_DEPT_NUM
+										,(                                                                                 
+									        SELECT C.KOR_NAME                                                              
+									          FROM COM_EMP_INFO C                                                           
+									          WHERE C.EMP_NUM = A.ISSUE_REG_DEPT_NUM                                          
+									     ) ISSUE_REG_DEPT_NUM_NM    	   
+										
+										, A.ISSUE_DUTY_DEPT_CODE
+										,(                                                                             
+									        SELECT D.DEPT_NAME                                                             
+									          FROM COM_DEPT D                                                               
+									          WHERE D.DEPT_CODE = A.ISSUE_DUTY_DEPT_CODE                                      
+									     ) ISSUE_DUTY_DEPT_NM  
+										
+										, A.ISSUE_DUTY_DEPT_NUM
+										,(                                                                                 
+									        SELECT E.KOR_NAME                                                              
+									          FROM COM_EMP_INFO E                                                           
+									          WHERE E.EMP_NUM = A.ISSUE_DUTY_DEPT_NUM                                          
+									     ) ISSUE_DUTY_DEPT_NUM_NM
+										
+										, A.ISSUE_TERMINATE_NOTE
+										, A.PROC_STATUS_CODE
+										,(
+									        SELECT F.COM_CODE_NAME
+									          FROM COM_CODE F
+									          WHERE F.GROUP_CODE = 'FLOW_STATUS_CODE' AND F.COM_CODE = A.PROC_STATUS_CODE
+									          AND F.USE_YN ='Y'
+									     )PROC_STATUS_NM    
+										
+										, A.EFFECT
+										,(
+									        SELECT G.COM_CODE_NAME
+									          FROM COM_CODE G
+									          WHERE G.GROUP_CODE = 'EFFECT_TYPE_CODE' AND G.COM_CODE = A.EFFECT
+									          AND G.USE_YN ='Y'
+									     ) EFFECT_NM   
+								     
+										, A.EMERGNCY
+										,(
+									        SELECT H.COM_CODE_NAME
+									          FROM COM_CODE H
+									          WHERE H.GROUP_CODE = 'EMERGNCY_TYPE_CODE' AND H.COM_CODE = A.EMERGNCY
+									          AND H.USE_YN ='Y'
+									     ) EMERGNCY_NM 
+										
+										, A.NOTE 
+										
+										,(SELECT ADMIN_NM FROM TB_ADMIN WHERE ADMIN_ID=A.FINAL_MOD_ID) AS FINAL_MOD_ID  
+										,TO_CHAR(A.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE
+										,TO_CHAR(A.REG_DATE,'YYYY-MM-DD') REG_DATE 
+										,(SELECT ADMIN_NM FROM TB_ADMIN WHERE ADMIN_ID=A.REG_ID) AS REG_ID 
+									     
+								FROM PJT_ISSUE A
+								WHERE	(  SELECT PJT_TYPE_CODE
+								         	FROM PJT_INFO
+								         	WHERE PJT_ID = A.PJT_ID 
+								   		) IN ('10', '20') 
+								
+								<isNotEmpty property="src_pjt_type_code">
+									AND (  SELECT PJT_TYPE_CODE
+									          FROM PJT_INFO
+									          WHERE PJT_ID = A.PJT_ID 
+									     )  = #src_pjt_type_code#   
+								</isNotEmpty> 
+				 ) WHERE 1=1
+					<isNotEmpty property="src_issue_type_code">
+						AND ISSUE_TYPE_CODE = #src_issue_type_code#
+					</isNotEmpty> 
+					 
+					<isNotEmpty property="src_pjt_id">
+						AND pjt_id = #src_pjt_id#   
+					</isNotEmpty>
+					
+					<isNotEmpty property="src_pjt_name">
+						AND pjt_name like '%'||#src_pjt_name#||'%'   
+					</isNotEmpty>
+					 
+					<isNotEmpty property="src_pjt_date_from">
+						AND PJT_DATE_FROM  <![CDATA[>=]]>  REPLACE(#src_pjt_date_from#, '-', '') 
+					</isNotEmpty>
+					
+					<isNotEmpty property="src_pjt_date_to">
+						AND PJT_DATE_TO  <![CDATA[<=]]>  REPLACE(#src_pjt_date_to#, '-', '')
+					</isNotEmpty>
+					
+					<isNotEmpty property="session_dept_code">
+						AND(	 
+						     ISSUE_REG_DEPT_CODE = #session_dept_code#
+						  OR ISSUE_DUTY_DEPT_CODE = #session_dept_code#
+						)
+					</isNotEmpty>
+					ORDER BY REG_ID ,FINAL_MOD_DATE	 			
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	 ORDER BY PJT_REG_DATE DESC, PJT_ID DESC
+	</select>
+	
+	
+	 
+	<select id="selectPjtIssueCount" parameterClass="HashMap" resultClass="int">
+		SELECT 
+		    COUNT(ISSUE_INFO_SEQ) 
+		FROM PJT_ISSUE A
+		WHERE (  SELECT PJT_TYPE_CODE
+			         FROM PJT_INFO
+			         WHERE PJT_ID = A.PJT_ID 
+			    ) IN ('10', '20')   
+		<isNotEmpty property="src_issue_type_code">
+			AND ISSUE_TYPE_CODE = #src_issue_type_code#
+		</isNotEmpty>
+		
+		<isNotEmpty property="src_pjt_type_code">
+			AND (  SELECT PJT_TYPE_CODE
+			          FROM PJT_INFO
+			          WHERE PJT_ID = A.PJT_ID 
+			     )  = #src_pjt_type_code#   
+		</isNotEmpty>
+		 
+		<isNotEmpty property="src_pjt_name">
+			AND (  SELECT PJT_NAME
+			          FROM PJT_INFO
+			          WHERE PJT_ID = A.PJT_ID 
+			     ) like '%'||#src_pjt_name#||'%'   
+		</isNotEmpty>
+		
+		<isNotEmpty property="src_pjt_id">
+			AND PJT_ID = #src_pjt_id#   
+		</isNotEmpty>
+		 
+		<isNotEmpty property="src_pjt_date_from">
+			AND  (  SELECT PJT_DATE_FROM
+			          FROM PJT_INFO
+			          WHERE PJT_ID = A.PJT_ID 
+			     )  <![CDATA[>=]]>  REPLACE(#src_pjt_date_from#, '-', '') 
+		</isNotEmpty>
+		
+		<isNotEmpty property="src_pjt_date_to">
+			AND  (  SELECT PJT_DATE_TO
+			          FROM PJT_INFO
+			          WHERE PJT_ID = A.PJT_ID 
+			     )  <![CDATA[<=]]>  REPLACE(#src_pjt_date_to#, '-', '')
+		</isNotEmpty>
+		
+		
+		<isNotEmpty property="session_dept_code">
+			AND(	 
+			     ISSUE_REG_DEPT_CODE = #session_dept_code#
+			  OR ISSUE_DUTY_DEPT_CODE = #session_dept_code#
+			)
+		</isNotEmpty>
+					
+	</select>
+
+  
+  	<!-- 개발프로젝트정보 등록 -->
+	<insert id="insertPjtIssue" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO PJT_ISSUE (
+						 	 ISSUE_INFO_SEQ
+							,PJT_REG_DATE
+							,PJT_ID
+							,ISSUE_TYPE_CODE
+							,ISSUE_CODE
+							,ISSUE_REG_DEPT_CODE
+							,ISSUE_REG_DEPT_NUM
+							,ISSUE_DUTY_DEPT_CODE
+							,ISSUE_DUTY_DEPT_NUM
+							,ISSUE_TERMINATE_NOTE
+							,PROC_STATUS_CODE
+							,EFFECT
+							,EMERGNCY
+							,NOTE
+							,ATT_FILE_NAME
+							,ATT_FILE_PATH
+							,FINAL_MOD_ID
+							,FINAL_MOD_DATE
+							,REG_DATE
+							,REG_ID
+					)
+					VALUES(	 
+                 			  (SELECT NVL(max(TO_NUMBER(ISSUE_INFO_SEQ)), 0) + 1 
+  								 FROM PJT_ISSUE )				
+							, REPLACE(#pjt_reg_date#, '-', '')
+							, #pjt_id#               
+							, #issue_type_code#      
+							, #issue_code#
+							, #issue_reg_dept_code#
+							, #issue_reg_dept_num#
+							, #issue_duty_dept_code#
+							, #issue_duty_dept_num#
+							, #issue_terminate_note#
+							, #proc_status_code#
+							, #effect#
+							, #emergncy#
+							, #note#
+							, #att_file_name#
+							, #att_file_path#
+							, #admin_id#
+							, SYSTIMESTAMP
+							, SYSTIMESTAMP
+							, #admin_id#
+					)
+	]]>
+	</insert>
+	
+	<!-- 개발프로젝트정보   수정 -->
+	<update id="updatePjtIssue" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE PJT_ISSUE
+		   SET    
+				 ISSUE_TYPE_CODE			= #issue_type_code#      
+				,ISSUE_CODE                 = #issue_code#           
+				,ISSUE_REG_DEPT_CODE        = #issue_reg_dept_code#  
+				,ISSUE_REG_DEPT_NUM         = #issue_reg_dept_num#   
+				,ISSUE_DUTY_DEPT_CODE       = #issue_duty_dept_code# 
+				,ISSUE_DUTY_DEPT_NUM        = #issue_duty_dept_num#  
+				,ISSUE_TERMINATE_NOTE       = #issue_terminate_note# 
+				,PROC_STATUS_CODE           = #proc_status_code#     
+				,EFFECT                     = #effect#               
+				,EMERGNCY                   = #emergncy#             
+				,NOTE                       = #note#                 
+				,ATT_FILE_NAME              = #att_file_name#        
+				,ATT_FILE_PATH              = #att_file_path# 
+			 	,FINAL_MOD_ID   			= #admin_id#
+			 	,FINAL_MOD_DATE 			= SYSTIMESTAMP
+		 WHERE
+		 		 ISSUE_INFO_SEQ	= #issue_info_seq#
+		  	 AND PJT_REG_DATE   = REPLACE(#pjt_reg_date#, '-', '')
+			 AND PJT_ID         = #pjt_id#
+				
+	]]>
+	</update>
+ 
+	
+	
+ </sqlMap>

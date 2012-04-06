@@ -1,0 +1,309 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context-2.5.xsd
+                           http://www.springframework.org/schema/aop 
+                           http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+                           http://www.springframework.org/schema/tx 
+                           http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <!-- 공통 beans -->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+
+    <bean id="dataSource" 
+        class="org.apache.commons.dbcp.BasicDataSource" 
+        destroy-method="close"
+        p:driverClassName="${jdbc.driverClassName}"
+        p:url="${jdbc.url}"
+        p:username="${jdbc.username}"
+        p:password="${jdbc.password}"
+        p:validationQuery="${jdbc.validationQuery}"
+        p:maxActive="${jdbc.maxActive}"
+        p:maxIdle="${jdbc.maxIdle}"
+        p:maxWait="${jdbc.maxWait}"
+        p:logAbandoned="${jdbc.logAbandoned}"
+        p:removeAbandoned="${jdbc.removeAbandoned}"
+        p:removeAbandonedTimeout="${jdbc.removeAbandonedTimeout}"
+        p:initialSize="${jdbc.initialSize}"/>
+
+    <bean id="transactionManager" 
+        class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+        p:dataSource-ref="dataSource"/>
+
+    <bean id="sqlMapClient" 
+        class="org.springframework.orm.ibatis.SqlMapClientFactoryBean"
+        p:configLocation="classpath:sql-map-config.xml"
+        p:dataSource-ref="dataSource"/>
+
+    <!-- SGF manage dao 등록  -->
+
+    <!-- 게시판 마스터  dao -->    
+    <bean id="boardMstDao"
+        class="com.signgate.core.web.manage.boardmst.oracle.dao.BoardMstDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+
+    <!-- 게시판 dao -->    
+    <bean id="boardDao"
+        class="com.signgate.core.web.manage.board.oracle.dao.BoardDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+        
+    <!-- 관리자 관리  dao -->
+    <bean id="suserDao"
+        class="com.signgate.core.web.manage.suser.oracle.dao.SUserDao"
+        p:sqlMapClient-ref="sqlMapClient"/>   
+        
+    <!-- 메뉴 관리  dao -->
+    <bean id="menuDao"
+        class="com.signgate.core.web.manage.menu.oracle.dao.MenuDao"
+        p:sqlMapClient-ref="sqlMapClient"/>      
+
+	<!-- 그룹 관리  dao -->
+    <bean id="groupDao"
+        class="com.signgate.core.web.manage.group.oracle.dao.GroupDao"
+        p:sqlMapClient-ref="sqlMapClient"/>  
+
+    <!-- 배치 관리  dao -->
+    <bean id="batWorkDao"
+        class="com.signgate.core.batch.oracle.dao.BatWorkDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+
+    <bean id="batHistoryDao"
+        class="com.signgate.core.batch.oracle.dao.BatHistoryDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+<!-- 코드 관리  dao -->
+	 <bean id="codeDao"
+        class="com.signgate.core.web.manage.code.oracle.dao.CodeDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+        
+	<!-- Database dao -->
+    <bean id="setupDao"
+        class="com.signgate.core.web.setup.oracle.dao.SetupDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+    
+    
+    
+    
+    <!-- 사용자 정의 dao 등록 -->
+    <!--우편번호 조회  -->
+     <bean id="zipDao"
+        class="sg.svc.portal.bass.post.dao.ZipDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+           
+    <!-- 담당자 dao -->
+    <bean id="chmanDao"
+        class="sg.svc.portal.bass.chman.dao.ChmanDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+        
+    <!-- 기술지원 dao -->
+    <bean id="techsupDao"
+        class="sg.svc.portal.bass.techsup.dao.TechsupDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+    
+    <!-- 제품 등록 dao -->
+    <bean id="productDao"
+        class="sg.svc.portal.bass.product.oracle.dao.ProductDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+    
+    <!-- 공통코드 등록 dao -->
+    <bean id="bassCodeDao"
+        class="sg.svc.portal.bass.BassCode.dao.BassCodeDao"
+        p:sqlMapClient-ref="sqlMapClient"/> 
+    
+    <!-- 스케줄관리 dao -->
+    <bean id="scheduleDao"
+        class="sg.svc.portal.bass.schedule.dao.ScheduleDao"
+        p:sqlMapClient-ref="sqlMapClient"/>    
+        
+    <!-- MAIN dao -->
+    <bean id="mainDao"
+        class="sg.svc.portal.bass.Main.dao.MainDao"
+        p:sqlMapClient-ref="sqlMapClient"/>    
+    
+     <bean id="cassTechsupDao"
+        class="sg.svc.portal.cass.techsup.dao.CassTechsupDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+     
+     <!-- 메인 레이아웃 -->
+     <bean id="layoutDao"
+        class="com.sg.sgis.layout.dao.LayoutDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+
+     <!--*************************   시스템관리        ************************* -->
+		
+	 <!-- 부서정보관리 -->
+     <bean id="deptDao"
+		class="com.sg.sgis.com.dept.dao.DeptDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 		
+	 
+	 <!-- 사원정보관리 -->
+     <bean id="employeeDao"
+		class="com.sg.sgis.com.employee.dao.EmployeeDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 	
+	
+	 <!-- 품목정보관리 -->
+     <bean id="itemDao"
+		class="com.sg.sgis.com.item.dao.ItemDao"
+		p:sqlMapClient-ref="sqlMapClient"/>
+	
+	<bean id="itemSWDao"
+		class="com.sg.sgis.com.item.dao.ItemSWDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 
+		
+	<bean id="itemHWDao"
+		class="com.sg.sgis.com.item.dao.ItemHWDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 	
+		
+	<bean id="itemDeveloperDao"
+		class="com.sg.sgis.com.item.dao.ItemDeveloperDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 		
+		
+	<!-- 거래처 관리 Dao -->
+	<bean id="customDao"
+		class="com.sg.sgis.com.custom.dao.CustomDao"
+		p:sqlMapClient-ref="sqlMapClient"/>		
+	
+	<!-- 일정 관리 Dao -->
+	<bean id="calendarDao"
+		class="com.sg.sgis.com.calendar.dao.CalendarDao"
+		p:sqlMapClient-ref="sqlMapClient"/>		
+
+    <!-- 코드 관리 Dao -->
+    <bean id="sgisCodeDao"
+        class="com.sg.sgis.com.sgisCode.dao.SgisCodeDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+        
+    <!-- 이슈 관리 Dao -->
+    <bean id="issueDao"
+        class="com.sg.sgis.com.issue.dao.IssueDao"
+        p:sqlMapClient-ref="sqlMapClient"/>    
+        
+    <!-- 타스크 관리 Dao -->
+    <bean id="taskDao"
+        class="com.sg.sgis.com.task.dao.TaskDao"
+        p:sqlMapClient-ref="sqlMapClient"/>      
+	<!-- 개인별휴가정보관리 -->
+    <bean id="empVacInfoDao"
+		class="com.sg.sgis.com.empVac.dao.EmpVacInfoDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 	
+		
+	<!-- 개인별휴가정보관리 -->
+    <bean id="empVacUsedInfoDao"
+		class="com.sg.sgis.com.empVac.dao.EmpVacUsedInfoDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 			
+    
+    <!--*************************  프로젝트관리      ************************* -->       
+	
+	<!-- 프로젝트관리 -->
+    <bean id="pjtManageDao"
+		class="com.sg.sgis.pjt.pjtManage.dao.PjtManageDao"
+		p:sqlMapClient-ref="sqlMapClient"/>  
+	
+	<!-- 프로젝트이슈관리 -->
+    <bean id="pjtIssueDao"
+		class="com.sg.sgis.pjt.pjtManage.dao.PjtIssueDao"
+		p:sqlMapClient-ref="sqlMapClient"/>    
+		
+    <!--*************************    견적관리         ************************* --> 
+ 	
+ 	<!-- 견적정보조회 -->
+    <bean id="estimateInfoInquiryDao"
+		class="com.sg.sgis.est.estimate.dao.EstimateInfoInquiryDao"
+		p:sqlMapClient-ref="sqlMapClient"/>    
+		 
+	<!-- 견적진행상태관리 -->
+    <bean id="estimateProcessStateManageDao"
+		class="com.sg.sgis.est.estimate.dao.EstimateProcessStateManageDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 
+		
+	<!-- 견적정보관리 -->
+    <bean id="estimateInfoManageDao"
+		class="com.sg.sgis.est.estimate.dao.EstimateInfoManageDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 	
+		 
+    <!--*************************    수주관리         ************************* --> 
+  	
+  	<!-- 수주정보조회 -->
+    <bean id="orderInfoInquiryDao"
+		class="com.sg.sgis.ord.order.dao.OrderInfoInquiryDao"
+		p:sqlMapClient-ref="sqlMapClient"/>    
+		
+	<!-- 수주진행상태관리 -->
+    <bean id="orderProcessStateManageDao"
+		class="com.sg.sgis.ord.order.dao.OrderProcessStateManageDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 
+		
+	<!-- 수주정보관리 -->
+    <bean id="orderInfoManageDao"
+		class="com.sg.sgis.ord.order.dao.OrderInfoManageDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 	
+    
+    <!--*************************    구매관리         ************************* --> 
+
+    <!-- 구매 관리 Dao -->
+    <bean id="purDao"
+        class="com.sg.sgis.pur.dao.PurchaseDao"
+        p:sqlMapClient-ref="sqlMapClient"/>
+    <!-- 견적관리 Dao -->
+    <bean id="payDao"
+        class="com.sg.sgis.pur.dao.PayInfoDao"
+        p:sqlMapClient-ref="sqlMapClient"/>   
+        
+    <!--*************************    매출관리         ************************* -->           
+
+	<!-- 매출정보관리-->
+    <bean id="saleInfoManageDao"
+		class="com.sg.sgis.sal.sale.dao.SaleInfoManageDao"
+		p:sqlMapClient-ref="sqlMapClient"/> 
+		
+   	<!-- 리포트 Dao -->
+    <bean id="ozDao"
+        class="com.sg.sgis.com.oz.dao.OzDao"
+        p:sqlMapClient-ref="sqlMapClient"/>   
+        
+    <!-- 수금관리-->
+    <bean id="receiptManageDao"
+		class="com.sg.sgis.sal.receipt.dao.ReceiptManageDao"
+		p:sqlMapClient-ref="sqlMapClient"/>     
+
+	<!--*************************    개발관리         ************************* --> 
+	<!-- 업무요청정보관리  Dao -->
+    <bean id="csrInfoMngDao"
+        class="com.sg.sgis.dev.csrInfoMng.dao.CsrInfoMngDao"
+        p:sqlMapClient-ref="sqlMapClient"/> 
+
+	<!-- 개발프로젝트관리  Dao -->
+    <bean id="pjdInfMngDao"
+        class="com.sg.sgis.dev.pjdInfoMng.dao.PjdInfMngDao"
+        p:sqlMapClient-ref="sqlMapClient"/> 
+        
+	<!-- 개발일정계획관리  Dao -->
+    <bean id="scdInfoMngDao"
+        class="com.sg.sgis.dev.scdInfoMng.dao.ScdInfoMngDao"
+        p:sqlMapClient-ref="sqlMapClient"/>  
+    
+    <!-- 유지보수  Dao -->
+    <bean id="managementDao"
+        class="com.sg.sgis.man.management.dao.ManagementDao"
+        p:sqlMapClient-ref="sqlMapClient"/>         
+
+	<!-- 개인별개발일정관리  Dao -->
+    <bean id="scdDayInfoMngDao"
+        class="com.sg.sgis.dev.scdInfoMng.dao.ScdDayInfoMngDao"
+        p:sqlMapClient-ref="sqlMapClient"/>    
+        
+	<!--*************************    기술지원         ************************* -->       
+	
+	  <!-- 기술지원관리  Dao -->
+    <bean id="srsMngDao"
+        class="com.sg.sgis.srs.dao.SrsMngDao"
+        p:sqlMapClient-ref="sqlMapClient"/>  
+
+</beans>

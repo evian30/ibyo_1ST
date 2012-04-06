@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Code">
+		
+	<select id="check" resultClass="Int">			
+   		select count(code) FROM TOT_CODE_MNG 
+   		WHERE	 code = #code#
+   				AND code_sect = #code_sect# 
+    </select>	
+ 
+    
+    <select id="selectTotCountDe" resultClass="Int">				
+		 SELECT count(*) FROM TOT_CODE_MNG
+		  WHERE  code_sect = #code_sect#			
+	        <isNotEmpty property="keyword" prepend="AND">
+	       		<isEqual property="key" compareValue="001">
+			   		code_sect like '%'||#keyword#||'%'  
+			   	</isEqual> 
+			   	<isEqual property="key" compareValue="002">
+			   		code_nm like '%'||#keyword#||'%'  
+			   	</isEqual> 
+	        </isNotEmpty> 
+    </select>
+     
+    
+    <select id="listDataDe" resultClass="HashMap">				
+		 SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, VR_T1.* FROM 
+			(SELECT 
+				CEIL(ROWNUM / #pageSize#) PAGE 
+					,code_nm,
+					code_sect,
+					cr_date,
+					use_yn, 
+					code_detail,
+					code  
+				FROM TOT_CODE_MNG 
+			WHERE   code_sect = #code_sect# 
+					AND use_yn = 'Y'
+			
+	        <isNotEmpty property="keyword" prepend="AND">
+	       		<isEqual property="key" compareValue="001">
+			   		code_sect like '%'||#keyword#||'%'  
+			   	</isEqual> 
+			   	<isEqual property="key" compareValue="002">
+			   		code_nm like '%'||#keyword#||'%'  
+			   	</isEqual> 
+	        </isNotEmpty>
+			
+			) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#  
+      	ORDER BY code_sect DESC, TO_NUMBER(code) DESC
+ 
+    </select> 
+    
+     
+    
+    
+    <select id="selectTotCountGr" resultClass="Int">				
+		 SELECT  count(*) FROM (SELECT code_sect FROM TOT_CODE_MNG WHERE use_yn = 'Y' GROUP BY code_sect)  		  
+		  WHERE 1=1  
+	        <isNotEmpty property="keyword" prepend="AND">
+	       		<isEqual property="key" compareValue="001">
+			   		code_sect like '%'||#keyword#||'%'  
+			   	</isEqual> 
+			   	<isEqual property="key" compareValue="002">
+			   		code_nm like '%'||#keyword#||'%'  
+			   	</isEqual> 
+	        </isNotEmpty> 
+    </select>
+     
+    
+    <select id="listDataGr" resultClass="HashMap">				
+		 SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, VR_T1.* FROM 
+			(SELECT 
+				CEIL(ROWNUM / #pageSize#) PAGE
+				 ,code_sect,
+	             code_detail
+	            FROM (SELECT code_sect, code_detail FROM TOT_CODE_MNG WHERE use_yn = 'Y' GROUP BY code_sect, code_detail)  
+						
+			WHERE 1=1 	 
+			
+	        <isNotEmpty property="keyword" prepend="AND">
+	       		<isEqual property="key" compareValue="001">
+			   		code_sect like '%'||#keyword#||'%'  
+			   	</isEqual> 
+			   	<isEqual property="key" compareValue="002">
+			   		code_nm like '%'||#keyword#||'%'  
+			   	</isEqual> 
+	        </isNotEmpty>
+			
+			) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+		WHERE RNUM > 0 AND PAGE = #pageNum#  
+       	ORDER BY code_sect DESC
+ 
+    </select> 
+    
+     
+	<insert id="insertData" parameterClass="HashMap">
+      	INSERT INTO TOT_CODE_MNG (
+									code,			
+									code_nm,
+									code_sect,
+									cr_date,
+									use_yn,
+									code_detail
+								)
+					VALUES (
+							  	#code#,		    
+								#code_nm#,       
+								#code_sect#,     
+								sysdate,       
+								#use_yn#,        
+								#code_detail#   
+				      		)
+								      
+    </insert> 
+    
+     
+     
+	<update id="updateData" parameterClass="HashMap">
+	 		UPDATE TOT_CODE_MNG
+				SET   
+				code_nm     =     #code_nm#,
+				use_yn      =     #use_yn#,         
+				code_detail =     #code_detail#
+			WHERE 
+					code		=    #code#
+				AND code_sect   =    #code_sect#   
+	</update> 
+	
+	
+	 
+	<delete id="deleteData" parameterClass="HashMap">
+	 	DELETE FROM TOT_CODE_MNG
+	 	WHERE code		=    #code#
+			  AND code_sect   =    #code_sect#   
+	</delete>
+	 
+	
+	 
+    <select id="selectData" resultClass="HashMap" >
+    	  SELECT * FROM 
+			(SELECT VR_T1.* FROM 
+				(SELECT 
+					code,			
+					code_nm,
+					code_sect,
+					cr_date,
+					use_yn,
+					code_detail
+				 FROM TOT_CODE_MNG
+				 WHERE 	code = #code#
+					AND code_sect = #code_sect#  				 
+				 ) VR_T1 
+			) VR_T2 
+			 
+    </select>
+    
+ 
+ </sqlMap>

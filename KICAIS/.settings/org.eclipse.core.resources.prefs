@@ -1,0 +1,17 @@
+#Mon Nov 08 11:42:52 KST 2010
+eclipse.preferences.version=1
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/chman/ChmanBiz.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/chman/ChmanController.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/chman/dao/ChmanDao.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/chman/domain/Chman.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/chman/ifac/IChmanDao.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/product/ProdcutBiz.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/product/ProductController.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/product/ifac/IProductDao.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/product/oracle/dao/ProductDao.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/techsup/TechsupBiz.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/techsup/TechsupController.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/techsup/dao/TechsupDao.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/techsup/domain/Techsup.java=UTF-8
+encoding//WebRoot/WEB-INF/src/sg/svc/portal/bass/techsup/ifac/ITechsupDao.java=UTF-8
+encoding/<project>=UTF-8

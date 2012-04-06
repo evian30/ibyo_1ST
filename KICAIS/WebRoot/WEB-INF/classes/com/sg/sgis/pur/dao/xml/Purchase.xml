@@ -1,0 +1,812 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Purchase">
+	<!-- 구매정보 조회 -->
+	<select id="selectPurchase" resultClass="HashMap">
+		SELECT
+		       A.PUR_ID                                              					/* 구매ID  */         
+		     , TO_CHAR(TO_DATE(A.PUR_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS PUR_DATE      /* 구매일자  */
+		            
+		     , A.PUR_TYPE_CODE                                     						/* 구매구분코드  */
+		     ,(
+		     	SELECT COM_CODE_NAME
+				FROM (
+				    SELECT ROWNUM rnum,
+				      A.*
+				    FROM (
+				        SELECT COM_CODE ,
+				          GROUP_CODE ,
+				          REF_VAL_01 ,
+				          REF_NAME_01 ,
+				          REF_VAL_02 ,
+				          REF_NAME_02 ,
+				          REF_VAL_03 ,
+				          REF_NAME_03 ,
+				          REF_VAL_04 ,
+				          REF_NAME_04 ,
+				          REF_VAL_05 ,
+				          REF_NAME_05 ,
+				          SYSTEM_CODE_YN ,
+				          USE_YN ,
+				          COM_CODE_NAME ,
+				          (
+				            select admin_nm
+				            from tb_admin
+				            where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID ,
+				          TO_CHAR(FINAL_MOD_DATE, 'YYYY-MM-DD') AS FINAL_MOD_DATE ,
+				          SORT_NUM
+				        FROM COM_CODE A
+				        WHERE COM_CODE != '$$'
+				          AND GROUP_CODE like 'ITEM_TYPE_CODE'
+				        ORDER BY GROUP_CODE ASC, SORT_NUM ASC, COM_CODE ASC ) A )
+				WHERE COM_CODE = A.PUR_TYPE_CODE
+		     )   AS PUR_TYPE_NAME 
+		     , A.ROLL_TYPE_CODE                                      	/* 업무구분코드  */
+		     , (
+		     	SELECT COM_CODE_NAME
+				FROM (
+				    SELECT ROWNUM rnum,
+				      A.*
+				    FROM (
+				        SELECT COM_CODE ,
+				          GROUP_CODE ,
+				          REF_VAL_01 ,
+				          REF_NAME_01 ,
+				          REF_VAL_02 ,
+				          REF_NAME_02 ,
+				          REF_VAL_03 ,
+				          REF_NAME_03 ,
+				          REF_VAL_04 ,
+				          REF_NAME_04 ,
+				          REF_VAL_05 ,
+				          REF_NAME_05 ,
+				          SYSTEM_CODE_YN ,
+				          USE_YN ,
+				          COM_CODE_NAME ,
+				          (
+				            select admin_nm
+				            from tb_admin
+				            where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID ,
+				          TO_CHAR(FINAL_MOD_DATE, 'YYYY-MM-DD') AS FINAL_MOD_DATE ,
+				          SORT_NUM
+				        FROM COM_CODE A
+				        WHERE COM_CODE != '$$'
+				          AND GROUP_CODE like 'ROLL_TYPE_CODE'
+				        ORDER BY GROUP_CODE ASC, SORT_NUM ASC, COM_CODE ASC ) A )
+				WHERE COM_CODE = A.ROLL_TYPE_CODE
+		     )   AS ROLL_TYPE_NAME   
+		     , A.PUR_NAME                                            	/* 구매명  */          
+		     , A.PUR_TOTAL_AMT                                     		/* 구매총액  */
+		     , A.PUR_TOTAL_TAX                                     		/* 구매총세액  */
+		     , A.PAY_NO                                              	/* 지출번호  */        
+		     , A.PJT_ID                                              	/* 프로젝트ID  */
+		     ,(
+		     	select PJT_NAME
+		     	from PJT_INFO
+		     	where PJT_ID = A.PJT_ID
+		     		
+		     )AS PJT_NAME  
+		     , B.PJT_NAME                                            	/* 프로젝트명  */    
+		     , A.EST_ID                                              	/* 견적ID  */          
+		     , A.EST_VERSION                                        	/* 버전  */            
+		     , A.PUR_DEPT_CODE                                      	/* 구매부서코드   */
+		     , (SELECT DEPT_NAME 
+		        FROM   COM_DEPT 
+		        WHERE DEPT_CODE = A.PUR_DEPT_CODE) PUR_DEPT_NAME     	/* 구매부서명  */
+		     , A.PUR_EMP_NUM                                        	/* 구매담당자번호   */ 
+		     , (SELECT KOR_NAME 
+		        FROM   COM_EMP_INFO 
+		        WHERE  EMP_NUM = A.PUR_EMP_NUM) PUR_EMP_NAME         	/* 구매담당자명  */
+		     , A.PUR_TOTAL_AMT                                      	/* 구매총금액  */      
+		     , A.PUR_TOTAL_TAX                                      	/* 구매총세액  */      
+		     , TO_CHAR(TO_DATE(A.IN_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS IN_DATE                                            	/* 입고일자  */        
+		     , A.PUR_REPORT_NUM                                      	/* 구매품의서번호  */  
+		     , A.INSPECT_YN                                          	/* 검수필요여부  */    
+		     , TO_CHAR(TO_DATE(A.INSPECT_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS INSPECT_DATE                                        	/* 검수일자  */        
+		     , A.INSPECT_EMP_NUM                                    	/* 검수담당자사번  */  
+		     , (SELECT KOR_NAME 
+		        FROM   COM_EMP_INFO 
+		        WHERE  EMP_NUM = A.INSPECT_EMP_NUM) INSPECT_EMP_NAME 	/* 검수담당자명  */
+		     , A.INSPECT_DESC                                        	/* 검수내용  */        
+		     , TO_CHAR(TO_DATE(A.USE_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS USE_DATE                                            	/* 사용일자  */        
+		     , A.USE_DEPT                                            	/* 사용부서  */ 
+		     , (SELECT DEPT_NAME 
+		        FROM   COM_DEPT 
+		        WHERE DEPT_CODE = A.USE_DEPT) USE_DEPT_NAME          	/* 사용부서명  */
+		     , A.USE_EMP_NUM                                        	/* 사용자사번  */  
+		     , (SELECT KOR_NAME 
+		        FROM   COM_EMP_INFO 
+		        WHERE  EMP_NUM = A.USE_EMP_NUM) USE_EMP_NAME         	/* 사용자명  */
+		     , A.NOTE                                                	/* 비고  */            
+		     , A.PROC_STATUS_CODE                                    	/* 진행상태코드  */    
+		     , A.ATTACH_FILE_PATH                                    	/* 첨부파일경로  */    
+		     , A.ATTACH_FILE_NAME                                    	/* 첨부파일명  */      
+		     , A.MOD_ATTACH_FILE_PATH                                	/* 변경첨부파일명  */  
+		     , A.FINAL_MOD_ID                                        	/* 최종변경자ID  */    
+		     , (SELECT KOR_NAME 
+		        FROM   COM_EMP_INFO 
+		        WHERE  EMP_NUM = A.FINAL_MOD_ID) FINAL_MOD_NAME   	/* 최종변경자이름  */
+		     , TO_CHAR(A.FINAL_MOD_DATE,
+                    'YYYY-MM-DD') AS FINAL_MOD_DATE                   	/* 최종변경일시  */    
+		FROM   PUR_INFO A                                            	/*구매정보관리*/
+		     , PJT_INFO B                                            	/*프로젝트정보관리*/   
+		WHERE  A.PJT_ID = B.PJT_ID(+)
+
+		AND    PUR_DATE BETWEEN NVL(#src_pur_date_from#, '20000101') AND NVL(#src_pur_date_to#, '20000101') 
+		<isNotEmpty property="src_task_group_code">
+		AND    PUR_ID LIKE #src_pur_id#||'%'
+		</isNotEmpty>
+		<isNotEmpty property="src_pur_type_code">
+		AND    PUR_TYPE_CODE = #src_pur_type_code#
+		</isNotEmpty>
+		<isNotEmpty property="src_pjt_id">
+		AND    A.PJT_ID = #src_pjt_id#
+		</isNotEmpty>
+		
+		<isNotEmpty property="session_dept_code">
+		AND	   A.PUR_DEPT_CODE  = #session_dept_code#
+		</isNotEmpty>
+	</select>
+	
+	<!-- 구매목록 총갯수 -->
+	<select id="selectPurchaseCount" resultClass="int">
+		SELECT COUNT(PUR_ID)   /*구매ID*/        
+		FROM pur_info PI 	   /*구매관리*/
+		WHERE 1 = 1 
+			AND    PUR_DATE BETWEEN NVL(#src_pur_date_from#, '20000101') AND NVL(#src_pur_date_to#, '20000101')
+		<isNotEmpty property="src_task_group_code">
+			AND    PUR_ID LIKE #src_pur_id#||'%'
+		</isNotEmpty>
+		<isNotEmpty property="src_pur_type_code">
+			AND    PUR_TYPE_CODE = #src_pur_type_code#
+		</isNotEmpty>
+		<isNotEmpty property="src_pjt_id">
+			AND    PJT_ID = #src_pjt_id#
+		</isNotEmpty>
+		
+		<isNotEmpty property="session_dept_code">
+			AND	   PUR_DEPT_CODE  = #session_dept_code#
+		</isNotEmpty>
+	</select>
+	
+	<!-- 구매 목록 저장 -->
+	<insert id="insertPurchaseInfo" parameterClass="HashMap">
+    	<![CDATA[
+			INSERT INTO PUR_INFO (
+				PUR_ID              	/*구매ID        */
+				,PUR_DATE            	/*구매일자      */
+				,PUR_TYPE_CODE       	/*구매구분코드  */			
+				,ROLL_TYPE_CODE      	/*업무구분코드  */
+				,PUR_NAME            	/*구매명        */
+				,PAY_NO              	/*지출번호      */
+				,PJT_ID              	/*프로젝트ID    */
+				,PUR_EMP_NUM         	/*구매담당자번호*/
+				,PUR_TOTAL_AMT       	/*구매총금액    */
+				,PUR_TOTAL_TAX       	/*구매총세액    */
+				,IN_DATE             	/*입고일자      */
+				,PUR_REPORT_NUM      	/*구매품의서번호*/
+				,INSPECT_YN          	/*검수필요여부  */
+				,INSPECT_DATE        	/*검수일자      */
+				,INSPECT_EMP_NUM     	/*검수당당자사번*/
+				,INSPECT_DESC        	/*검수내용      */
+				,USE_DATE            	/*사용일자      */
+				/*,USE_DEPT            	사용부서      */
+				,USE_EMP_NUM         	/*사용자사번    */
+				,NOTE                	/*비고          */
+				,PROC_STATUS_CODE    	/*진행상태코드  */
+				,FINAL_MOD_ID				/*최종 변경자    */
+				,FINAL_MOD_DATE				/*최초 변경 일시    */
+				,REG_DATE				/*최초등록일    */
+				,REG_ID					/*최초등록자    */
+			)
+			VALUES ( 
+				#pur_id#
+				,#pur_date#
+				,#pur_type_code#
+				,#roll_type_code#
+				,#pur_name#
+				,#pay_no#
+				,#pjt_id#
+				
+				,#pur_emp_num#
+				,#pur_total_amt#
+				,#pur_total_tax#
+				,#in_date#
+				,#pur_report_num#
+				,#inspect_yn#
+				,#inspect_date#
+				,#inspect_emp_num#
+				,#inspect_desc#
+				,#use_date#
+				
+				,#use_emp_num#
+				,#note#
+				,#proc_status_code#
+				,#reg_id#
+				,SYSTIMESTAMP    
+				,SYSTIMESTAMP
+				,#reg_id#     
+			)
+		]]>
+  	</insert>
+  	
+  	<!-- 구매 품목 목록 저장 -->
+	<insert id="insertPurchaseItem" parameterClass="HashMap">
+    	<![CDATA[
+			INSERT INTO PUR_ITEM (
+				PUR_ID			/*구매ID*/
+				,PUR_INFO_SEQ	/*순번*/
+				,CUSTOM_CODE	/*거래처코드*/
+				,ITEM_CODE		/*품목코드*/
+				,STANDARD		/*규격*/
+				,UNIT			/*단위*/
+				,CNT			/*수량*/
+				,UNIT_PRICE		/*단가*/
+				,AMT			/*금액*/
+				,TAX			/*세액*/
+				,PAY_FREE_CODE	/*유무상구분*/
+				,NOTE			/*비고*/
+				,REG_DATE		/*최초등록일*/
+				,REG_ID			/*최초등록자*/
+			)
+			VALUES ( 
+				#pur_id#
+     			,(SELECT NVL(max(TO_NUMBER(PUR_INFO_SEQ)), 0) + 1  FROM PUR_ITEM)
+     			,#custom_code#
+     			,#item_code#
+     			,#standard#
+     			,#unit#
+     			,#cnt#
+     			,#unit_price#
+     			,#amt#
+     			,#tax#
+     			,#pay_free_code#
+     			,#note#
+     			,SYSTIMESTAMP
+     			,#reg_id#
+			)
+		]]>
+  	</insert>
+  	
+  	<!-- 구매 품목 스펙 목록 저장 -->
+	<insert id="insertPurItemSpec" parameterClass="HashMap">
+    	<![CDATA[
+			INSERT INTO PUR_SPEC_INFO (
+				 PUR_ID				/*구매ID*/
+				,PUR_INFO_SEQ		/*순번*/
+				,ITEM_CODE			/*품목코드*/
+				,SPEC_TYPE_CODE		/*제원구분코드*/
+				,SPEC_INTRO			/*제원설명*/
+				,SPEC_CNT			/*제원수량*/
+				,SPEC_VOL			/*제원용량*/
+				,NOTE				/*비고*/
+				,REG_DATE			/*최초등록일*/
+				,REG_ID				/*최초등록자*/
+			)
+			VALUES ( 
+				#pur_id#
+     			,(SELECT NVL(max(TO_NUMBER(PUR_INFO_SEQ)), 0) + 1  FROM PUR_SPEC_INFO)
+     			,#item_code#
+     			,#spec_type_code#
+     			,#spec_intro#
+     			,#spec_cnt#
+     			,#spec_vol#
+     			,#note#
+     			,SYSTIMESTAMP
+     			,#reg_id#
+			)
+		]]>
+  	</insert>
+  	
+  	<!-- 구매 아이템 검색 -->
+  	<select id="selectPurchaseItem" resultClass="HashMap" parameterClass="HashMap" >
+  		SELECT 
+			A.PUR_ID
+			,A.PUR_INFO_SEQ
+			,A.CUSTOM_CODE
+			,(select CUSTOM_NAME
+				from COM_CUSTOM 
+				where CUSTOM_CODE = A.CUSTOM_CODE
+				) AS CUSTOM_NAME
+			,A.ITEM_CODE
+			,(select ITEM_NAME
+				from COM_ITEM 
+				where ITEM_CODE = A.ITEM_CODE
+				) AS ITEM_NAME
+			,A.STANDARD
+			,A.UNIT
+			,A.CNT
+			,A.UNIT_PRICE
+			,A.AMT
+			,A.TAX
+			,A.PAY_FREE_CODE
+			,A.NOTE
+			,A.FINAL_MOD_ID
+			,A.FINAL_MOD_DATE
+			,A.REG_DATE
+			,A.REG_ID
+		FROM PUR_ITEM A
+		WHERE 1=1
+		<isNotEmpty property="pur_id"> 
+		  AND PUR_ID = #pur_id#
+		</isNotEmpty>
+		<isEmpty property="pur_id">
+		  AND PUR_ID = '9999999999'
+		</isEmpty> 
+  	</select>
+  	
+  	<!-- 구매 아이템 갯수 -->
+  	<select id="selectPurItemCount" resultClass="int" parameterClass="HashMap" >
+  		SELECT 
+			count(*)
+		FROM PUR_ITEM A
+		WHERE 1=1
+		<isNotEmpty property="pur_id"> 
+		  AND PUR_ID = #pur_id#
+		</isNotEmpty>
+		<isEmpty property="pur_id">
+		  AND PUR_ID = '9999999999'
+		</isEmpty> 
+  	</select>
+  	
+  	<!-- 구매 아이템 스펙 검색 -->
+  	<select id="selectPurItemSpec" resultClass="HashMap" parameterClass="HashMap" >
+  		SELECT 
+  			 PUR_ID
+			,PUR_INFO_SEQ
+			,ITEM_CODE
+			,(select ITEM_NAME
+				from COM_ITEM 
+				where ITEM_CODE = A.ITEM_CODE
+				) AS ITEM_NAME
+			,SPEC_TYPE_CODE
+			,(select ITEM_NAME
+				from COM_ITEM 
+				where ITEM_CODE = A.ITEM_CODE
+				) AS SPEC_TYPE_NAME
+			,SPEC_INTRO
+			,SPEC_CNT
+			,SPEC_VOL
+			,NOTE
+		FROM PUR_SPEC_INFO A
+		WHERE 1=1
+		<isNotEmpty property="pur_id"> 
+		  AND PUR_ID = #pur_id#
+		</isNotEmpty>
+		<isEmpty property="pur_id">
+		  AND PUR_ID = '9999999999'
+		</isEmpty> 
+		
+		<isNotEmpty property="item_code"> 
+		  AND ITEM_CODE = #item_code#
+		</isNotEmpty>
+		<isEmpty property="item_code">
+		  AND ITEM_CODE = '9999999999'
+		</isEmpty>  
+		
+	</select>
+	
+	<!-- 구매 아이템 스펙 갯수 -->
+  	<select id="selectPurItemSpecCount" resultClass="int" parameterClass="HashMap" >
+  		SELECT 
+			count(*)
+		FROM PUR_SPEC_INFO A
+		WHERE 1=1
+		<isNotEmpty property="pur_id"> 
+		  AND PUR_ID = #pur_id#
+		</isNotEmpty>
+		<isEmpty property="pur_id">
+		  AND PUR_ID = '9999999999'
+		</isEmpty>
+		<isNotEmpty property="item_code">
+		  AND ITEM_CODE = #item_code#
+		</isNotEmpty> 
+  	</select>
+  	
+  	<!-- 구매정보 수정 -->
+	<update id="updatePurchaseInfo" parameterClass="HashMap">
+		<![CDATA[
+			UPDATE PUR_INFO 
+			SET 
+				PUR_DATE			= #pur_date#
+				,PUR_TYPE_CODE		= #pur_type_code#
+				,ROLL_TYPE_CODE		= #roll_type_code#
+				,PUR_NAME			= #pur_name#
+				,PAY_NO				= #pay_no#
+				,PJT_ID				= #pjt_id#
+				,PUR_EMP_NUM		= #pur_emp_num#
+				,PUR_TOTAL_AMT		= #pur_total_amt#
+				,PUR_TOTAL_TAX		= #pur_total_tax#
+				,IN_DATE			= #in_date#
+				,PUR_REPORT_NUM		= #pur_report_num#
+				,INSPECT_YN			= #inspect_yn#
+				,INSPECT_DATE		= #inspect_date#
+				,INSPECT_EMP_NUM	= #inspect_emp_num#
+				,INSPECT_DESC		= #inspect_desc#
+				,USE_DATE			= #use_date#
+				,USE_EMP_NUM		= #use_emp_num#
+				,NOTE				= #note#
+				,PROC_STATUS_CODE	= #proc_status_code#
+				,FINAL_MOD_ID		= #final_mod_id#
+				,FINAL_MOD_DATE		= SYSTIMESTAMP
+			 WHERE 
+			 	PUR_ID 		  = #pur_id#
+		]]>
+	</update>
+	
+	<!-- 구매 아이템 수정 -->
+	<update id="updatePurchaseItem" parameterClass="HashMap">
+		<![CDATA[
+			UPDATE PUR_ITEM 
+			SET 
+				CUSTOM_CODE		= #custom_code#
+				,CUSTOM_NAME	= #custom_name#
+				,STANDARD		= #standard#
+				,UNIT			= #unit#
+				,CNT			= #cnt#
+				,UNIT_PRICE		= #unit_price#
+				,AMT			= #amt#
+				,TAX			= #tax#
+				,PAY_FREE_CODE	= #pay_free_code#
+				,NOTE			= #note#
+				,FINAL_MOD_ID	= #final_mod_id#
+				,FINAL_MOD_DATE	= #final_mod_date#
+			 WHERE 
+			 	PUR_ID 		  = #pur_id#
+			 	AND PUR_INFO_SEQ = #pur_info_seq#
+			 	AND ITEM_CODE = #item_code#
+		]]>
+	</update>
+	
+	<!-- 구매 스펙  수정 -->
+	<update id="updatePurItemSpec" parameterClass="HashMap">
+		<![CDATA[
+			UPDATE PUR_SPEC_INFO 
+			SET 
+				SPEC_TYPE_CODE	= #spec_type_code#
+				,SPEC_INTRO		= #spec_intro#
+				,SPEC_CNT		= #spec_cnt#
+				,SPEC_VOL		= #spec_vol#
+				,NOTE			= #note#
+				,FINAL_MOD_ID	= #final_mod_id#
+				,FINAL_MOD_DATE	= #final_mod_date#
+			 WHERE 
+			 	PUR_ID 		  = #pur_id#
+			 	AND PUR_INFO_SEQ = #pur_info_seq#
+			 	AND ITEM_CODE = #item_code#
+		]]>
+	</update>
+	
+	<!-- 지출결의 정보 저장 -->
+	<insert id="insertPayInfo" parameterClass="HashMap">
+    	<![CDATA[
+			INSERT INTO PAY_INFO (
+				 PAY_NO
+				,PAY_DATE
+				,PUR_ID
+				,REPORT_ID
+				,PJT_ID
+				,DRAFT_EMP_NUM
+				,DRAFT_DEPT_CODE
+				,ENFORCE_EMP_NUM
+				,ENFORCE_DEPT_CODE
+				,ENFORCE_DATE
+				,RESOL_DATE
+				,USE_DATE
+				,USE_EMP_NUM
+				,USE_DEPT_CODE
+				,BUDGET_TYPE_CODE
+				,BUDGET_USE_DEPT_CODE
+				,PAY_DESC
+				,PAY_TOTAL_AMT
+				,PAY_TOTAL_TAX
+				,NOTE
+				,REG_DATE
+				,REG_ID
+			)
+			VALUES ( 
+				#pay_no#
+				,#pay_date#
+				,#pur_id#
+				,#report_id#
+				,#pjt_id#
+				,#draft_emp_num#
+				,#draft_dept_code#
+				,#enforce_emp_num#
+				,#enforce_dept_code#
+				,#enforce_date#
+				,#resol_date#
+				,#use_date#
+				,#use_emp_num#
+				,#use_dept_code#
+				,#budget_type_code#
+				,#budget_use_dept_code#
+				,#pay_desc#
+				,#pay_total_amt#
+				,#pay_total_tax#
+				,#note#
+     			,SYSTIMESTAMP
+     			,#reg_id#
+			)
+		]]>
+  	</insert>
+  	
+  	<!-- 지출결의 조회 -->
+	<select id="selectPayInfo" resultClass="HashMap">
+		 
+		SELECT 	
+			PAY_NO
+			,TO_CHAR(TO_DATE(A.PAY_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS PAY_DATE  
+			
+			,PUR_ID
+			,(SELECT PUR_NAME FROM PUR_INFO WHERE PUR_ID = A.PUR_ID) PUR_NAME
+			
+			,REPORT_ID
+			
+			,PJT_ID
+			,(SELECT PJT_NAME FROM PJT_INFO WHERE PJT_ID = A.PJT_ID) AS PJT_NAME
+			
+			,DRAFT_EMP_NUM
+			,(SELECT KOR_NAME FROM COM_EMP_INFO WHERE EMP_NUM = A.DRAFT_EMP_NUM) DRAFT_EMP_NAME
+			
+			,DRAFT_DEPT_CODE
+			,(SELECT DEPT_NAME FROM COM_DEPT WHERE DEPT_CODE = A.DRAFT_DEPT_CODE) DRAFT_DEPT_CODE_NAME
+			
+			,ENFORCE_EMP_NUM
+			,(SELECT KOR_NAME FROM COM_EMP_INFO WHERE EMP_NUM = A.ENFORCE_EMP_NUM) ENFORCE_EMP_NAME
+			
+			,ENFORCE_DEPT_CODE
+			,(SELECT DEPT_NAME FROM COM_DEPT WHERE DEPT_CODE = A.ENFORCE_DEPT_CODE) ENFORCE_DEPT_CODE
+			
+			
+			,TO_CHAR(TO_DATE(A.ENFORCE_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS ENFORCE_DATE  
+			,TO_CHAR(TO_DATE(A.RESOL_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS RESOL_DATE
+			,TO_CHAR(TO_DATE(A.USE_DATE, 'YYYY-MM-DD'),'YYYY-MM-DD') AS USE_DATE  
+	
+			,USE_EMP_NUM
+			,(SELECT KOR_NAME FROM COM_EMP_INFO WHERE EMP_NUM = A.USE_EMP_NUM) USE_EMP_NAME
+			
+			,USE_DEPT_CODE
+			,(SELECT DEPT_NAME FROM COM_DEPT WHERE DEPT_CODE = A.USE_DEPT_CODE) USE_DEPT_CODE
+			
+			,BUDGET_TYPE_CODE
+			,(SELECT COM_CODE_NAME FROM  COM_CODE WHERE GROUP_CODE='BUDGET_TYPE_CODE' AND COM_CODE=A.BUDGET_TYPE_CODE) AS BUDGET_TYPE_NAME
+			
+			,BUDGET_USE_DEPT_CODE
+			,(SELECT DEPT_NAME FROM COM_DEPT WHERE DEPT_CODE = A.BUDGET_USE_DEPT_CODE) BUDGET_USE_DEPT_NAME
+							
+			,PAY_DESC
+			,PAY_TOTAL_AMT
+			,PAY_TOTAL_TAX
+			
+			,NOTE
+			
+			,(SELECT ADMIN_NM FROM TB_ADMIN WHERE ADMIN_ID=A.FINAL_MOD_ID) AS FINAL_MOD_ID  
+			,TO_CHAR(A.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE
+			,TO_CHAR(A.REG_DATE,'YYYY-MM-DD') REG_DATE 
+			,(SELECT ADMIN_NM FROM TB_ADMIN WHERE ADMIN_ID=A.REG_ID) AS REG_ID 
+		FROM PAY_INFO A
+		WHERE 1=1
+		AND    PAY_DATE BETWEEN NVL(REPLACE(#src_pay_date_from#,'-',''), '20000101') AND NVL(REPLACE(#src_pay_date_to#,'-',''), '20000101')
+		<isNotEmpty property="src_pay_no">
+		AND    PAY_NO LIKE #src_pay_no#||'%'
+		</isNotEmpty>
+		<isNotEmpty property="src_pjt_id">
+		AND    PJT_ID = #src_pjt_id#
+		</isNotEmpty>
+		<isNotEmpty property="src_draft_emp_name">
+		AND    DRAFT_EMP_NUM = (SELECT EMP_NUM  FROM COM_EMP_INFO WHERE KOR_NAME = #src_draft_emp_name#) 
+		</isNotEmpty>
+	</select>
+	
+	<!-- 지출증빙자료 저장 -->
+	<insert id="insertPayEvidInfo" parameterClass="HashMap">
+    	<![CDATA[
+			INSERT INTO PAY_EVID_INFO (
+				 PAY_NO					/*지출번호*/
+				,PAY_INFO_SEQ			/*순번*/
+				,EVID_TYPE_CODE			/*증빙유형코드*/
+				,EVID_DATE				/*증빙일자*/
+				,EVID_NO				/*증빙번호*/
+				,CUSTOM_CODE			/*거래처코드*/
+				,AMT					/*금액*/
+				,TAX					/*세액*/
+				,BASE_BRIEF_TYPE_CODE	/*기본적요구분코드*/
+				,DETAIL_DESC			/*상세내역*/
+				,NOTE					/*비고*/
+				,REG_DATE				/*최초등록일*/
+				,REG_ID					/*최초등록자*/
+			)
+			VALUES ( 
+				#pay_no#
+     			,(SELECT NVL(max(TO_NUMBER(PAY_INFO_SEQ)), 0) + 1  FROM PAY_EVID_INFO)
+     			,#evid_type_code#
+     			,REPLACE(#evid_date#,'-','')
+     			,#evid_no#
+     			,#custom_code#
+     			,#amt#
+     			,#tax#
+     			,#base_brief_type_code#
+     			,#detail_desc#
+     			,#note#
+     			,SYSTIMESTAMP
+     			,#reg_id#
+			) 
+		]]>
+  	</insert>
+	
+	<!-- 지출결의 정보 갯수 -->
+  	<select id="selectPayInfoCount" resultClass="int" parameterClass="HashMap" >
+  		SELECT 
+			count(*)
+		FROM PAY_INFO A
+		WHERE 1=1
+		AND    PAY_DATE BETWEEN NVL(REPLACE(#src_pay_date_from#,'-',''), '20000101') AND NVL(REPLACE(#src_pay_date_to#,'-',''), '20000101')
+		<isNotEmpty property="src_pay_id"> 
+		  AND PAY_ID like #src_pay_id#||'%'
+		</isNotEmpty>
+		<isNotEmpty property="src_pjt_id">
+		  AND PJT_ID like #src_pjt_id#||'%' 
+		</isNotEmpty>
+		<isNotEmpty property="draft_emp_name">
+		  AND EMP_NUM = (SELECT EMP_NUM FROM COM_EMP_INFO WEHERE KOR_NAME like #draft_emp_name#||'%')
+		</isNotEmpty>
+  	</select>
+  	
+  	<!-- 지출 증빙 정보 조회 -->
+	<select id="selectPayEvidInfo" resultClass="HashMap">
+		 
+		SELECT
+			PAY_NO
+			,PAY_INFO_SEQ
+			,EVID_TYPE_CODE
+			,to_CHAR(TO_DATE(EVID_DATE),'YYYY-MM-DD') EVID_DATE
+			,EVID_NO
+			,CUSTOM_CODE
+			,AMT
+			,TAX
+			,BASE_BRIEF_TYPE_CODE
+			,DETAIL_DESC
+			,NOTE
+			,FINAL_MOD_ID
+			,FINAL_MOD_DATE
+		FROM
+			PAY_EVID_INFO
+		WHERE
+			1=1
+		<isNotEmpty property="pay_no"> 
+		  AND PAY_NO = #pay_no#
+		</isNotEmpty>
+		<isEmpty property="pay_no">
+		  AND PAY_NO = '9999999999'
+		</isEmpty>
+	</select>
+  	
+	
+	<!-- 지출결의정보 수정 -->
+	<update id="updatePayInfo" parameterClass="HashMap">
+		<![CDATA[
+			UPDATE PAY_INFO 
+			SET 
+				PAY_DATE				=	#pay_date#
+				,PUR_ID					=	#pur_id#
+				,REPORT_ID				=	#report_id#
+				,PJT_ID					=	#pjt_id#
+				,DRAFT_EMP_NUM			=	#draft_emp_num#
+				,DRAFT_DEPT_CODE		=	#draft_dept_code#
+				,ENFORCE_EMP_NUM		=	#enforce_emp_num#
+				,ENFORCE_DEPT_CODE		=	#enforce_dept_code#
+				,ENFORCE_DATE			=	#enforce_date#
+				,RESOL_DATE				=	#resol_date#
+				,USE_DATE				=	#use_date#
+				,USE_EMP_NUM			=	#use_emp_num#
+				,USE_DEPT_CODE			=	#use_dept_code#
+				,BUDGET_TYPE_CODE		=	#budget_type_code#
+				,BUDGET_USE_DEPT_CODE	= 	#budget_use_dept_code#
+				,PAY_DESC				=	#pay_desc#
+				,PAY_TOTAL_AMT			=	#pay_total_amt#
+				,PAY_TOTAL_TAX			=	#pay_total_tax#
+				,NOTE					=	#note#
+				,FINAL_MOD_ID			=	#final_mod_id#
+				,FINAL_MOD_DATE			=	SYSTIMESTAMP
+			 WHERE 
+			 	PAY_NO 		  = #pay_no#
+		]]>
+	</update>
+	
+	<!-- 지출증빙자료 수정 -->
+	<update id="updatePayEvidInfo" parameterClass="HashMap">
+		<![CDATA[
+			UPDATE PAY_EVID_INFO 
+			SET 
+				EVID_TYPE_CODE			=	#evid_type_code#
+				,EVID_DATE				=	REPLACE(#evid_date#,'-','')
+				,EVID_NO				=	#evid_no#
+				,CUSTOM_CODE			=	#custom_code#
+				,AMT					=	#amt#
+				,TAX					=	#tax#
+				,BASE_BRIEF_TYPE_CODE	=	#base_brief_type_code#
+				,DETAIL_DESC			=	#detail_desc#
+				,NOTE					=	#note#
+				,FINAL_MOD_ID			=	#final_mod_id#
+				,FINAL_MOD_DATE			=	SYSTIMESTAMP
+			 WHERE 
+			 	PAY_NO 		 			=	#pay_no#
+			 	AND PAY_INFO_SEQ 		=	#pay_info_seq#
+		]]>
+	</update>
+	
+	<!-- 검수정보 확인 업데이트 -->
+	<update id="updateInspectInfo" parameterClass="HashMap">
+		<![CDATA[
+			UPDATE PUR_INFO 
+			SET 
+				PROC_STATUS_CODE		=	#proc_status_code#
+				,FINAL_MOD_ID			=	#final_mod_id#
+				,FINAL_MOD_DATE			=	SYSTIMESTAMP
+			 WHERE 
+			 	PUR_ID 		 			=	#pur_id#
+		]]>
+	</update>
+	
+	
+	<!-- 프로젝트 진행상태  업데이트 -->
+	<update id="updatePjtProcCode" parameterClass="HashMap">
+		<![CDATA[
+			UPDATE PJT_INFO 
+			SET 
+				PROC_STATUS_CODE		=	#pjt_status_code#
+				,FINAL_MOD_ID			=	#final_mod_id#
+				,FINAL_MOD_DATE			=	SYSTIMESTAMP
+			 WHERE 
+			 	PJT_ID 		 			=	#pjt_id#
+		]]>
+	</update>
+	
+	
+	<!-- 프로젝트 히스토리 인서트 -->
+	<insert id="insertPjtHistory" parameterClass="HashMap">
+    	<![CDATA[
+			INSERT INTO PJT_HISTORY (
+				 PJT_INFO_SEQ
+				,PJT_REG_DATE
+				,PJT_ID
+				,PJT_STATUS_CODE
+				,PJT_PROC_NAME
+				,EMP_NUM
+				
+				
+				,FINAL_MOD_ID
+				,FINAL_MOD_DATE
+				,REG_DATE
+				,REG_ID
+					)
+			VALUES(	 
+					(
+					   SELECT NVL(MAX(pjt_info_seq),0)+1
+					     FROM pjt_history
+					    WHERE pjt_id = #pjt_id#
+					      AND pjt_reg_date = TO_CHAR(SYSDATE,'YYYYMMDD')			 
+			 		)				
+					,( 
+					   SELECT TO_CHAR(SYSDATE,'yyyymmdd')
+					     FROM DUAL
+					) 
+					,#pjt_id#
+					,#pjt_status_code#
+					,'구매'
+					,#reg_id#          
+					                
+					            
+					
+					,#reg_id#
+					,SYSTIMESTAMP
+					,SYSTIMESTAMP
+					,#reg_id#
+				  )
+		]]>
+  	</insert>
+	
+	
+ </sqlMap>

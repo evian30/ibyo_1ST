@@ -1,0 +1,107 @@
+<project name="SigngateFrameworkWebDistribute" default="process_build" basedir="." >
+        <property file="create_new_webproject.properties"/>
+
+        <property name="TOMCAT.COMMON.LIB.DIR" value="${TOMCAT.HOME.DIR}/common/lib"/>
+
+        <property name="POJECT.HOME.DIR" value="${PROJECT.DIR}/${PROJECT.NAME}"/>
+        <property name="PROJECT.LIB.DIR" value="${POJECT.HOME.DIR}/WEB-INF/lib"/>
+        <property name="TEMP.CLASS.DIR" value="${PROJECT.DIR}/classes/${PROJECT.NAME}"/>
+
+        <property name="CHECKOUT.HOME.DIR" value="${PROJECT.DIR}/src"/>
+
+        <property name="SRC.HOME.DIR" value="${PROJECT.DIR}/src/${CVS.PACKAGE}"/>
+        <property name="SRC.JAVA.DIR" value="${SRC.HOME.DIR}/WEB-INF/src"/>
+        <property name="SRC.PROPERTIES.DIR" value="${SRC.HOME.DIR}/config-local"/>
+        <property name="SRC.LIB.DIR" value="${SRC.HOME.DIR}/WEB-INF/lib"/>
+        <property name="SRC.META.DIR" value="${SRC.HOME.DIR}/META-INF"/>
+
+        <target name="process_build" depends="deleteDir">
+
+                <chmod perm="755">
+                        <fileset dir=".">
+                                <include name="*.sh"/>
+                        </fileset>
+                </chmod>
+        </target>
+
+        <target name="deleteDir" depends="compile_webRoot">
+                <delete dir="${TEMP.CLASS.DIR}"/>
+                <delete dir="${SRC.HOME.DIR}"/>
+        </target>
+
+        <target name="compile_webRoot" depends="sync_project">
+                <copy todir="${POJECT.HOME.DIR}">
+                        <fileset dir="${SRC.HOME.DIR}">
+                                <include name="**/*.jsp"/>
+                                <include name="**/*.html"/>
+                                <include name="**/*.js"/>
+                                <include name="**/*.css"/>
+                                <include name="**/*.jar"/>
+                                <include name="**/*.xml"/>
+                                <include name="**/*.gif"/>
+                                <include name="**/*.GIF"/>
+                                <include name="**/*.jpg"/>
+                                <include name="sh/**/*.sh"/>
+                                <include name="sh/**/*.properties"/>
+                                <exclude name="sh/create*.*"/>
+                                <exclude name="*config*/**"/>
+                                <exclude name="META-INF/**"/>
+                                <exclude name="document/**"/>
+                                <exclude name="**/src/**/*.xml"/>
+                        </fileset>
+                </copy>
+
+                <javac srcdir="${SRC.HOME.DIR}" destdir="${TEMP.CLASS.DIR}" encoding="utf-8">
+                        <classpath>
+
+                                <fileset dir="${SRC.LIB.DIR}">
+                                        <include name="*.jar" />
+                                </fileset>
+
+                                <fileset dir="${TOMCAT.COMMON.LIB.DIR}">
+                                        <include name="*.jar" />
+                                </fileset>
+
+                                <pathelement location="${TEMP.CLASS.DIR}" />
+                        </classpath>
+                </javac>
+
+                <copy todir="${TEMP.CLASS.DIR}">
+                        <fileset dir="${SRC.JAVA.DIR}">
+                                <include name="**/*.xml"/>
+                        </fileset>
+                </copy>
+
+                <copy todir="${POJECT.HOME.DIR}">
+                        <fileset dir="${SRC.HOME.DIR}">
+                                <include name="config-local/**/*.xml"/>
+                                <include name="config-local/**/*.properties"/>
+                                <include name="config-dev/**/*.xml"/>
+                                <include name="config-dev/**/*.properties"/>
+                        </fileset>
+                </copy>
+
+                <jar destfile="${PROJECT.LIB.DIR}/SGF.jar">
+                    <fileset dir="${TEMP.CLASS.DIR}" />
+                    <fileset dir="${SRC.HOME.DIR}">
+                        <include name="**/*.tld"/>
+                        <exclude name="WEB-INF/**"/>
+                    </fileset>
+                </jar>
+        </target>
+
+        <target name="sync_project" depends="makeDir">
+                <cvs cvsRoot="${CVS.CVSROOT}"
+                        command="checkout"
+                        dest="${CHECKOUT.HOME.DIR}"
+                        package="${CVS.PACKAGE}"
+                        failonerror="true">
+                </cvs>
+        </target>
+
+        <target name="makeDir">
+            <mkdir dir="${PROJECT.DIR}"/>
+            <mkdir dir="${POJECT.HOME.DIR}"/>
+            <mkdir dir="${TEMP.CLASS.DIR}"/>
+        </target>
+</project>

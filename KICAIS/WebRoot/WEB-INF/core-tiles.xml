@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE tiles-definitions PUBLIC
+       "-//Apache Software Foundation//DTD Tiles Configuration 2.0//EN"
+       "http://tiles.apache.org/dtds/tiles-config_2_0.dtd">
+
+<tiles-definitions>
+
+    <definition name="default" template="/WEB-INF/web/jsp/common/tiles/default/default-layout.jsp">
+        <put-attribute name="title" value="sample serviec"/>
+        <put-attribute name="header" value="/WEB-INF/web/jsp/common/tiles/default/header.jsp"/>
+        <put-attribute name="body" value="/WEB-INF/web/jsp/common/tiles/default/body.jsp"/>
+        <put-attribute name="footer" value="/WEB-INF/web/jsp/common/tiles/default/footer.jsp"/>
+    </definition>
+
+    <definition name="admin" template="/WEB-INF/web/jsp/common/tiles/admin/admin-layout.jsp">
+    	<put-attribute name="title" value="sample serviec"/>
+        <put-attribute name="header" value="/WEB-INF/web/jsp/common/tiles/admin/header.jsp"/>
+        <put-attribute name="body" value="/WEB-INF/web/jsp/common/tiles/admin/body.jsp"/>
+        <put-attribute name="left" value="/WEB-INF/web/jsp/common/tiles/admin/left.jsp"/>
+        <put-attribute name="footer" value="/WEB-INF/web/jsp/common/tiles/admin/footer.jsp"/>
+    </definition>
+
+    <definition name="popup" template="/WEB-INF/web/jsp/common/tiles/popup/popup-layout.jsp">
+        <put-attribute name="title" value="sample serviec"/>
+        <put-attribute name="header" value="/WEB-INF/web/jsp/common/tiles/popup/header.jsp"/>
+        <put-attribute name="body" value="/WEB-INF/web/jsp/common/tiles/popup/body.jsp"/>
+        <put-attribute name="footer" value="/WEB-INF/web/jsp/common/tiles/popup/footer.jsp"/>
+    </definition>
+
+</tiles-definitions>

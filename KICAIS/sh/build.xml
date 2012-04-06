@@ -1,0 +1,17 @@
+ <!-- 만약 checkout 폴더가 없다면, checkout한다 -->
+	 <project>
+	 <typedef resource="org/tigris/subversion/svnant/svnantlib.xml" classpath="/usr/local/apache-ant-1.7.1/lib/svnant.jar" />  		
+	 	<property file="Bass-build.properties"/>
+	 	<target name="svn_checkout" >
+	     <svn username="${SVN.USER}" password="${SVN.PASSWD}">
+	            <checkout url="${SVN.URL}"   destPath="${CHECKOUT.HOME.DIR}" />
+	       </svn> 
+	 		 <!--                                                                            
+	 		    <exec executable="svn">
+	 		      <arg value="co"/>
+	 		      <arg value="${SVN.URL}"/>
+	 		      <arg value="${CHECKOUT.HOME.DIR}"/>
+	 		   </exec>
+	 		  -->  
+	 </target>
+	 </project>

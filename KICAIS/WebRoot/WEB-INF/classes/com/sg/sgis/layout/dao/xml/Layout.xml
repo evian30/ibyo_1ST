@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="SV_MAIN_LAYOUT"> 
+      
+ 
+     
+     <select id="selectAllMenu2" resultClass="org.apache.commons.collections.map.CaseInsensitiveMap">
+       select id, text, description, 'false' as draggable, iconCls, url
+       
+        from (
+           select
+		       SUBSTR(A.menu_id, 0, 3)as id  			      
+			    ,case
+		    		when  TO_NUMBER(SUBSTR(A.menu_id, 4, 3)) > 0 then 'Y'
+		    		when  TO_NUMBER(SUBSTR(A.menu_id, 4, 3)) = 0 then 'N'
+		    	end	as leaf
+			    ,menu_nm as description
+			    ,menu_pos   
+			    ,case 
+			        when menu_thread > '1' then 'book'
+			        when menu_thread = '1' then 'folder' 
+			     end as iconCls 
+			    ,menu_path||'<![CDATA[&]]>hmenu_id='||A.menu_id as url
+			    ,nvl(menu_option, '') as menu_option 
+			    , nvl(menu_nm, '') as text 
+			    , nvl(menu_thread, '') as menu_thread     		
+			  FROM TB_MENU A, TB_READMENUGRANT B
+			  WHERE     A.MENU_ID = B.MENU_ID
+					AND B.GROUP_ID IN <iterate property="group_id" open="(" close=")" conjunction=","> #group_id[]# </iterate>
+					AND A.MENU_THREAD = '1'
+			 GROUP BY A.MENU_ID, menu_nm, menu_thread, menu_path, menu_pos, menu_option		
+		   )
+		  
+		  order by menu_pos asc 
+     </select>
+     
+     
+     <select id="selectAllMenu2_node" resultClass="org.apache.commons.collections.map.CaseInsensitiveMap">
+       select id, text, description, 'false' as draggable, iconCls, url
+       
+        from (
+        	  select
+		        SUBSTR(A.menu_id, 0, 6)as id  			      
+			    ,case
+		    		when  TO_NUMBER(SUBSTR(A.menu_id, 7, 3)) > 0 then 'Y'
+		    		when  TO_NUMBER(SUBSTR(A.menu_id, 7, 3)) = 0 then 'N'
+		    	end	as leaf
+			    ,menu_nm as description
+			    ,menu_pos   
+			    ,case
+			        when menu_thread > '1' then 'book'
+			        when menu_thread = '1' then 'folder' 
+			     end as iconCls 
+			    ,menu_path||'<![CDATA[&]]>hmenu_id='||A.menu_id as url
+			    , nvl(menu_option, '') as menu_option
+			    , nvl(menu_nm, '') as text 
+			    , nvl(menu_thread, '') as menu_thread     		
+			  FROM TB_MENU A, TB_READMENUGRANT B
+			    WHERE       A.MENU_ID = B.MENU_ID
+						AND B.GROUP_ID IN <iterate property="group_id" open="(" close=")" conjunction=","> #group_id[]# </iterate>
+						AND A.MENU_THREAD = '2'
+				GROUP BY A.MENU_ID, menu_nm, menu_thread, menu_path, menu_pos, menu_option
+        
+           	  )
+		  
+		  where 1=1
+		  		<isNotEmpty property="node" prepend="AND">  
+      		 	id LIKE ''||#node#||'%'  
+		  		</isNotEmpty>
+		  order by menu_pos asc 
+     </select>
+     
+     
+     <select id="selectAllMenu3_node" resultClass="org.apache.commons.collections.map.CaseInsensitiveMap">
+       select id, text, description, 'false' as draggable, iconCls, url, 'true' as leaf
+       
+        from (
+        	  select
+		      	 A.menu_id as id
+			    ,menu_nm as description
+			    ,menu_pos   
+			    ,case
+			        when menu_thread > '1' then 'book'
+			        when menu_thread = '1' then 'folder' 
+			     end as iconCls 
+			    ,menu_path||'<![CDATA[&]]>hmenu_id='||A.menu_id as url
+			    , nvl(menu_option, '') as menu_option
+			    , nvl(menu_nm, '') as text 
+			    , nvl(menu_thread, '') as menu_thread     		
+			  FROM TB_MENU A, TB_READMENUGRANT B
+			    WHERE       A.MENU_ID = B.MENU_ID
+						AND B.GROUP_ID IN <iterate property="group_id" open="(" close=")" conjunction=","> #group_id[]# </iterate>
+						AND A.MENU_THREAD = '3'
+				GROUP BY A.MENU_ID, menu_nm, menu_thread, menu_path, menu_pos, menu_option
+           	  )
+		  
+		  where 1=1
+		  		<isNotEmpty property="node" prepend="AND">  
+      		 	id LIKE ''||#node#||'%'  
+		  		</isNotEmpty>
+		  order by menu_pos asc 
+     </select>
+      
+
+</sqlMap>

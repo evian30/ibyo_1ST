@@ -1,0 +1,590 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : Custom.xml
+    Description : 거래처관리
+-->
+<sqlMap namespace="Custom">
+
+	<!-- 거래처 목록조회 -->
+	<select id="selectCustom" resultClass="HashMap">
+	SELECT	/*Custom.selectCustom*/
+			*
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+				   SELECT 'R' FLAG			   	   							      /*조회상태*/			
+						, CC.CUSTOM_TYPE           								  /*거래처구분*/  	
+						, (
+						  SELECT C.COM_CODE_NAME
+					         FROM COM_CODE C
+					        WHERE C.GROUP_CODE = 'CUSTOM_TYPE'
+					          AND C.COM_CODE = TRIM(CC.CUSTOM_TYPE)
+					      ) CUSTOM_TYPE_NAME
+						, CC.CUSTOM_CODE					 					  /*거래처코드*/ 
+						, CC.CUSTOM_NAME           								  /*거래처명*/              
+						, CC.PER_BIZ_TYPE      								  	  /*개인/사업자구분*/       
+						, CC.BIZ_NUM               								  /*사업자번호*/
+						
+						, SUBSTR(CC.BIZ_NUM, 0, 3)||'-'||SUBSTR(CC.BIZ_NUM, 4, 2)||'-'||SUBSTR(CC.BIZ_NUM, 6, 5) AS BIZ_NUM_CONVERT
+						            
+						, CC.CEO_NAME              								  /*대표자명*/              
+						, CC.BIZ_TYPE              								  /*업태*/                  
+						, CC.BIZ_KIND              								  /*업종*/                  
+						, CC.ZIPCODE               								  /*우편번호*/              
+						, CC.ADDR                  								  /*주소*/                  
+						, CC.ADDR_DETAIL           								  /*주소상세*/              
+						, CC.TELEPHONE             								  /*전화번호*/              
+						, CC.FAX                   								  /*팩스*/                  
+						, CC.EMAIL                 								  /*E-MAIL*/                
+						, CC.ETAX_ISSUE_YN         								  /*전자세금계산서발행여부*/
+						, CC.CUSTOM_LEVEL          								  /*거래처등급코드*/ 
+						, CC.NOTE                    							  /*비고*/        
+						, CC.USE_YN                  							  /*사용여부*/    
+						, CC.FINAL_MOD_ID            							  /*최종변경자ID*/
+						, (SELECT admin_nm
+						     FROM tb_admin
+						    WHERE admin_id = CC.final_mod_id
+						  )FINAL_MOD_NAME 
+						, TO_CHAR(CC.FINAL_MOD_DATE,'YYYY-MM-DD') FINAL_MOD_DATE  /*최종변경일시*/
+					 FROM com_custom CC	   							 	          /*거래처관리*/
+					WHERE 1 = 1 
+					<isNotEmpty property="src_custom_type">
+					  AND CC.custom_type = #src_custom_type#
+					</isNotEmpty>
+					<isNotEmpty property="src_custom_code">
+					  AND CC.custom_code = #src_custom_code#
+					</isNotEmpty>
+					<isNotEmpty property="src_custom_name">
+					  AND CC.custom_name LIKE '%'||#src_custom_name#||'%'
+					</isNotEmpty>
+					<isNotEmpty property="src_biz_num">
+					  AND CC.biz_num LIKE '%'||#src_biz_num#||'%'
+					</isNotEmpty>
+					ORDER BY CC.reg_date desc, CC.final_mod_date desc
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	<!-- 거래처목록 총갯수 -->
+	<select id="selectCustomCount" resultClass="int">
+	SELECT COUNT(CC.custom_code)	/*거래처코드*/	   	   		
+ 	  FROM com_custom CC	   		/*거래처관리*/
+	 WHERE 1 = 1 
+	 <isNotEmpty property="src_custom_type">
+	   AND CC.custom_type = #src_custom_type#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_custom_code">
+	   AND CC.custom_code = #src_custom_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_custom_name">
+	   AND CC.custom_name LIKE '%'||#src_custom_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_biz_num">
+	   AND CC.biz_num LIKE '%'||#src_biz_num#||'%'
+	 </isNotEmpty>
+	</select>
+	
+	<!-- 거래처관리 등록 -->
+	<insert id="insertCustom" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO com_custom (  custom_type       		/*거래처구분*/            
+							, custom_code				/*거래처코드*/            
+							, custom_name       		/*거래처명*/              
+							, per_biz_type      		/*개인/사업자구분*/       
+							, biz_num           		/*사업자번호*/            
+							, ceo_name          		/*대표자명*/              
+							, biz_type          		/*업태*/                  
+							, biz_kind          		/*업종*/                  
+							, zipcode           		/*우편번호*/              
+							, addr              		/*주소*/                  
+							, addr_detail       		/*주소상세*/              
+							, telephone         		/*전화번호*/              
+							, fax               		/*팩스*/                  
+							, email             		/*E-MAIL*/                
+							, etax_issue_yn     		/*전자세금계산서발행여부*/
+							, custom_level      		/*거래처등급코드*/        
+							, note              		/*비고*/                  
+							, use_yn            		/*사용여부*/              
+							, final_mod_id      		/*최종변경자ID*/          
+							, final_mod_date    		/*최종변경일시*/
+							, reg_date					/*최초등록일*/
+						    , reg_id					/*최초등록자*/
+						    )
+					 VALUES ( #custom_type#       		/*거래처구분*/            
+							, (
+							   SELECT LPAD(NVL(MAX(custom_code),0)+1,7,0)
+  								 FROM com_custom
+							  )				/*거래처코드*/            
+							, #custom_name#       		/*거래처명*/              
+							, #per_biz_type#      		/*개인/사업자구분*/       
+							, #biz_num#           		/*사업자번호*/            
+							, #ceo_name#          		/*대표자명*/              
+							, #biz_type#          		/*업태*/                  
+							, #biz_kind#          		/*업종*/                  
+							, #zipcode1#||#zipcode2#    /*우편번호*/              
+							, #addr#              		/*주소*/                  
+							, #addr_detail#       		/*주소상세*/              
+							, #telephone#         		/*전화번호*/              
+							, #fax#               		/*팩스*/                  
+							, #email#             		/*E-MAIL*/                
+							, #etax_issue_yn#     		/*전자세금계산서발행여부*/
+							, #custom_level#      		/*거래처등급코드*/        
+							, #note#              		/*비고*/                  
+							, #use_yn#            		/*사용여부*/              
+							, #final_mod_id#        	/*최종변경자ID*/          
+							, SYSDATE    				/*최종변경일시*/
+							, SYSDATE					/*최초등록일*/
+						    , #final_mod_id#			/*최초등록자*/
+						    )
+	]]>
+	</insert>
+	
+	<!-- 거래처관리 수정 -->
+	<update id="updateCustom" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE com_custom								/*거래처관리*/
+	   SET custom_name    = #custom_name#       	/*거래처명*/              
+		 , per_biz_type   = #per_biz_type#      	/*개인/사업자구분*/       
+		 , biz_num        = #biz_num#           	/*사업자번호*/            
+		 , ceo_name       = #ceo_name#          	/*대표자명*/              
+		 , biz_type       = #biz_type#          	/*업태*/                  
+		 , biz_kind       = #biz_kind#          	/*업종*/                  
+		 , zipcode        = #zipcode1#||#zipcode2#  /*우편번호*/              
+		 , addr           = #addr#              	/*주소*/                  
+		 , addr_detail    = #addr_detail#       	/*주소상세*/              
+		 , telephone      = #telephone#         	/*전화번호*/              
+		 , fax            = #fax#               	/*팩스*/                  
+		 , email          = #email#             	/*E-MAIL*/                
+		 , etax_issue_yn  = #etax_issue_yn#     	/*전자세금계산서발행여부*/
+		 , custom_level   = #custom_level#      	/*거래처등급코드*/        
+		 , note           = #note#              	/*비고*/                  
+		 , use_yn         = #use_yn#            	/*사용여부*/              
+		 , final_mod_id   = #final_mod_id#     		/*최종변경자ID*/          
+		 , final_mod_date = SYSDATE    				/*최종변경일시*/   
+	 WHERE custom_type    = #custom_type#			/*거래처구분*/
+	   AND custom_code    = #custom_code#       	/*거래처코드*/           
+	]]>
+	</update>
+	
+	<!-- 거래처 팝업조회	-->
+	<select id="selectCustomPopList" resultClass="HashMap">
+	SELECT custom_code           /*거래처코드*/    
+	     , custom_name           /*거래처명*/      
+	     , custom_type			 /*거래처구분*/
+	     , biz_num			     /*사업자번호*/
+	  FROM com_custom			 /*거래처관리*/
+	 WHERE 1 = 1
+	 <isNotEmpty property="search_div">
+	   AND $search_div$ LIKE '%'||#search_val#||'%'
+	 </isNotEmpty>
+	 ORDER BY custom_code
+	</select>
+	
+	<!-- 거래처담당자관리 목록조회 -->
+	<select id="selectCustomMember" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+				  SELECT 'R' flag			   	 								/*조회상태*/
+				       , CM.custom_code          								/*거래처코드*/
+				       , CM.customer_num         								/*거래처담당자번호*/
+				       , CM.customer_name        								/*거래처담당자명*/
+				       , CM.customer_dept        								/*거래처담당자부서*/
+				       , CM.customer_position    								/*거래처담당자직위*/
+				       , CM.customer_roll_code   								/*거래처담당자업무구분코드*/
+				       , CM.customer_telephone   								/*거래처담당자전화번호*/
+				       , CM.customer_mobile      								/*거래처담당자휴대폰번호*/
+				       , CM.customer_direct      								/*거래처담당자내선번호*/
+				       , CM.customer_email       								/*거래처담당자E-MAIL*/
+				       , CM.customer_level       								/*거래처담당자등급*/
+				       , CM.customer_notice      								/*거래처담당자메모사항*/
+				       , CM.note                 								/*비고*/
+				       , CM.use_yn               								/*사용여부*/
+				       , CM.final_mod_id         								/*최종변경자ID*/
+				       , (SELECT admin_nm
+						     FROM tb_admin
+						    WHERE admin_id = CM.final_mod_id
+						  ) final_mod_name 
+				       , TO_CHAR(CM.final_mod_date,'YYYY-MM-DD') final_mod_date	/*최종변경일시*/
+				       , CC.custom_type          								/*거래처구분*/
+				       , CC.custom_name          								/*거래처명*/
+				       
+				       , SUBSTR(CC.BIZ_NUM, 0, 3)||'-'||SUBSTR(CC.BIZ_NUM, 4, 2)||'-'||SUBSTR(CC.BIZ_NUM, 6, 5) AS BIZ_NUM_CONVERT
+				       
+				       , CC.biz_num              								/*사업자번호*/
+				    FROM COM_CUSTOM_MEMBER CM                					/*거래처담당자관리*/
+				    LEFT OUTER JOIN
+				         COM_CUSTOM CC                      					/*거래처관리*/
+				      ON CM.CUSTOM_CODE = CC.CUSTOM_CODE     
+				   WHERE 1=1
+				     <isNotEmpty property="src_custom_code">
+				     AND CM.custom_code = #src_custom_code#
+				     </isNotEmpty>
+				     <isNotEmpty property="src_custom_name">
+				     AND CC.custom_name LIKE '%'||#src_custom_name#||'%'
+				     </isNotEmpty>
+				     <isNotEmpty property="src_biz_num">
+				     AND CC.biz_num LIKE '%'||#src_biz_num#||'%'
+				     </isNotEmpty>
+				     <isNotEmpty property="src_customer_name">
+				     AND CM.customer_name LIKE '%'||#src_customer_name#||'%'
+				     </isNotEmpty>
+				  ) A
+		   )
+	<isNotNull property="start">	   
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	</isNotNull> 	
+	</select>
+	
+	<!-- 거래처담당자관리 목록 총갯수 -->
+	<select id="selectCustomMemberCount" resultClass="int">
+	SELECT COUNT(CM.custom_code)          /*거래처코드*/
+      FROM COM_CUSTOM_MEMBER CM                /*거래처담당자관리*/
+      LEFT OUTER JOIN
+           COM_CUSTOM CC                       /*거래처관리*/
+        ON CM.CUSTOM_CODE = CC.CUSTOM_CODE     
+     WHERE 1=1
+      <isNotEmpty property="src_custom_code">
+       AND CM.custom_code = #src_custom_code#
+      </isNotEmpty>
+      <isNotEmpty property="src_custom_name">
+       AND CC.custom_name LIKE '%'||#src_custom_name#||'%'
+      </isNotEmpty>
+      <isNotEmpty property="src_biz_num">
+       AND CC.biz_num LIKE '%'||#src_biz_num#||'%'
+      </isNotEmpty>
+      <isNotEmpty property="src_customer_name">
+       AND CM.customer_name LIKE '%'||#src_customer_name#||'%'
+      </isNotEmpty>
+	</select>
+	
+	<!-- 거래처담당자관리 등록 -->
+	<insert id="insertCustomMember" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO com_custom_member ( custom_code        			/*거래처코드*/
+								  , customer_num			 	/*거래처담당자번호*/
+								  , customer_name      			/*거래처담당자명*/
+								  , customer_dept      			/*거래처담당자부서*/
+								  , customer_position  			/*거래처담당자직위*/
+								  , customer_roll_code 			/*거래처담당자업무구분코드*/
+								  , customer_telephone 			/*거래처담당자전화번호*/
+								  , customer_mobile    			/*거래처담당자휴대폰번호*/
+								  , customer_direct    			/*거래처담당자내선번호*/
+								  , customer_email     			/*거래처담당자E-MAIL*/
+								  , customer_level     			/*거래처담당자등급*/
+								  , customer_notice    			/*거래처담당자메모사항*/
+								  , note               			/*비고*/
+								  , use_yn             			/*사용여부*/
+								  , final_mod_id       			/*최종변경자ID*/
+								  , final_mod_date     			/*최종변경일시*/ 
+								  , reg_date					/*최초등록일*/
+						    	  , reg_id						/*최초등록자*/
+						          )
+					 	   VALUES ( #custom_code#				/*거래처코드*/                   
+								  , (SELECT #custom_code#||LPAD(NVL(MAX(customer_num),0)+1,3,0)
+									   FROM com_custom_member
+									  WHERE custom_code = #custom_code#
+								    )							/*거래처담당자번호*/           
+								  , #customer_name#				/*거래처담당자명*/               
+								  , #customer_dept#				/*거래처담당자부서*/             
+								  , #customer_position#			/*거래처담당자직위*/             
+								  , #customer_roll_code#		/*거래처담당자업무구분코드*/   
+								  , #customer_telephone#		/*거래처담당자전화번호*/       
+								  , #customer_mobile#			/*거래처담당자휴대폰번호*/       
+								  , #customer_direct#			/*거래처담당자내선번호*/         
+								  , #customer_email#			/*거래처담당자E-MAIL*/         
+								  , #customer_level#			/*거래처담당자등급*/           
+								  , #customer_notice#			/*거래처담당자메모사항*/         
+								  , #note#						/*비고*/                       
+								  , #use_yn#					/*사용여부*/                   
+								  , #final_mod_id#				/*최종변경자ID*/               
+								  , SYSDATE						/*최종변경일시*/  
+								  , SYSDATE						/*최초등록일*/
+						    	  , #final_mod_id#				/*최초등록자*/             
+						          )
+	]]>
+	</insert>
+	
+	<!-- 거래처담당자관리 수정 -->
+	<update id="updateCustomMember" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE com_custom_member								/*거래처담당자관리*/
+	   SET customer_name      = #customer_name#				/*거래처담당자명*/
+		 , customer_dept      = #customer_dept#				/*거래처담당자부서*/
+		 , customer_position  = #customer_position#			/*거래처담당자직위*/
+		 , customer_roll_code = #customer_roll_code#		/*거래처담당자업무구분코드*/
+		 , customer_telephone = #customer_telephone#		/*거래처담당자전화번호*/
+		 , customer_mobile    = #customer_mobile#			/*거래처담당자휴대폰번호*/
+		 , customer_direct    = #customer_direct#			/*거래처담당자내선번호*/
+		 , customer_email     = #customer_email#			/*거래처담당자E-MAIL*/
+		 , customer_level     = #customer_level#			/*거래처담당자등급*/
+		 , customer_notice    = #customer_notice#			/*거래처담당자메모사항*/
+		 , note               = #note#						/*비고*/
+		 , use_yn             = #use_yn#					/*사용여부*/
+		 , final_mod_id       = #final_mod_id#				/*최종변경자ID*/
+		 , final_mod_date     = SYSDATE						/*최종변경일시*/
+	 WHERE custom_code        = #custom_code#				/*거래처코드*/
+	   AND customer_num		  = #customer_num#				/*거래처담당자번호*/          
+	]]>
+	</update>
+	
+	<!-- 거래처정보조회_거래처정보 목록조회 -->
+	<select id="customListView" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (	
+    	      	   SELECT CC.custom_type           								  /*거래처구분*/  	
+				  		, CC.custom_code					 					  /*거래처코드*/ 
+				  		, (
+						  SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'CUSTOM_TYPE'
+					          AND C.com_code = TRIM(CC.custom_type)
+					      ) custom_type_name
+					  	, CC.custom_name           								  /*거래처명*/              
+					  	, CC.per_biz_type      								  	  /*개인/사업자구분*/       
+					  	, CC.biz_num               								  /*사업자번호*/            
+					  	, CC.ceo_name              								  /*대표자명*/              
+					  	, CC.biz_type              								  /*업태*/                  
+					  	, CC.biz_kind              								  /*업종*/                  
+					  	, CC.zipcode               								  /*우편번호*/              
+					  	, CC.addr                  								  /*주소*/                  
+					  	, CC.addr_detail           								  /*주소상세*/              
+					  	, CC.telephone             								  /*전화번호*/              
+					  	, CC.fax                   								  /*팩스*/                  
+					  	, CC.email                 								  /*E-MAIL*/                
+					  	,(
+						  SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'YESNO_CODE'
+					          AND C.com_code = TRIM(CC.etax_issue_yn)
+					      ) etax_issue_yn										  /*전자세금계산서발행여부*/
+					  	, (
+						  SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'CUSTOM_LEVEL_CODE'
+					          AND C.com_code = TRIM(CC.custom_level)
+					      ) custom_level 										  /*거래처등급코드*/
+					  	, CC.note                    							  /*비고*/        
+					  	,(
+						  SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'YESNO_CODE'
+					          AND C.com_code = TRIM(CC.use_yn)
+					      ) use_yn                  							  /*사용여부*/    
+					  	, CC.final_mod_id            							  /*최종변경자ID*/
+					  	, TO_CHAR(CC.final_mod_date,'YYYY-MM-DD') final_mod_date  /*최종변경일시*/
+				   	 FROM com_custom CC	   							 	          /*거래처관리*/
+				    WHERE 1 = 1 
+				    <isNotEmpty property="src_custom_type">
+				      AND CC.custom_type = #src_custom_type#
+				  	</isNotEmpty>
+				  	<isNotEmpty property="src_custom_code">
+				      AND CC.custom_code = #src_custom_code#
+				  	</isNotEmpty>
+				  	<isNotEmpty property="src_biz_num">
+				      AND CC.biz_num LIKE '%'||#src_biz_num#||'%'
+				  	</isNotEmpty>
+				  	<isNotEmpty property="src_custom_level">
+				      AND CC.custom_level = #src_custom_level#
+				  	</isNotEmpty>
+				  	<isNotEmpty property="src_use_yn">
+				      AND CC.use_yn = #src_use_yn#
+				  	</isNotEmpty>
+					<isNotEmpty property="src_customer_name">
+				      AND CC.custom_code IN (
+					                         SELECT CM.custom_code
+					                           FROM com_custom_member CM
+					                          WHERE customer_name LIKE '%'||#src_customer_name#||'%'
+					                        ) 
+				  	</isNotEmpty>
+				    ORDER BY CC.CUSTOM_TYPE, CC.CUSTOM_CODE
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	<!-- 거래처정보조회_거래처정보 목록조회 총갯수 -->
+	<select id="customListViewCount" resultClass="int">
+	SELECT COUNT(CC.custom_code)					 					  /*거래처코드*/ 
+   	  FROM com_custom CC	   							 	          /*거래처관리*/
+     WHERE 1 = 1 
+     <isNotEmpty property="src_custom_type">
+       AND CC.custom_type = #src_custom_type#
+  	 </isNotEmpty>
+  	 <isNotEmpty property="src_custom_code">
+       AND CC.custom_code = #src_custom_code#
+  	 </isNotEmpty>
+  	 <isNotEmpty property="src_biz_num">
+       AND CC.biz_num LIKE '%'||#src_biz_num#||'%'
+  	 </isNotEmpty>
+  	 <isNotEmpty property="src_custom_level">
+       AND CC.custom_level = #src_custom_level#
+  	 </isNotEmpty>
+  	 <isNotEmpty property="src_use_yn">
+       AND CC.use_yn = #src_use_yn#
+  	 </isNotEmpty>
+  	 <isNotEmpty property="src_customer_name">
+       AND CC.custom_code IN (
+	                         SELECT CM.custom_code
+	                           FROM com_custom_member CM
+	                          WHERE customer_name LIKE '%'||#src_customer_name#||'%'
+	                         ) 
+  	 </isNotEmpty>
+	</select>
+	
+	<!-- 거래처정보조회_거래처담당자 목록조회 -->
+	<select id="customMemberListView" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+				  SELECT 'R' flag			   	 								/*조회상태*/
+				       , CM.custom_code          								/*거래처코드*/
+				       , CM.customer_num         								/*거래처담당자번호*/
+				       , CM.customer_name        								/*거래처담당자명*/
+				       , CM.customer_dept        								/*거래처담당자부서*/
+				       , CM.customer_position    								/*거래처담당자직위*/
+				       ,(
+						  SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'CUSTOMER_ROLL_CODE'
+					          AND C.com_code = TRIM(CM.customer_roll_code)
+					     ) customer_roll_code									/*거래처담당자업무구분코드*/
+				       , CM.customer_telephone   								/*거래처담당자전화번호*/
+				       , CM.customer_mobile      								/*거래처담당자휴대폰번호*/
+				       , CM.customer_direct      								/*거래처담당자내선번호*/
+				       , CM.customer_email       								/*거래처담당자E-MAIL*/
+				       , CM.customer_level       								/*거래처담당자등급*/
+				       , CM.customer_notice      								/*거래처담당자메모사항*/
+				       , CM.note                 								/*비고*/
+				       , CM.use_yn               								/*사용여부*/
+				       , CM.final_mod_id         								/*최종변경자ID*/
+				       , TO_CHAR(CM.final_mod_date,'YYYY-MM-DD') final_mod_date	/*최종변경일시*/
+				       , CC.custom_type          								/*거래처구분*/
+				       , CC.custom_name          								/*거래처명*/
+				       , CC.biz_num              								/*사업자번호*/
+				    FROM COM_CUSTOM_MEMBER CM                					/*거래처담당자관리*/
+				    LEFT OUTER JOIN
+				         COM_CUSTOM CC                      					/*거래처관리*/
+				      ON CM.CUSTOM_CODE = CC.CUSTOM_CODE     
+				   WHERE 1=1
+				     <isNotEmpty property="src_custom_code">
+				     AND CM.custom_code = #src_custom_code#
+				     </isNotEmpty>
+				     <isEmpty property="src_custom_code">
+				     AND CM.custom_code = '9999a'
+				     </isEmpty>
+				  ) A
+		   )
+	<isNotNull property="start">	   
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	</isNotNull>  	
+	</select>
+	
+	<!-- 거래처정보조회_거래처담당자 목록조회 총갯수 -->
+	<select id="customMemberListViewCount" resultClass="int">
+	SELECT COUNT(CM.customer_num)  								/*거래처담당자번호*/
+	  FROM com_custom_member CM                					/*거래처담당자관리*/
+	  LEFT OUTER JOIN
+	       com_custom CC                      					/*거래처관리*/
+	    ON CM.custom_code = CC.custom_code     
+	 WHERE 1=1
+     <isNotEmpty property="src_custom_code">
+       AND CM.custom_code = #src_custom_code#
+     </isNotEmpty>
+     <isEmpty property="src_custom_code">
+       AND CM.custom_code = '9999a'
+     </isEmpty>
+	</select>
+	
+	<!-- 거래처담당자관리 팝업목록조회 -->
+	<select id="selectCustomMemberPop" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+				  SELECT 'R' flag			   	 								/*조회상태*/
+				       , CM.custom_code          								/*거래처코드*/
+				       , CM.customer_num         								/*거래처담당자번호*/
+				       , CM.customer_name        								/*거래처담당자명*/
+				       , CM.customer_dept        								/*거래처담당자부서*/
+				       , CM.customer_position    								/*거래처담당자직위*/
+				       , CM.customer_roll_code   								/*거래처담당자업무구분코드*/
+				       , CM.customer_telephone   								/*거래처담당자전화번호*/
+				       , CM.customer_mobile      								/*거래처담당자휴대폰번호*/
+				       , CM.customer_direct      								/*거래처담당자내선번호*/
+				       , CM.customer_email       								/*거래처담당자E-MAIL*/
+				       , CM.customer_level       								/*거래처담당자등급*/
+				       , CM.customer_notice      								/*거래처담당자메모사항*/
+				       , CM.note                 								/*비고*/
+				       , CM.use_yn               								/*사용여부*/
+				       , CM.final_mod_id         								/*최종변경자ID*/
+				       , TO_CHAR(CM.final_mod_date,'YYYY-MM-DD') final_mod_date	/*최종변경일시*/
+				       , CC.custom_type          								/*거래처구분*/
+				       , CC.custom_name          								/*거래처명*/
+				       , CC.biz_num              								/*사업자번호*/
+				       
+				       , SUBSTR(CC.BIZ_NUM, 0, 3)||'-'||SUBSTR(CC.BIZ_NUM, 4, 2)||'-'||SUBSTR(CC.BIZ_NUM, 6, 5) AS BIZ_NUM_CONVERT
+				       
+				    FROM COM_CUSTOM_MEMBER CM                					/*거래처담당자관리*/
+				    LEFT OUTER JOIN
+				         COM_CUSTOM CC                      					/*거래처관리*/
+				      ON CM.CUSTOM_CODE = CC.CUSTOM_CODE     
+				   WHERE 1=1
+				     <isNotEmpty property="src_custom_code">
+				     AND CM.custom_code = #src_custom_code#
+				     </isNotEmpty>
+				     <isNotEmpty property="src_biz_num">
+				     AND CC.biz_num LIKE '%'||#src_biz_num#||'%'
+				     </isNotEmpty>
+				     <isNotEmpty property="src_customer_name">
+				     AND CM.customer_name LIKE '%'||#src_customer_name#||'%'
+				     </isNotEmpty>
+					 <isNotEmpty property="src_custom_name">
+				     AND CC.custom_name LIKE '%'||#src_custom_name#||'%'
+				     </isNotEmpty>				     
+				  ) A
+		   )
+	<isNotNull property="start">	   
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	</isNotNull> 	
+	</select>
+	
+	<!-- 거래처담당자관리팝업 목록 총갯수 -->
+	<select id="selectCustomMemberPopCount" resultClass="int">
+	SELECT COUNT(CM.custom_code)          /*거래처코드*/
+      FROM COM_CUSTOM_MEMBER CM                /*거래처담당자관리*/
+      LEFT OUTER JOIN
+           COM_CUSTOM CC                       /*거래처관리*/
+        ON CM.CUSTOM_CODE = CC.CUSTOM_CODE     
+     WHERE 1=1
+      <isNotEmpty property="src_custom_code">
+       AND CM.custom_code = #src_custom_code#
+      </isNotEmpty>
+      <isNotEmpty property="src_biz_num">
+       AND CC.biz_num LIKE '%'||#src_biz_num#||'%'
+      </isNotEmpty>
+      <isNotEmpty property="src_customer_name">
+       AND CM.customer_name LIKE '%'||#src_customer_name#||'%'
+      </isNotEmpty>
+	 <isNotEmpty property="src_custom_name">
+      AND CC.custom_name LIKE '%'||#src_custom_name#||'%'
+	</isNotEmpty>	      
+	</select>	
+	
+</sqlMap>

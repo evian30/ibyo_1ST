@@ -1,0 +1,344 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context-2.5.xsd
+                           http://www.springframework.org/schema/aop 
+                           http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+                           http://www.springframework.org/schema/tx 
+                           http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <!-- 공통 logger aop 정의 -->
+
+    <bean id="methodLogger"
+        class="com.signgate.core.log.MethodLogger" /> 
+    <aop:config>
+        <aop:aspect id="loggingAspect" ref="methodLogger">
+            <aop:pointcut id="loggerPointcut" expression="execution(public * com.signgate..*.*(..))"/>
+            <aop:before method="beforeMethod" pointcut-ref="loggerPointcut"/>
+            <aop:after-returning method="returnMethod" returning="result" pointcut-ref="loggerPointcut"/>
+            <aop:after method="finallyMethod" pointcut-ref="loggerPointcut"/>
+        </aop:aspect>
+    </aop:config>
+
+    <!-- SGF manage controller 등록  -->
+
+    <!-- 게시판  마스터 controller -->
+    <bean id="boardMst" name="/core/manage/boardmst"
+          class="com.signgate.core.web.manage.boardmst.BoardMstController" 
+          p:boardMstBiz-ref="boardMstBiz" />
+
+    <!-- 게시판 controller -->
+    <bean id="board" name="/core/manage/board"
+          class="com.signgate.core.web.manage.board.BoardController" 
+          p:boardBiz-ref="boardBiz"  />
+          
+    <!-- 관리자 관리  controller -->
+    <bean id="suser" name="/core/manage/suser"
+          class="com.signgate.core.web.manage.suser.SUserController" 
+          p:setupBiz-ref="setupBiz"
+          p:suserBiz-ref="suserBiz" />
+
+
+	<!-- 메뉴 관리  controller -->
+	<bean id="menu" name="/core/manage/menu"
+	      class="com.signgate.core.web.manage.menu.MenuController" 
+	      p:menuBiz-ref="menuBiz" />
+	      
+	<!-- 그룹  관리  controller -->
+	<bean id="group" name="/core/manage/group"
+	      class="com.signgate.core.web.manage.group.GroupController" 
+	      p:groupBiz-ref="groupBiz" />
+          
+    <!-- 배치  관리  controller -->
+    <bean id="batch" name="/core/manage/batch"
+          class="com.signgate.core.web.manage.batch.BatchController" 
+          p:batchBiz-ref="batchBiz" />
+          
+    <!-- 코드  관리  controller -->
+    <bean id="code" name="/core/manage/code"
+          class="com.signgate.core.web.manage.code.CodeController" 
+          p:codeBiz-ref="codeBiz" />      
+	
+	<!-- 접속 DataBase controller -->
+    <bean id="setup" name="/core/manage/setup"
+          class="com.signgate.core.web.setup.SetupController" 
+          p:setupBiz-ref="setupBiz" />
+	
+    <!-- 사용자 정의 controller 등록 -->  
+    
+    <!-- 우편번호 조회 controller -->
+    <bean id="zip" name="/sgportal/post"
+        class="sg.svc.portal.bass.post.ZipController"
+        p:zipBiz-ref="zipBiz" />     
+    
+    
+    <!-- 담당자 controller -->
+    <bean id="chman" name="/sgportal/chman"
+          class="sg.svc.portal.bass.chman.ChmanController" 
+          p:chmanBiz-ref="chmanBiz" />
+ 
+    <!-- 기술지원 controller -->
+    <bean id="techsup" name="/sgportal/techsup"
+          class="sg.svc.portal.bass.techsup.TechsupController" 
+          p:techsupBiz-ref="techsupBiz" 
+          p:chmanBiz-ref="chmanBiz"
+          p:productBiz-ref="productBiz" 
+          />   
+    
+    <!-- 제품 관리 controller -->
+    <bean id="product" name="/sgportal/product"
+          class="sg.svc.portal.bass.product.ProductController" 
+          p:productBiz-ref="productBiz" 
+          p:techsupBiz-ref="techsupBiz" />   
+    
+    <!-- 공통코드 관리 controller -->
+    <bean id="bassCode" name="/sgportal/bassCode"
+          class="sg.svc.portal.bass.BassCode.BassCodeController" 
+          p:bassCodeBiz-ref="bassCodeBiz" />  
+     
+    <!-- 스케줄 관리 controller -->
+    <bean id="schedule" name="/sgportal/schedule"
+          class="sg.svc.portal.bass.schedule.ScheduleController" 
+          p:scheduleBiz-ref="scheduleBiz"  />  
+          
+    <!-- Main controller -->
+    <bean id="main" name="/sgportal/main"
+          class="sg.svc.portal.bass.Main.MainController" 
+          p:mainBiz-ref="mainBiz"  
+          p:techsupBiz-ref="techsupBiz" 
+          p:chmanBiz-ref="chmanBiz"
+          p:productBiz-ref="productBiz" 
+          p:scheduleBiz-ref="scheduleBiz" />         
+
+  	<bean id="cassTechsup" name="/sgportal/cass/techsup"
+          class="sg.svc.portal.cass.techsup.CassTechsupController" 
+          p:cassTechsupBiz-ref="cassTechsupBiz" 
+          p:chmanBiz-ref="chmanBiz"
+          p:productBiz-ref="productBiz" 
+          />
+          
+    <!-- 메인 레이아웃 -->
+  	<bean id="layout" name="/sgis"
+          class="com.sg.sgis.layout.LayoutController" 
+          p:layoutBiz-ref="layoutBiz"
+          p:menuBiz-ref="menuBiz"
+          p:pjtManageBiz-ref="pjtManageBiz" 
+         
+          p:calendarBiz-ref="calendarBiz"
+          p:pjtIssueBiz-ref="pjtIssueBiz"
+          p:pjdInfoMngBiz-ref="pjdInfoMngBiz"
+          />
+      
+	<!--*************************   시스템관리        ************************* -->
+	
+	<!-- 부서정보관리 -->
+	<bean id="dept" name="/com/dept"
+		class="com.sg.sgis.com.dept.DeptController" 
+		p:deptBiz-ref="deptBiz"
+		p:sgisCodeBiz-ref="sgisCodeBiz" />   	
+		
+	<!-- 사원정보관리 -->
+	<bean id="employee" name="/com/employee"
+		class="com.sg.sgis.com.employee.EmployeeController" 
+		p:employeeBiz-ref="employeeBiz"
+		p:deptBiz-ref="deptBiz"
+		p:sgisCodeBiz-ref="sgisCodeBiz" 
+		p:pjtManageBiz-ref="pjtManageBiz" /> 	
+		
+	<!-- 품목정보관리 -->
+	<bean id="item" name="/com/item"
+		class="com.sg.sgis.com.item.ItemController" 
+		p:itemBiz-ref="itemBiz"
+		p:itemSWBiz-ref="itemSWBiz"
+		p:itemHWBiz-ref="itemHWBiz"
+		p:sgisCodeBiz-ref="sgisCodeBiz"
+		p:itemDeveloperBiz-ref="itemDeveloperBiz"/>  	
+	
+	<!-- 거래처 관리 controller -->
+	<bean id="custom" name="/com/custom"
+		class="com.sg.sgis.com.custom.CustomController" 
+		p:customBiz-ref="customBiz"  
+		p:sgisCodeBiz-ref="sgisCodeBiz" />
+		
+	<!-- 일정 관리 controller -->
+	<bean id="calendar" name="/com/calendar"
+		class="com.sg.sgis.com.calendar.CalendarController" 
+		p:calendarBiz-ref="calendarBiz"
+		p:sgisCodeBiz-ref="sgisCodeBiz" 
+		p:pjtManageBiz-ref="pjtManageBiz" />
+	
+	<!-- 코드 관리 controller -->
+    <bean id="sgisCode" name="/com/sgisCode"
+        class="com.sg.sgis.com.sgisCode.SgisCodeController" 
+        p:sgisCodeBiz-ref="sgisCodeBiz" />
+        
+    <!-- 이슈관리 controller -->
+    <bean id="issue" name="/com/issue"
+        class="com.sg.sgis.com.issue.IssueController" 
+        p:issueBiz-ref="issueBiz" 
+        p:sgisCodeBiz-ref="sgisCodeBiz" />    
+    
+    <!-- 타스크관리 controller -->
+    <bean id="task" name="/com/task"
+        class="com.sg.sgis.com.task.TaskController" 
+        p:taskBiz-ref="taskBiz" 
+        p:sgisCodeBiz-ref="sgisCodeBiz" />
+        
+	<!-- 개인별휴가정보관리 --> 
+	<bean id="empVac" name="/com/empVac"
+		class="com.sg.sgis.com.empVac.EmpVacInfoController" 
+		p:empVacInfoBiz-ref="empVacInfoBiz"
+		p:empVacUsedInfoBiz-ref="empVacUsedInfoBiz"
+		p:deptBiz-ref="deptBiz" 
+		p:pjtManageBiz-ref="pjtManageBiz" /> 
+        
+    <!--*************************  프로젝트관리      ************************* -->       
+    <!-- 프로젝트관리 -->
+	<bean id="pjtManage" name="/pjt/pjtManage"
+		class="com.sg.sgis.pjt.pjtManage.PjtManageController" 
+		p:pjtManageBiz-ref="pjtManageBiz"
+		p:deptBiz-ref="deptBiz" 
+		p:sgisCodeBiz-ref="sgisCodeBiz" 
+		p:purBiz-ref="purBiz" /> 
+	
+	<!-- 이슈관리 -->
+	<bean id="pjtIssue" name="/pjt/pjtIssue"
+		class="com.sg.sgis.pjt.pjtManage.PjtIssueController" 
+		p:pjtIssueBiz-ref="pjtIssueBiz"
+		p:pjtManageBiz-ref="pjtManageBiz"
+		p:deptBiz-ref="deptBiz" 
+		p:sgisCodeBiz-ref="sgisCodeBiz" />
+		
+    <!--*************************    견적관리         ************************* --> 
+  	<!-- 견적관리
+  	   * estimateInfoInquiryBiz		   : 견적정보조회
+  	   * estimateInfoManageBiz		   : 견적정보관리
+  	   * estimateProcessStateManageBiz : 견적진행상태관리
+  	 -->
+	<bean id="estimateInfoInquiry" name="/est/estimate"
+		class="com.sg.sgis.est.estimate.EstimateController" 
+		p:sgisCodeBiz-ref="sgisCodeBiz"
+		p:estimateInfoInquiryBiz-ref="estimateInfoInquiryBiz"
+		p:estimateInfoManageBiz-ref="estimateInfoManageBiz" 
+		p:estimateProcessStateManageBiz-ref="estimateProcessStateManageBiz"
+		p:pjtManageBiz-ref="pjtManageBiz"
+		p:managementBiz-ref="managementBiz"
+		 /> 
+  
+    <!--*************************    수주관리         ************************* --> 
+   
+    <!-- 수주관리
+  	   * orderInfoManageBiz		    : 수주정보관리
+  	   * orderInfoInquiryBiz		: 수주정보조회
+  	   * orderProcessStateManageBiz : 수주진행상태관리
+  	 -->
+	<bean id="orderInfoManage" name="/ord/order"
+		class="com.sg.sgis.ord.order.OrderController" 
+		p:sgisCodeBiz-ref="sgisCodeBiz"
+		p:orderInfoManageBiz-ref="orderInfoManageBiz"
+		p:orderInfoInquiryBiz-ref="orderInfoInquiryBiz" 
+		p:orderProcessStateManageBiz-ref="orderProcessStateManageBiz"
+		p:pjtManageBiz-ref="pjtManageBiz"
+		 /> 
+    <!--*************************    구매관리         ************************* --> 
+    <!-- 구매관리 controller -->
+    <bean id="purchase" name="/pur"
+        class="com.sg.sgis.pur.PurchaseController" 
+        p:payBiz-ref="payBiz"
+        p:sgisCodeBiz-ref="sgisCodeBiz"
+        p:purBiz-ref="purBiz" 
+        p:pjtManageBiz-ref="pjtManageBiz" />
+  
+   
+    <!--*************************    매출관리         ************************* --> 
+    
+    <!-- 매출정보관리    -->	
+    <bean id="sale" name="/sal/sale"
+		class="com.sg.sgis.sal.sale.SaleInfoManageController"  
+		p:sgisCodeBiz-ref="sgisCodeBiz"
+		p:saleInfoManageBiz-ref="saleInfoManageBiz"
+		p:pjtManageBiz-ref="pjtManageBiz"
+		/> 
+    
+    <!-- 리포트 controller -->
+    <bean id="oz" name="/ozr"
+        class="com.sg.sgis.com.oz.OzController" 
+        p:ozBiz-ref="ozBiz" />
+
+	<!-- 수금관리    -->	
+    <bean id="receipt" name="/sal/receipt"
+		class="com.sg.sgis.sal.receipt.ReceiptManageController"  
+		p:sgisCodeBiz-ref="sgisCodeBiz"
+		p:receiptManageBiz-ref="receiptManageBiz"
+		/> 
+
+    <!--*************************    개발관리         ************************* -->          
+    <!-- 업무요청정보 -->
+	<bean id="csrInfoMng" name="/dev/csrInfo"
+		class="com.sg.sgis.dev.csrInfoMng.CsrInfoMngController" 
+		p:csrInfoMngBiz-ref="csrInfoMngBiz"
+		p:deptBiz-ref="deptBiz" 
+		p:sgisCodeBiz-ref="sgisCodeBiz" 
+		p:pjtManageBiz-ref="pjtManageBiz"/> 
+
+    <!-- 개발프로젝트 관리 -->
+	<bean id="pjdInfoMng" name="/dev/pjdInfo"
+		class="com.sg.sgis.dev.pjdInfoMng.PjdInfoMngController" 
+		p:pjdInfoMngBiz-ref="pjdInfoMngBiz"
+		p:deptBiz-ref="deptBiz" 
+		p:sgisCodeBiz-ref="sgisCodeBiz" 
+		p:pjtManageBiz-ref="pjtManageBiz" /> 
+		
+		
+    <!-- 개발일정계획관리 -->
+	<bean id="scdInfoMng" name="/dev/scdInfo"
+		class="com.sg.sgis.dev.scdInfoMng.ScdInfoMngController" 
+		p:scdInfoMngBiz-ref="scdInfoMngBiz"
+		p:sgisCodeBiz-ref="sgisCodeBiz" 
+		p:pjtManageBiz-ref="pjtManageBiz" />
+	
+	
+	<!-- 유지보수관리 -->
+	<bean id="management" name="/man/management"
+		class="com.sg.sgis.man.management.ManagementController" 
+		p:managementBiz-ref="managementBiz"
+		p:pjtManageBiz-ref="pjtManageBiz"
+		p:saleInfoManageBiz-ref="saleInfoManageBiz"
+		p:sgisCodeBiz-ref="sgisCodeBiz" /> 
+
+    <!-- 개인별개발일정관리 -->
+	<bean id="scdDayInfoMng" name="/dev/scdInfo/dayInfo"
+		class="com.sg.sgis.dev.scdInfoMng.ScdDayInfoMngController" 
+		p:scdDayInfoMngBiz-ref="scdDayInfoMngBiz"
+		p:scdInfoMngBiz-ref="scdInfoMngBiz"
+		p:sgisCodeBiz-ref="sgisCodeBiz" 
+		p:pjtManageBiz-ref="pjtManageBiz"/> 
+
+    <!-- 개발프로젝트검토관리 -->
+	<bean id="scdDayInfoReviewMngList" name="/dev/scdInfo/dayInfoReview"
+		class="com.sg.sgis.dev.scdInfoMng.ScdDayInfoMngController" 
+		p:scdDayInfoMngBiz-ref="scdDayInfoMngBiz"
+		p:scdInfoMngBiz-ref="scdInfoMngBiz"
+		p:sgisCodeBiz-ref="sgisCodeBiz" 
+		p:pjtManageBiz-ref="pjtManageBiz"/> 
+		
+		
+	<!--*************************    기술지원         ************************* -->  
+    <!-- 기술지원요청 관리 -->
+	<bean id="srsInfoMngList" name="/srs"
+		class="com.sg.sgis.srs.SrsController" 
+		p:srsMngBiz-ref="srsMngBiz"
+		p:deptBiz-ref="deptBiz" 
+		p:sgisCodeBiz-ref="sgisCodeBiz" 
+		p:pjtManageBiz-ref="pjtManageBiz"
+		p:employeeBiz-ref="employeeBiz"/> 	
+	
+</beans>

@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Product">
+	<select id="productMax" resultClass="String">
+    	SELECT RETURN_NO('PROD') FROM DUAL
+    </select>
+	
+	<!-- 제품 마스트  정보 등록  -->
+	<insert id="insProductInsert" parameterClass="HashMap">
+     INSERT INTO PROD(
+			PROD_NO,
+			PROD_NM,
+			PROD_VER,
+			RELEASE_DATE,
+			RECMD_CPU,
+			RECMD_MEM,
+			RECMD_DISK,	
+			RECMD_NIC,		
+			PROD_INTRO,		
+			PROD_ABLE,		
+			PROD_BROC,		
+			PROD_TYPE_CODE,		
+			PROD_MOD_CONTENTS,
+			CR_DATE,
+			UP_DATE,
+			CHMAN_NO,
+			USE_YN
+			)	
+			VALUES(
+					#prod_no#,
+					#prod_nm#,	       
+					#prod_ver#,		     
+					#release_date#,		 
+					#recmd_cpu#,	     
+					#recmd_mem#,	     
+					#recmd_disk#,	     
+					#recmd_nic#,	     
+					#prod_intro#,	     
+					#prod_able#,	     
+					#prod_broc#,	  
+					#prod_type_code#,	 
+					#prod_mod_contents#,
+					sysdate,
+					sysdate,
+					#chman_no#,
+					'Y'
+					
+			  )
+           </insert>
+           
+ 		<!-- 제품 소프트웨어   정보 등록  --> 
+	<insert id="insProductSWInsert" parameterClass="HashMap"> 
+		INSERT INTO PROD_RECMD_SW(
+		PROD_NO,    	<!--제품번호입력-->
+		SW_NO,			<!-- OTHER_SW 테이블을 조회후 입력하게끔 -->
+		CR_DATE)		<!--SYSDATE 입력-->
+		VALUES( 
+		<isEqual property="actType" compareValue="ins">
+       		'PRO'||(select max(TO_NUMBER(SUBSTR(PROD_NO, 4))) FROM PROD),
+       	</isEqual>
+		<isEqual property="actType" compareValue="mod">
+			#prod_no#,
+		</isEqual>
+		#sw_no#,		
+		sysdate		
+		 )
+	</insert> 
+          
+          <!-- 제품 개발자 담당자   정보 등록  --> 
+	<insert id="insProductDevInsert" parameterClass="HashMap">
+		INSERT INTO PROD_DEV_CHMAN(
+		PROD_NO,    <!--제품번호입력-->
+		CHMAN_NO,			<!--CHMAN 테이블을 조회후 입력하게끔-->
+		CR_DATE,		 <!--SYSDATE 입력-->
+		SEQ)			<!--매인개발자는 1 , 그외에는 직급순으로 넣어도 됨-->
+		VALUES( 
+		<isEqual property="actType" compareValue="ins">
+       		'PRO'||(select max(TO_NUMBER(SUBSTR(PROD_NO, 4))) FROM PROD),
+       	</isEqual>
+		<isEqual property="actType" compareValue="mod">
+			#prod_no#,
+		</isEqual>
+		#dev_chman_no#,
+		sysdate,	
+		(SELECT NVL(max(TO_NUMBER(SEQ)), 0) + 1 from PROD_DEV_CHMAN)
+		 )   
+	</insert> 
+ 
+ <!-- 제품 마스트  정보 수정  -->
+	<update  id="updateProduct" parameterClass="HashMap">
+   		UPDATE PROD
+			SET
+			<isNotEmpty property="prod_nm" >PROD_NM = #prod_nm#</isNotEmpty>	 
+			<isNotEmpty property="prod_ver">,PROD_VER = #prod_ver#	</isNotEmpty>
+			<isNotEmpty property="release_date">,RELEASE_DATE = #release_date#	</isNotEmpty>
+			<isNotEmpty property="recmd_cpu">,RECMD_CPU = #recmd_cpu#</isNotEmpty>
+			<isNotEmpty property="recmd_mem">,RECMD_MEM = #recmd_mem#</isNotEmpty>
+			<isNotEmpty property="recmd_disk">,RECMD_DISK =#recmd_disk#</isNotEmpty>
+			<isNotEmpty property="recmd_nic">,RECMD_NIC =#recmd_nic#</isNotEmpty>
+			<isNotEmpty property="prod_intro">,PROD_INTRO =#prod_intro#</isNotEmpty>
+			<isNotEmpty property="prod_able">,PROD_ABLE = #prod_able#</isNotEmpty>
+			<isNotEmpty property="prod_broc" >,PROD_BROC = #prod_broc#</isNotEmpty>
+			<isNotEmpty property="prod_type_code">,PROD_TYPE_CODE =#prod_type_code#</isNotEmpty>	
+			<isNotEmpty property="prod_mod_contents">,PROD_MOD_CONTENTS = #prod_mod_contents#</isNotEmpty>
+			,UP_DATE = sysdate
+			<isNotEmpty property="prod_mod_contents">,CHMAN_NO = ( select chman_no from chman where ID = #admin_id#)</isNotEmpty>
+			
+			WHERE PROD_NO =#prod_no#
+	</update>
+   
+   
+ <!-- 제품개발 담당자  정보 수정  --> 
+	<update  id="updateProductDev" parameterClass="HashMap">
+		  UPDATE PROD_DEV_CHMAN
+		  SET CHMAN_NO =#dev_chman_no#,		<!--개발담당자변경(SEQ가 1번일 경우에 대표개발담당자이며 그외에는 그냥 순차적)-->
+		  WHERE PROD_NO=#prod_no#
+		  AND SEQ=#seq#  
+	</update>
+   
+   
+ <!-- 제품권장 WS 정보 수정  -->     
+   <update  id="updateProductSW" parameterClass="HashMap">
+	  UPDATE PROD_RECMD_SW
+	  SET SW_NO = #sw_no#,		<!--소프트웨어 변경(DB, WEB, WAS에 관해서 따로따로 해줘야합니다)-->
+	  WHERE PROD_NO=#prod_no#
+   </update>
+	
+	<!-- 제품권장 OS -->
+	<update  id="recmdOsMod" parameterClass="HashMap">
+		UPDATE RECMD_OS
+		SET SW_NO = #sw_no#,		
+		WHERE PROD_NO=#prod_no#
+			 
+	</update>
+	
+	<!-- 제품  정보 조회   -->
+	<select  id="viewProductSelect" resultClass="HashMap">
+ 	
+	SELECT  
+        T1.* FROM 
+		(SELECT PROD_NO, 
+		PROD_NM ,
+		PROD_VER,
+		TO_CHAR(RELEASE_DATE,'YYYY-MM-DD') AS RELEASE_DATE,
+		(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='PROD_TYPE_CODE' AND P.PROD_TYPE_CODE = CODE) PROD_TYPE_CODE_NM,
+        PROD_TYPE_CODE,
+		RECMD_CPU, 
+		RECMD_MEM, 
+		RECMD_DISK, 
+		RECMD_NIC,
+		PROD_INTRO,
+		PROD_ABLE,
+		PROD_BROC,
+		PROD_MOD_CONTENTS,
+		( SELECT CHMAN_NO FROM CHMAN WHERE ID = #admin_id#) AS LCHMAN_NO,
+        CHMAN_NO,
+        USE_YN
+		FROM PROD P
+		WHERE P.PROD_NO = #prod_no#) T1
+		
+	</select >
+   
+ <!-- 제품 정보 목록 --> 
+	<select  id="listProductSelect" parameterClass="HashMap" resultClass="HashMap">
+ 		SELECT * FROM 
+			(SELECT ROWNUM AS RNUM, CEIL(ROWNUM / #pageSize#) PAGE, VR_T1.* FROM 
+			(  
+			SELECT  
+			        T1.*  FROM 
+					(SELECT PROD_NO,
+					PROD_NM ,
+					PROD_VER,
+					TO_CHAR(RELEASE_DATE,'YYYY-MM-DD') AS RELEASE_DATE,
+					(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='PROD_TYPE_CODE' AND P.PROD_TYPE_CODE = CODE) PROD_TYPE_CODE_NM,
+			        PROD_TYPE_CODE,
+					RECMD_CPU, 
+					RECMD_MEM, 
+					RECMD_DISK, 
+					RECMD_NIC,
+					PROD_INTRO,
+					PROD_ABLE,
+					PROD_BROC,
+					PROD_MOD_CONTENTS,
+					USE_YN
+					FROM PROD P
+					WHERE (USE_YN = 'Y' 
+							OR #groups# = 'G001')
+			        <isNotEmpty property="keyword" prepend="AND">
+					   	<isEqual property="key" compareValue="001">
+					   		PROD_NM like '%'||#keyword#||'%'  
+					   	</isEqual> 
+			        </isNotEmpty>
+			        
+		       		<isNotEmpty property="sortKey" prepend="">
+			        	ORDER BY $sortKey$
+					   	<isEqual property="sort" compareValue="1">
+					   		ASC
+					   	</isEqual> 
+					   	<isEqual property="sort" compareValue="2">
+					   		DESC
+					   	</isEqual>
+			        </isNotEmpty>   
+			        
+			        <isEmpty property="sortKey">
+			        	ORDER BY PROD_NO DESC
+			        </isEmpty>
+			        
+			        
+			        ) T1
+			        ) VR_T1 WHERE ROWNUM &lt;= #pageNum# * #pageSize#) VR_T2 
+					WHERE RNUM > 0 AND PAGE = #pageNum#  
+	 			
+
+	</select>
+	
+ <!-- 제품 정보 목록 XML --> 
+	<select  id="listProductSelectXML" parameterClass="HashMap" resultClass="HashMap">
+ 		SELECT PROD_NO,
+					PROD_NM ,
+					PROD_VER,
+					TO_CHAR(RELEASE_DATE,'YYYY-MM-DD') AS RELEASE_DATE,
+					(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='PROD_TYPE_CODE' AND P.PROD_TYPE_CODE = CODE) PROD_TYPE_CODE_NM,
+			        PROD_TYPE_CODE,
+					RECMD_CPU, 
+					RECMD_MEM, 
+					RECMD_DISK, 
+					RECMD_NIC,
+					PROD_INTRO,
+					PROD_ABLE,
+					PROD_BROC,
+					PROD_MOD_CONTENTS
+					FROM PROD P
+					WHERE USE_YN = 'Y'
+	
+	</select>
+	
+ 	<!-- 리스트 갯수  -->     
+	<select  id="countProductSelect" resultClass="Int">
+	 SELECT COUNT(*) totalCount
+	  FROM ( 
+				SELECT   T1.*  FROM 
+						(SELECT PROD_NO,
+						PROD_NM ,
+						PROD_VER,
+						TO_CHAR(RELEASE_DATE,'YYYY-MM-DD') AS RELEASE_DATE,
+						(SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT='PROD_TYPE_CODE' AND P.PROD_TYPE_CODE = CODE) PROD_TYPE_CODE_NM,
+				        PROD_TYPE_CODE,
+						RECMD_CPU, 
+						RECMD_MEM, 
+						RECMD_DISK, 
+						RECMD_NIC,
+						PROD_INTRO,
+						PROD_ABLE,
+						PROD_BROC,
+						PROD_MOD_CONTENTS
+						FROM PROD P
+						WHERE (USE_YN = 'Y' 
+								OR #groups# = 'G001') 
+					     
+					     <isNotEmpty property="keyword" prepend="AND">
+						   	<isEqual property="key" compareValue="001">
+						   		PROD_NM like '%'||#keyword#||'%'  
+						   	</isEqual> 
+				        </isNotEmpty> 
+				        
+				        ) T1
+	         )
+	</select>
+   
+	<select  id="listOSSelect"  resultClass="HashMap">
+		SELECT os_no as CODE,os_nm ||' '||os_ver ||' ('||os_manufact||')' as VALUE FROM OS
+	</select>
+    
+     <select  id="listSWSelect"   resultClass="HashMap">
+		SELECT DECODE(sw_type_code,'1','데이터베이스','2','웹서버','3','어플리케이션서버','4','JDK 버전')  as VALUE   
+		      , sw_no ,sw_nm ||' / 버젼 : ' || sw_ver AS CODE	  
+		FROM OTHER_SW
+		WHERE sw_type_code IN('1','2','3','4') 
+	 </select>
+	 
+	 <select  id="listSWTypeSelect" resultClass="HashMap">
+		SELECT MAX(DECODE(sw_type_code,'1','데이터베이스','2','웹서버','3','어플리케이션서버','4','JDK 버전')) AS CODE
+		 ,MAX(DECODE(sw_type_code,'1','데이터베이스','2','웹서버','3','어플리케이션서버','4','JDK 버전')) as VALUE 
+		FROM OTHER_SW 
+		WHERE sw_type_code IN('1','2','3','4') 
+        GROUP BY sw_type_code
+	 </select>
+	 
+	<select id="prodNoMax" resultClass="Int">
+        SELECT 
+    		TO_NUMBER(SUBSTR(PROD_NO, 4)) + 1 PROD_NO
+    	FROM PROD
+    </select>
+	 
+	<insert id="recmdOsIns" parameterClass="HashMap"> 
+		INSERT INTO RECMD_OS
+							(
+							PROD_NO,	
+							OS_NO,
+							SEQ,
+							CR_DATE
+							)		
+							VALUES( 
+							<isEqual property="actType" compareValue="ins">
+					       		'PRO'||(select max(TO_NUMBER(SUBSTR(PROD_NO, 4))) FROM PROD),
+					       	</isEqual>
+							<isEqual property="actType" compareValue="mod">
+								#prod_no#,
+							</isEqual>
+							
+							#os_no#,
+							(SELECT NVL(max(TO_NUMBER(SEQ)), 0) + 1 from RECMD_OS),
+							sysdate		
+		 					)
+	 </insert> 
+	
+	<select id="prodMaxSeq" resultClass="Int">
+		SELECT 
+    		max(TO_NUMBER(SUBSTR(PROD_NO, 4))) + 1 AS PROD_NO  
+    	FROM PROD
+    </select>
+	 
+<!-- 제품권장 sw --> 
+	<select  id="prodRecmdSwList" parameterClass="HashMap" resultClass="HashMap">
+ 		SELECT PRS.SW_NO, PROD_NO, TCM.CODE_NM AS SW_CODE_NM, SW_NM, SW_VER
+	        FROM OTHER_SW C , PROD_RECMD_SW PRS, TOT_CODE_MNG TCM
+			WHERE PRS.PROD_NO = #prod_no#
+			AND PRS.SW_NO = C.SW_NO
+			AND TCM.CODE_SECT ='SW_TYPE_CODE'
+			AND TCM.CODE = C.SW_TYPE_CODE 
+	</select>
+	
+<!-- 제품권장 os --> 
+	<select  id="prodRecmdOsList" parameterClass="HashMap" resultClass="HashMap">
+ 		  SELECT *
+	        FROM OS O , RECMD_OS RO
+			WHERE RO.PROD_NO =  #prod_no#
+			AND O.OS_NO = RO.OS_NO 
+	</select>
+	
+	<!-- 개발담당자 --> 
+	<select  id="prodDevChmanList" parameterClass="HashMap" resultClass="HashMap">
+ 		  SELECT 
+ 		  	D.PROD_NO,
+            D.CHMAN_NO,
+			C.CHMAN_NM,
+            D.SEQ,
+           	NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='CHMAN_TYPE_CODE' AND CODE = C.CHMAN_TYPE_CODE),'코드값없음') CHMAN_TYPE_CODE,
+			C.CHMAN_NM AS CHMAN_NM,
+			NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='GRADE_CODE' AND CODE = C.GRADE_CODE),'코드값없음') GRADE_CODE,
+			NVL((SELECT CODE_NM FROM TOT_CODE_MNG WHERE CODE_SECT ='DEPT_CODE' AND CODE = C.DEPT_CODE),'코드값없음') DEPT_CODE
+		FROM PROD_DEV_CHMAN D, CHMAN C
+            WHERE D.CHMAN_NO(+) = C.CHMAN_NO
+             <isNotEmpty property="prod_no" prepend="AND">
+                 D.PROD_NO = #prod_no#
+             </isNotEmpty>
+	</select>
+	 
+    <insert id="insSupFile" parameterClass="HashMap">
+    
+   	 	INSERT INTO ADD_FILE_MNG ( 
+								add_file_no	,
+								no          ,
+								file_path   ,
+								file_save_nm,
+								file_real_nm,
+								file_size   , 
+								cr_date     ,
+								chman_no      
+					)
+		VALUES ( 
+					(SELECT NVL(max(TO_NUMBER(add_file_no)), 0) + 1  from ADD_FILE_MNG ),
+					#no#,             
+					#file_path#,      
+					#file_save_nm#,   
+					#file_real_nm#,   
+					#file_size#,   
+					sysdate,        
+					#chman_no#   
+  				) 
+    </insert>
+ 
+     <delete id="deleteProduct" parameterClass="HashMap">
+	 	DELETE FROM PROD
+	 	WHERE PROD_NO = #prod_no#
+	 		
+	</delete>  
+	
+	<update id="deleteUseProduct" parameterClass="HashMap">
+	 	UPDATE PROD
+		SET USE_YN = #use_yn#,
+		UP_DATE = sysdate
+		WHERE PROD_NO =#prod_no#
+	 		
+	</update>
+	
+    <delete id="deleteProductSW" parameterClass="HashMap">
+	 	DELETE FROM PROD_RECMD_SW 
+	 	WHERE PROD_NO = #prod_no#
+	 		<isNotEmpty property="sw_no" prepend="AND">
+                 SW_NO  =  #sw_no#
+             </isNotEmpty>
+	</delete>  
+    
+    <delete id="deleteProdDevChman" parameterClass="HashMap">
+	 	DELETE FROM PROD_DEV_CHMAN 
+	 	WHERE PROD_NO = #prod_no#
+	 		<isNotEmpty property="seq" prepend="AND">
+                 SEQ  =  #seq#
+            </isNotEmpty>
+	</delete>
+	
+	<delete id="deleteProductOS" parameterClass="HashMap">
+	 	DELETE FROM RECMD_OS 
+	 	WHERE PROD_NO = #prod_no#
+	 		<isNotEmpty property="seq" prepend="AND">
+                 SEQ  =  #seq#
+           	</isNotEmpty>
+	</delete>
+	
+ </sqlMap>

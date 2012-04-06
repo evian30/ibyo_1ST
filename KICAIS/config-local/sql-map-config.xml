@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMapConfig PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+
+    <!--These settings control SqlMap configuration details, primarily to do with transaction
+        management. They are all optional (see the Developer Guide for more). -->
+    <settings
+        cacheModelsEnabled="true"
+        enhancementEnabled="true"
+        lazyLoadingEnabled="true"
+        maxRequests="256"
+        maxSessions="64"
+        maxTransactions="16"
+        useStatementNamespaces="true"
+    />
+    <!-- jdk collection  -->
+    <typeAlias alias="Map"     type="java.util.Map"/>
+    <typeAlias alias="HashMap" type="java.util.HashMap"/>
+    <typeAlias alias="long"    type="java.lang.Long"/>
+    <typeAlias alias="int"     type="java.lang.Integer"/>    
+    <typeAlias alias="String"  type="java.lang.String"/>
+	<typeAlias alias="DownloadFileBean" type="com.signgate.core.web.servlet.vo.DownloadFileBean"/>
+	
+    <!-- SGF manage service 정의 sql(xml) 등록  -->
+
+    <!-- 게시판  -->
+    <sqlMap resource="com/signgate/core/web/manage/board/oracle/dao/Board.xml" />
+    <!-- 게시판 관리  -->    
+    <sqlMap resource="com/signgate/core/web/manage/boardmst/oracle/dao/BoardMst.xml" />
+    <!-- 어드민 관리  -->
+    <sqlMap resource="com/signgate/core/web/manage/suser/oracle/dao/SUser.xml" />
+    <!-- 메뉴관리  -->   
+    <sqlMap resource="com/signgate/core/web/manage/menu/oracle/dao/Menu.xml" />
+    <!-- 그룹 관리  -->   
+    <sqlMap resource="com/signgate/core/web/manage/group/oracle/dao/Group.xml" />
+    
+     <!-- 코드 관리  -->   
+    <sqlMap resource="com/signgate/core/web/manage/code/oracle/dao/Code.xml" />
+    
+
+    <!-- 배치 관리  -->   
+    <sqlMap resource="com/signgate/core/batch/oracle/dao/BatWork.xml" />
+    <sqlMap resource="com/signgate/core/batch/oracle/dao/BatHistory.xml" />
+    
+    <!-- DataBase 관리  -->   
+    <sqlMap resource="com/signgate/core/web/setup/oracle/dao/Setup.xml" />
+    
+    
+    <!-- 우편번호  -->
+	<sqlMap resource="sg/svc/portal/bass/post/dao/Zip.xml" />
+    
+    <!-- 담당자 관리  -->   
+    <sqlMap resource="sg/svc/portal/bass/chman/dao/Chman.xml" />
+
+    <!-- 담당자 관리  -->   
+    <sqlMap resource="sg/svc/portal/bass/techsup/dao/Techsup.xml" />
+   
+    <!-- 제품 관리  -->   
+    <sqlMap resource="sg/svc/portal/bass/product/oracle/dao/product.xml" />
+    
+    <!-- 공통코드 관리  -->   
+    <sqlMap resource="sg/svc/portal/bass/BassCode/dao/BassCode.xml" /> 
+    
+    <!-- 스케줄 관리  -->   
+    <sqlMap resource="sg/svc/portal/bass/schedule/dao/Schedule.xml" /> 
+    
+    <!-- 메인 관리  -->   
+    <sqlMap resource="sg/svc/portal/bass/Main/dao/Main.xml" /> 
+    
+    <sqlMap resource="sg/svc/portal/cass/techsup/dao/CassTechsup.xml" />
+	
+ 
+	<!-- 메인 레이아웃  -->
+	<sqlMap resource="com/sg/sgis/layout/dao/xml/Layout.xml" />
+		
+	<!--*************************   시스템관리        ************************* -->
+	
+	<!-- 부서정보관리 -->
+	<sqlMap resource="com/sg/sgis/com/dept/dao/xml/Dept.xml" />
+	<!-- 사원정보관리 -->
+	<sqlMap resource="com/sg/sgis/com/employee/xml/Employee.xml" />
+	
+	<!-- 품목정보관리 -->
+	<sqlMap resource="com/sg/sgis/com/item/dao/xml/Item.xml" />
+	<sqlMap resource="com/sg/sgis/com/item/dao/xml/ItemSW.xml" />
+	<sqlMap resource="com/sg/sgis/com/item/dao/xml/ItemHW.xml" />
+	<sqlMap resource="com/sg/sgis/com/item/dao/xml/ItemDeveloper.xml" />
+			  
+	<!-- 이슈관리 -->
+    <sqlMap resource="com/sg/sgis/com/issue/dao/xml/Issue.xml" />
+    <!-- 타스크관리 -->
+    <sqlMap resource="com/sg/sgis/com/task/dao/xml/Task.xml" />
+	<!-- 일정관리 -->
+	<sqlMap resource="com/sg/sgis/com/calendar/dao/xml/Calendar.xml" />
+	<!-- 코드관리 -->
+    <sqlMap resource="com/sg/sgis/com/sgisCode/dao/xml/SgisCode.xml" />
+    <!-- 거래처관리 -->
+    <sqlMap resource="com/sg/sgis/com/custom/dao/xml/Custom.xml" />
+
+   <!-- 개인별휴가정보 관리 -->
+    <sqlMap resource="com/sg/sgis/com/empVac/dao/xml/EmpVac.xml" />
+   <!-- 개인별휴가정보사용 관리 -->
+    <sqlMap resource="com/sg/sgis/com/empVac/dao/xml/EmpVacUsed.xml" />
+    <!--*************************  프로젝트관리      ************************* -->  
+
+    <!-- 프로젝트관리 -->
+    <sqlMap resource="com/sg/sgis/pjt/pjtManage/xml/PjtManage.xml" />
+    <sqlMap resource="com/sg/sgis/pjt/pjtManage/xml/PjtIssue.xml" />
+    
+    <!--*************************    견적관리         ************************* --> 
+ 	    
+    <!-- 견적정보조회 -->
+    <sqlMap resource="com/sg/sgis/est/estimate/dao/xml/EstimateInfoInquiry.xml" />
+
+	<!-- 견적정보관리 -->
+    <sqlMap resource="com/sg/sgis/est/estimate/dao/xml/EstimateInfoManage.xml" />
+    
+    <!-- 견적진행상태관리 -->
+    <sqlMap resource="com/sg/sgis/est/estimate/dao/xml/EstimateProcessStateManage.xml" />
+    
+    <!--*************************    수주관리         ************************* --> 
+    
+    <!-- 수주정보 조회 -->
+  	<sqlMap resource="com/sg/sgis/ord/order/dao/xml/OrderInfoManage.xml" />
+  	<!-- 수주정보 조회 -->
+	<sqlMap resource="com/sg/sgis/ord/order/dao/xml/OrderInfoInquiry.xml" />
+	<!-- 수주진행상태 관리 -->
+	<sqlMap resource="com/sg/sgis/ord/order/dao/xml/OrderProcessStateManage.xml" />
+	
+    <!--*************************    구매관리         ************************* --> 
+	<sqlMap resource="com/sg/sgis/pur/dao/xml/Purchase.xml" />    
+    <!--*************************    매출관리         ************************* --> 
+
+	<!--매출정보관리-->
+	<sqlMap resource="com/sg/sgis/sal/sale/dao/xml/SaleInfoManage.xml" />
+    
+    <!-- 리포트 -->
+    <sqlMap resource="com/sg/sgis/com/oz/dao/xml/OZ.xml" />
+    
+    <!--수금관리-->
+	<sqlMap resource="com/sg/sgis/sal/receipt/dao/xml/ReceiptManage.xml" />
+    
+	<!--*************************    개발관리         ************************* -->
+	<!-- 업무요청정보관리 -->
+    <sqlMap resource="com/sg/sgis/dev/csrInfoMng/dao/xml/CsrInfoMng.xml" />     
+    
+	<!-- 개발프로젝트관리 -->
+    <sqlMap resource="com/sg/sgis/dev/pjdInfoMng/dao/xml/PjdInfoMng.xml" />   
+    
+    <!-- 개발일정계획관리 --> 
+    <sqlMap resource="com/sg/sgis/dev/scdInfoMng/dao/xml/ScdInfoMng.xml" />
+    
+    <!-- 유지보수관리 --> 
+    <sqlMap resource="com/sg/sgis/man/management/xml/Management.xml" />   
+
+	<!-- 개인별개발일정관리 --> 
+    <sqlMap resource="com/sg/sgis/dev/scdInfoMng/dao/xml/ScdDayInfoMng.xml" />  
+    
+    <!--*************************    기술지원         ************************* -->
+    <!-- 기술지원요청관리 --> 
+    <sqlMap resource="com/sg/sgis/srs/dao/xml/SrsMng.xml" />        			     
+
+</sqlMapConfig>

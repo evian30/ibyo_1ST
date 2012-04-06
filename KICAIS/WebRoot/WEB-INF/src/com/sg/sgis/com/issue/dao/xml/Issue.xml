@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : Issue.xml
+    Description : 이슈관리
+-->
+<sqlMap namespace="Issue">
+
+	<!-- 이슈목록조회 -->
+	<select id="selectIssue" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag			   	   							    /*조회상태*/			
+					     , CI.issue_type_code         							/*이슈구분코드*/  
+						 , (
+					       SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'ISSUE_TYPE_CODE'
+					          AND C.com_code = TRIM(CI.issue_type_code)
+					       ) issue_type_name
+						 , CI.issue_code              							/*이슈코드*/    
+						 , CI.issue_info_seq		   							/*순번*/        
+					 	 , CI.issue_comment           							/*이슈내용*/    
+						 , CI.note                    							/*비고*/        
+						 , CI.use_yn                  							/*사용여부*/    
+						 , CI.final_mod_id            							/*최종변경자ID*/
+						 , TO_CHAR(CI.final_mod_date,'YYYYMMDD') final_mod_date /*최종변경일시*/
+					  FROM com_issue_info CI 	   							 	/*이슈정보관리*/
+					 WHERE 1 = 1 
+					 <isNotEmpty property="src_issue_type_code">
+					   AND CI.issue_type_code = #src_issue_type_code#
+					 </isNotEmpty>
+					 <isNotEmpty property="src_issue_code">
+					   AND CI.issue_code = #src_issue_code#
+					 </isNotEmpty>
+					 <isNotEmpty property="src_issue_comment">
+					   AND CI.issue_comment LIKE '%'||#src_issue_comment#||'%'
+					 </isNotEmpty>
+					 ORDER BY CI.issue_type_code, CI.issue_code, CI.issue_info_seq
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+
+	<!-- 이슈목록 총갯수 -->
+	<select id="selectIssueCount" resultClass="int">
+	SELECT COUNT(issue_info_seq)   /*순번*/        
+	  FROM com_issue_info CI 	   /*이슈정보관리*/
+	 WHERE 1 = 1 
+	 <isNotEmpty property="src_issue_type_code">
+	   AND CI.issue_type_code = #src_issue_type_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_issue_code">
+	   AND CI.issue_code = #src_issue_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_issue_comment">
+	   AND CI.issue_comment LIKE '%'||#src_issue_comment#||'%'
+	 </isNotEmpty>
+	</select>
+	
+	<!-- 이슈코드 중복체크 -->
+	<select id="checkIssueCode" resultClass="string">
+	<![CDATA[
+	SELECT DECODE(NVL(MAX(CI.ISSUE_CODE),''),'','Y','NULL','Y','N')
+  	  FROM COM_ISSUE_INFO CI
+     WHERE CI.ISSUE_TYPE_CODE = #issue_type_code#  /*이슈구분코드*/
+       AND CI.ISSUE_CODE = #issue_code#		       /*이슈코드*/
+    ]]>
+	</select>
+	
+	<!-- 이슈 등록 -->
+	<insert id="insertIssue" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO COM_ISSUE_INFO ( issue_type_code       						/*이슈구분코드*/
+							   , issue_code            						/*이슈코드*/    
+							   , issue_info_seq		   						/*순번*/        
+							   , issue_comment         						/*이슈내용*/    
+							   , note                  						/*비고*/        
+							   , use_yn                						/*사용여부*/    
+							   , final_mod_id          						/*최종변경자ID*/
+							   , final_mod_date        						/*최종변경일시*/
+							   , reg_date									/*최초등록일*/
+							   , reg_id										/*최초등록자*/
+							   )
+						VALUES ( #issue_type_code#     						/*이슈구분코드*/
+							   , #issue_code#          						/*이슈코드*/    
+							   , (
+							      SELECT LPAD(TO_CHAR(NVL(MAX(issue_info_seq),0)+1),5,'0')
+							        FROM com_issue_info
+							       WHERE issue_type_code = #issue_type_code#
+							         AND issue_code = #issue_code#
+							     )      			   						/*순번*/        
+							   , #issue_comment#       						/*이슈내용*/    
+							   , #note#                						/*비고*/        
+							   , #use_yn#              						/*사용여부*/    
+							   , #final_mod_id#        						/*최종변경자ID*/
+							   , SYSDATE              	 					/*최종변경일시*/
+							   , SYSDATE									/*최초등록일*/
+							   , #final_mod_id#								/*최초등록자*/
+						       )	   	
+	]]>
+	</insert>
+	
+	<!-- 이슈 수정 -->
+	<update id="updateIssue" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE com_issue_info
+	   SET issue_comment   = #issue_comment#	/*이슈내용*/
+		 , note            = #note#				/*비고*/
+		 , use_yn  		   = #use_yn#			/*사용여부*/
+		 , final_mod_id    = #final_mod_id#		/*최종변경자ID*/
+		 , final_mod_date  = SYSDATE			/*최종변경일시*/
+	 WHERE issue_info_seq  = #issue_info_seq#
+ 	   AND issue_code      = #issue_code#
+	   AND issue_type_code = #issue_type_code#
+	]]>
+	</update>
+	
+	
+	<!-- 이슈목록조회 팝업 -->
+	<select id="selectIssuePop" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag			   	   							    /*조회상태*/			
+					     , CI.issue_type_code         							/*이슈구분코드*/  
+						 , (
+					       SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'ISSUE_TYPE_CODE'
+					          AND C.com_code = TRIM(CI.issue_type_code)
+					       ) issue_type_name
+						 , CI.issue_code              							/*이슈코드*/    
+						 , CI.issue_info_seq		   							/*순번*/        
+					 	 , CI.issue_comment           							/*이슈내용*/    
+						 , CI.note                    							/*비고*/        
+						 , CI.use_yn                  							/*사용여부*/    
+						 , CI.final_mod_id            							/*최종변경자ID*/
+						 , TO_CHAR(CI.final_mod_date,'YYYYMMDD') final_mod_date /*최종변경일시*/
+					  FROM com_issue_info CI 	   							 	/*이슈정보관리*/
+					 WHERE 1 = 1 
+					 <isNotEmpty property="src_issue_type_code">
+					   AND CI.issue_type_code = #src_issue_type_code#
+					 </isNotEmpty>
+					 <isNotEmpty property="src_issue_code">
+					   AND CI.issue_code = #src_issue_code#
+					 </isNotEmpty>
+					 <isNotEmpty property="src_issue_comment">
+					   AND CI.issue_comment LIKE '%'||#src_issue_comment#||'%'
+					 </isNotEmpty>
+					 ORDER BY CI.issue_type_code, CI.issue_code, CI.issue_info_seq
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+
+	<!-- 이슈목록  팝업총갯수 -->
+	<select id="selectIssuePopCount" resultClass="int">
+	SELECT COUNT(issue_info_seq)   /*순번*/        
+	  FROM com_issue_info CI 	   /*이슈정보관리*/
+	 WHERE 1 = 1 
+	 <isNotEmpty property="src_issue_type_code">
+	   AND CI.issue_type_code = #src_issue_type_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_issue_code">
+	   AND CI.issue_code = #src_issue_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_issue_comment">
+	   AND CI.issue_comment LIKE '%'||#src_issue_comment#||'%'
+	 </isNotEmpty>
+	</select>	
+	
+</sqlMap>

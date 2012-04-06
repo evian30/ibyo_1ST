@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : ItemDeveloper.xml
+    Description : 품목정보관리_제품개발 담당자
+-->
+<sqlMap namespace="ItemDeveloper">
+
+	<!-- 제품권장사양_담당자 정보 조회 -->
+	<select id="selectItemDeveloper" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT cd.item_type_code   							/*품목구분코드*/
+						 , cd.item_code      							/*품목코드*/     
+						 , cd.item_info_seq								/*순번*/         
+						 , cd.emp_num        							/*사번*/    
+						 , ( SELECT kor_name
+						       FROM COM_EMP_INFO
+						      WHERE emp_num = cd.emp_num
+						   ) emp_name     
+						 , cd.note           							/*비고*/         
+						 , cd.use_yn         							/*사용여부*/     
+						 , cd.final_mod_id   							/*최종변경자ID*/ 
+						 , TO_CHAR(cd.final_mod_date, 'YYYY-MM-DD') 
+						   AS final_mod_date   							/*최종변경일시*/
+				 	  FROM com_developer cd
+				     WHERE cd.item_code = #item_code#
+					   AND cd.item_type_code = #item_type_code#
+					   <isEmpty property="item_type_code">
+					   AND cd.item_type_code = '999999'
+					   </isEmpty>
+					 ORDER BY TO_NUMBER(cd.item_info_seQ)
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 
+	</select>
+	
+	<!-- 제품권장사양_담당자 정보 조회 총건수 -->
+	<select id="selectItemDeveloperCount" resultClass="int">
+		SELECT COUNT(item_info_seq)	
+		  FROM com_developer
+		 WHERE item_code 	  = #item_code#
+		   AND item_type_code = #item_type_code#
+		<isEmpty property="item_type_code">
+	 	   AND item_type_code = '999999'
+	   	</isEmpty>
+	</select>
+	
+	<!-- 제품권장사양_개발담당자 정보 저장 -->
+	<insert id="insertItemDeveloper" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO com_developer ( item_type_code    	/*품목구분코드*/
+							  , item_code         	/*품목코드*/
+							  , item_info_seq	 	/*순번*/        
+							  , emp_num           	/*사번*/        
+							  , note              	/*비고*/        
+							  , use_yn            	/*사용여부*/    
+							  , final_mod_id      	/*최종변경자ID*/
+							  , final_mod_date    	/*최종변경일시*/
+							  )
+					   VALUES ( #item_type_code#   	/*품목구분코드*/
+							  , #item_code#   		/*품목코드*/
+							  , (
+								 SELECT NVL(max(TO_NUMBER(item_info_seq)), 0) + 1  
+								   FROM com_developer 
+								)					/*순번*/        
+							  , #emp_num#   		/*사번*/        
+							  , #note#   			/*비고*/        
+							  , #use_yn#   			/*사용여부*/    
+							  , #final_mod_id#   	/*최종변경자ID*/
+							  , SYSDATE	   			/*최종변경일시*/
+						 	  )
+	]]>
+	</insert>
+	
+	<!-- 제품권장사양_개발담당자 정보 수정 -->
+	<update id="updateItemDeveloper" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE com_developer 
+	   SET emp_num        = #emp_num#   		/*사번*/        
+		 , note           = #note#   			/*비고*/        
+		 , use_yn         = #use_yn#   			/*사용여부*/    
+		 , final_mod_id   = #final_mod_id#   	/*최종변경자ID*/
+		 , final_mod_date = SYSDATE 		   	/*최종변경일시*/ 
+     WHERE item_type_code = #item_type_code#  	/*품목구분코드*/
+	   AND item_code      = #item_code#   		/*품목코드*/
+	   AND item_info_seq  = #item_info_seq#		/*순번*/ 	  
+	]]>
+	</update> 
+</sqlMap>

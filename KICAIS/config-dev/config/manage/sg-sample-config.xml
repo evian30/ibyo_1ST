@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration> 
+    <sample>
+
+        <upload-info>
+            <middlePath>/sample</middlePath>
+        </upload-info>
+
+    </sample>
+</configuration>

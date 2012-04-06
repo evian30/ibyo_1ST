@@ -1,0 +1,19 @@
+form{
+    margin: 0;
+    padding: 0;
+}
+
+div.Carlender {
+    position:absolute;
+    filter:alpha(opacity=100);
+    border:1 solid blck;
+    left: 10px;
+}
+table.H.Carlender {background-color:#ECEDE5}
+TR.H.Carlender {background-color:#ECEDE5}
+td.Carlender, th.Carlender {font-family: font-family:돋움,seoul,arial,Verdana;font-size: 10px;}
+
+input.Carlender, select.Carlender {font-family: font-family:돋움,seoul,arial,Verdana;font-size:10px;COLOR:#0c8e9e;}
+
+input.Carlender {font-size:10; border:1; border-style:solid; border-color:#669999; cursor:hand}
+table.Carlender, p.Carlender {font-size:10;}

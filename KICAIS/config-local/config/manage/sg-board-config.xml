@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration> 
+    <manage>
+    	<board>
+    		<msg>
+    			<insert>저장 하였습니다.</insert>
+    			<update>수정 하였습니다.</update>
+    			<delete>삭제 하였습니다.</delete>
+    			<upload>파일업로드 실패하였습니다.</upload>
+    			<passwd>패스워드가 틀립니다.</passwd>
+    		</msg>
+    	</board>
+    	<upload-info>
+            <middlePath>/sgboard</middlePath>
+        </upload-info>
+    </manage>
+</configuration>

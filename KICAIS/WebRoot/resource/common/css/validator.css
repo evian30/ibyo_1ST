@@ -1,0 +1,30 @@
+/* 
+ * Designed By xanadu(방기배)
+ *
+ * html의 입력 Form의 스크립트(/commons/resource/js/validator.js)에 정의된 항목에 대하여
+ * 스타일을 입힌다.
+ * 예를 들어 "required" 속성의 폼은 배경색이 빨간색이어야 한다면......
+ * .required {background-color:red} 이런 식으로 정의하며, 정의가 필요 없다면...
+ * .required {} 이렇게 빈 속성을 생성한다.
+ * 
+ */
+
+.required{
+	background-image:url(/commons/manage/images/aster.gif);
+	background-position:right top;
+	background-repeat:no-repeat;
+}
+.validate-white-space {}
+.validate-digits {}
+.validate-alpha {}
+.validate-alpha-num {}
+.validate-date {}
+.validate-email {}
+.validate-url {}
+.validate-one-required {}
+.validate-required-select {}
+.validate-front-jumin {}
+.validate-back-jumin {}
+.validate-full-jumin {}
+.validate-tel-num()
+.validate-is-image{}

@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : Task.xml
+    Description : 타스크관리
+-->
+<sqlMap namespace="Task">
+
+	<!-- 타스크목록조회 -->
+	<select id="selectTask" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag			   	   							      /*조회상태*/			
+						 , CT.task_code  										  /*타스크코드*/
+						 , CT.task_group_code  									  /*타스크그룹코드*/
+						 , CT.task_group_name  									  /*타스크그룹명*/
+						 , (
+					       SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'TASK_GROUP_CODE'
+					          AND C.com_code = TRIM(CT.task_group_code)
+					       ) task_group_name1
+						 , CT.task_name  										  /*타스크명*/
+						 , CT.task_desc  										  /*타스크설명*/
+						 , CT.task_info_seq    									  /*순번*/
+						 , CT.note                    							  /*비고*/        
+						 , CT.use_yn                  							  /*사용여부*/    
+						 , CT.final_mod_id            							  /*최종변경자ID*/
+						 , TO_CHAR(CT.final_mod_date,'YYYY-MM-DD') final_mod_date /*최종변경일시*/
+					  FROM com_task_info CT 	   							 	  /*이슈정보관리*/
+					 WHERE 1 = 1 
+					 <isNotEmpty property="src_task_group_code">
+					   AND CT.task_group_code = #src_task_group_code#
+					 </isNotEmpty>
+					 <isNotEmpty property="src_task_code">
+					   AND CT.task_code = #src_task_code#
+					 </isNotEmpty>
+					 <isNotEmpty property="src_task_name">
+					   AND CT.task_name LIKE '%'||#src_task_name#||'%'
+					 </isNotEmpty>
+					 ORDER BY CT.task_group_code, CT.task_code, CT.task_info_seq
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	<!-- 이슈목록 총갯수 -->
+	<select id="selectTaskCount" resultClass="int">
+	SELECT COUNT(CT.task_code)	/*타스크코드*/	   	   		
+	  FROM com_task_info CT 	/*이슈정보관리*/
+	 WHERE 1 = 1 
+	 <isNotEmpty property="src_task_group_code">
+	   AND CT.task_group_code = #src_task_group_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_task_code">
+	   AND CT.task_code = #src_task_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_task_name">
+	   AND CT.task_name LIKE '%'||#src_task_name#||'%'
+	 </isNotEmpty>
+	</select>
+
+  	<!-- 타스크 등록 -->
+	<insert id="insertTask" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO COM_TASK_INFO ( task_code				  /*타스크코드*/
+							  , task_group_code           /*타스크그룹코드*/
+							  , task_group_name           /*타스크그룹명*/
+							  , task_name                 /*타스크명*/
+							  , task_desc                 /*타스크설명*/
+							  , note                      /*비고*/
+							  , task_info_seq             /*순번*/
+							  , use_yn                    /*사용여부*/
+							  , final_mod_id              /*최종변경자ID*/
+							  , final_mod_date            /*최종변경일시*/
+							  , reg_date				  /*최초등록일*/
+							  , reg_id					  /*최초등록자*/
+							  )
+					   VALUES ( #task_code#				  /*타스크코드*/
+							  , #task_group_code#         /*타스크그룹코드*/
+							  , #task_group_name#         /*타스크그룹명*/
+							  , #task_name#               /*타스크명*/
+							  , #task_desc#               /*타스크설명*/
+							  , #note#                    /*비고*/
+							  , '1'				          /*순번*/
+							  , #use_yn#                  /*사용여부*/
+							  , #final_mod_id#            /*최종변경자ID*/
+							  , SYSDATE                   /*최종변경일시*/ 
+							  , SYSDATE					  /*최초등록일*/
+							  , #final_mod_id#			  /*최초등록자*/
+						      )
+	]]>
+	</insert>
+	
+	<!-- 타스크 수정 -->
+	<update id="updateTask" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE com_task_info
+	   SET task_group_name = #task_group_name#           /*타스크그룹명*/
+		 , task_name       = #task_name#                 /*타스크명*/    
+		 , task_desc       = #task_desc#                 /*타스크설명*/  
+		 , note            = #note#                      /*비고*/        
+		 , use_yn          = #use_yn#                    /*사용여부*/    
+		 , final_mod_id    = #final_mod_id#              /*최종변경자ID*/
+		 , final_mod_date  = SYSDATE                     /*최종변경일시*/
+	 WHERE TASK_CODE       = #task_code#				 /*타스크코드*/
+	   AND TASK_GROUP_CODE = #task_group_code#           /*타스크그룹코드*/           
+	]]>
+	</update>
+	
+	<!-- 타스크코드 중복체크 -->
+	<select id="checkTaskCode" resultClass="string">
+	<![CDATA[
+	SELECT DECODE(NVL(MAX(CT.TASK_CODE),''),'','Y','NULL','Y','N')
+  	  FROM COM_TASK_INFO CT
+     WHERE CT.TASK_CODE = #task_code#		       /*타스크코드*/
+    ]]>
+	</select>
+	
+	<!-- 타스크별 산출물관리 등록 -->
+	<insert id="insertTaskReportInfo" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO com_task_report_info ( task_group_code   							/*타스크그룹코드*/  
+									 , task_code         							/*타스크 코드*/     
+									 , task_report_seq     							/*타스크산출물순번*/
+									 , task_report       							/*관련산출물*/      
+									 , mandetory_yn      							/*필수여부*/        
+									 , use_yn            							/*사용여부*/        
+									 , note              							/*비고*/            
+									 , final_mod_id      							/*최종변경자ID*/    
+									 , final_mod_date    							/*최종변경일시*/  
+									 , reg_date										/*최초등록일*/
+									 , reg_id										/*최초등록자*/
+									 )
+							  VALUES ( #task_group_code#   							/*타스크그룹코드*/  
+									 , #task_code#         							/*타스크 코드*/ 
+									 ,(SELECT NVL(MAX(task_report_seq),0)+1
+									      FROM com_task_report_info
+									     WHERE task_group_code = #task_group_code#
+									       AND task_code = #task_code# )  			/*타스크산출물순번*/
+									 , #task_report#       							/*관련산출물*/      
+									 , #mandetory_yn#      							/*필수여부*/        
+									 , 'Y' 		           							/*사용여부*/        
+									 , #note#              							/*비고*/            
+									 , #final_mod_id#      							/*최종변경자ID*/    
+									 , SYSDATE    									/*최종변경일시*/
+								     , SYSDATE										/*최초등록일*/
+									 , #final_mod_id# 								/*최초등록자*/
+								     )
+	]]>
+	</insert>
+	
+	<!-- 타스크별 산물출관리 수정  -->
+	<update id="updateTaskReportInfo" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE com_task_report_info
+	   SET task_report     = #task_report#   			 /*관련산출물*/      
+		 , mandetory_yn    = #mandetory_yn#  			 /*필수여부*/        
+		 , note            = #note#                      /*비고*/        
+		 , use_yn          = #use_yn#                    /*사용여부*/    
+		 , final_mod_id    = #final_mod_id#              /*최종변경자ID*/
+		 , final_mod_date  = SYSDATE                     /*최종변경일시*/
+	 WHERE task_code       = #task_code#				 /*타스크코드*/
+	   AND task_group_code = #task_group_code#           /*타스크그룹코드*/
+	   AND task_report_seq = #task_report_seq#    	 	 /*타스크산출물순번*/           
+	]]>
+	</update>
+	
+	<!-- 타스크별 산물출관리 목록조회 -->
+	<select id="selectTaskReportInfo" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+				   SELECT CT.task_group_code   		/*타스크그룹코드*/  
+						, CT.task_code         		/*타스크 코드*/     
+						, CT.task_report_seq       	/*타스크산출물순번*/
+						, CT.task_report       		/*관련산출물*/      
+						, CT.mandetory_yn      		/*필수여부*/        
+						, CT.use_yn            		/*사용여부*/        
+						, CT.note              		/*비고*/            
+						, CT.final_mod_id      		/*최종변경자ID*/    
+						, CT.final_mod_date    		/*최종변경일시*/   
+					 FROM com_task_report_info CT
+					WHERE 1 = 1 
+				    <isNotEmpty property="task_group_code">
+					  AND CT.task_group_code = #task_group_code#
+					</isNotEmpty>
+					<isNotEmpty property="task_code">
+					  AND CT.task_code = #task_code#
+					</isNotEmpty>
+					<isEmpty property="task_group_code">
+					  AND CT.task_group_code = '9999999999'
+					</isEmpty>
+					ORDER BY CT.task_group_code, CT.task_code, CT.task_report_seq
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	<!-- 타스크별 산물출관리 목록조회 총건수 -->
+	<select id="selectTaskReportInfoCnt" resultClass="Int">
+	   SELECT COUNT(CT.task_report_seq)       	
+		 FROM com_task_report_info CT
+		WHERE 1 = 1 
+	    <isNotEmpty property="task_group_code">
+		  AND CT.task_group_code = #task_group_code#
+		</isNotEmpty>
+		<isNotEmpty property="task_code">
+		  AND CT.task_code = #task_code#
+		</isNotEmpty>
+		<isEmpty property="task_group_code">
+		  AND CT.task_group_code = '9999999999'
+		</isEmpty>
+	</select>
+	
+	
+	<!-- 타스크목록팝업조회 -->
+	<select id="selectTaskPop" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag			   	   							      /*조회상태*/			
+						 , CT.task_code  										  /*타스크코드*/
+						 , CT.task_group_code  									  /*타스크그룹코드*/
+						 , CT.task_group_name  									  /*타스크그룹명*/
+						 , (
+					       SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'TASK_GROUP_CODE'
+					          AND C.com_code = TRIM(CT.task_group_code)
+					       ) task_group_name1
+						 , CT.task_name  										  /*타스크명*/
+						 , CT.task_desc  										  /*타스크설명*/
+						 , CT.task_info_seq    									  /*순번*/
+						 , CT.note                    							  /*비고*/        
+						 , CT.use_yn                  							  /*사용여부*/    
+						 , CT.final_mod_id            							  /*최종변경자ID*/
+						 , TO_CHAR(CT.final_mod_date,'YYYY-MM-DD') final_mod_date /*최종변경일시*/
+					  FROM com_task_info CT 	   							 	  /*이슈정보관리*/
+					 WHERE 1 = 1 
+					 <isNotEmpty property="src_task_group_code">
+					   AND CT.task_group_code = #src_task_group_code#
+					 </isNotEmpty>
+					 <isNotEmpty property="src_task_code">
+					   AND CT.task_code = #src_task_code#
+					 </isNotEmpty>
+					 <isNotEmpty property="src_task_name">
+					   AND CT.task_name LIKE '%'||#src_task_name#||'%'
+					 </isNotEmpty>
+					 ORDER BY CT.task_group_code, CT.task_code, CT.task_info_seq
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 	
+	</select>
+	
+	<!-- 이슈목록 팝업총갯수 -->
+	<select id="selectTaskPopCount" resultClass="int">
+	SELECT COUNT(CT.task_code)	/*타스크코드*/	   	   		
+	  FROM com_task_info CT 	/*이슈정보관리*/
+	 WHERE 1 = 1 
+	 <isNotEmpty property="src_task_group_code">
+	   AND CT.task_group_code = #src_task_group_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_task_code">
+	   AND CT.task_code = #src_task_code#
+	 </isNotEmpty>
+	 <isNotEmpty property="src_task_name">
+	   AND CT.task_name LIKE '%'||#src_task_name#||'%'
+	 </isNotEmpty>
+	</select>	
+	
+</sqlMap>

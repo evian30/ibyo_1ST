@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : EmpVac.xml
+    Description : 개인별휴가정보
+-->
+<sqlMap namespace="EmpVac">
+
+	<!-- 개인별휴가정보 목록조회 -->
+	<select id="selectEmpVacList"  parameterClass="HashMap" resultClass="HashMap">
+		SELECT	* 
+		  FROM (
+	    	   SELECT ROWNUM rnum
+	    	        , A.* 
+	    	     FROM (
+						SELECT 
+                         'R' flag			   	   							 /*조회상태*/
+                         ,MAX(nvl(basic_year, #basic_year#)) AS basic_year
+                         ,MAX(dept_code) AS dept_code
+                         ,emp_num
+                         ,max(kor_name) AS kor_name
+                         ,max(decode(vac_type_code, '01', vac_type_code,'')) AS vac_type_code_01 	/*년차 휴가*/         
+                         ,max(decode(vac_type_code, '01', vac_days,'')) AS vac_days_01  			/*년차 일수*/
+                         ,max(decode(vac_type_code, '02', vac_type_code, '')) AS vac_type_code_02  	/*자기개발 휴가*/         
+                         ,max(decode(vac_type_code, '02', vac_days,'')) AS vac_days_02  			/*자기개발 일수*/     
+                         ,max(decode(vac_type_code, '03', vac_type_code,'')) AS vac_type_code_03  	/*장기근속 휴가*/         
+                         ,max(decode(vac_type_code, '03', vac_days,'')) AS vac_days_03  			/*장기근속 일수*/        
+                         ,max(decode(vac_type_code, '04', vac_type_code,'')) AS vac_type_code_04  	/*대체 휴가*/         
+                         ,max(decode(vac_type_code, '04', vac_days,'')) AS vac_days_04  			/*대체 일수*/        
+                         ,max(decode(vac_type_code, '05', vac_type_code,'')) AS vac_type_code_05  	/*비정산 휴가*/         
+                         ,max(decode(vac_type_code, '05', vac_days,'')) AS vac_days_05  			/*비정산 일수*/    
+						 ,max(vac_tot_days) AS vac_tot_days               							/*총휴가일수*/  	
+						FROM	
+						(
+						  SELECT
+							B.emp_num
+							,B.kor_name
+							,B.dept_code
+							,A.basic_year
+							,A.vac_type_code
+							,A.vac_days
+							,SUM(A.vac_days) OVER (PARTITION BY A.basic_year,A.emp_num) AS vac_tot_days             
+							FROM
+						    com_vac_info A,
+						    ( SELECT
+						            C.emp_num,
+						            C.kor_name,
+						            C.dept_code,
+						            D.dept_name                           
+						    	FROM
+						            com_emp_info C,
+						            com_dept D                          
+						        WHERE
+						            C.dept_code =  D.dept_code(+) 
+						             and D.dept_code =  #dept_code#                        
+						    )B                    
+						    WHERE
+						        A.emp_num(+) = B.emp_num         
+						        and (A.basic_year = #basic_year# or A.basic_year is null)
+						)        
+						group by emp_num 
+					)A
+		       )
+		 WHERE rnum <![CDATA[>]]>  #start# 
+		   AND rnum <![CDATA[<=]]> #limit#  
+	</select>
+	
+	<select id="selectEmpVacCount" parameterClass="HashMap" resultClass="int">
+	  SELECT count(emp_num) emp_num
+	  FROM
+	  (
+	      SELECT
+	        B.emp_num
+	        FROM
+	            com_vac_info A,
+	            ( SELECT
+	                C.emp_num,
+	                C.kor_name,
+	                C.dept_code,
+	                D.dept_name                           
+	            FROM
+	                com_emp_info C,
+	                com_dept D                          
+	            WHERE
+	                C.dept_code =  D.dept_code(+) 
+	                 and D.dept_code =  #dept_code#                         
+	             )B                    
+	        WHERE
+	            A.emp_num(+) = B.emp_num         
+	            and (A.basic_year = #basic_year# or A.basic_year is null)
+	        group by B.emp_num
+	  )
+	</select>	 
+	
+	<select id="selectEmpVacSavedCount" parameterClass="HashMap" resultClass="int">
+		SELECT          
+           count(emp_num) emp_num
+            FROM
+                com_vac_info
+            WHERE
+              basic_year = #basic_year#
+		       and  emp_num = #emp_num#
+		       and vac_type_code =#vac_type_code#
+	</select>	
+	
+	<!-- 개인별휴가정보 등록 -->
+	<insert id="insertEmpVac" parameterClass="HashMap">
+	<![CDATA[
+		INSERT INTO com_vac_info(
+								basic_year
+								,emp_num
+								,vac_type_code
+								,vac_days
+								,note
+								,final_mod_id
+								,final_mod_date
+								,reg_id     			/*등록일시	          */ 
+								,reg_date  				/*등록자ID	          */ 
+								)
+							VALUES
+							(
+							   #basic_year#    
+							  ,#emp_num#         
+							  ,#vac_type_code#          								
+							  ,#vac_days#              							
+							  ,#note#     
+							  ,#final_mod_id#   
+							  , SYSDATE   
+							  ,#final_mod_id#   
+							  , SYSDATE         							
+							)
+	]]>
+	</insert>	
+	
+	<!-- 개인별휴가정보 수정 -->
+	<update id="updateEmpVac" parameterClass="HashMap">
+	<![CDATA[
+		UPDATE com_vac_info SET  
+			   vac_days    = #vac_days#          
+			   ,note        = #note#      
+			   ,final_mod_id    = #final_mod_id#    
+			   ,final_mod_date  = SYSDATE           
+		WHERE   emp_num     = #emp_num#                         
+        AND basic_year      = #basic_year#  
+        AND vac_type_code   = #vac_type_code#  		  
+	]]>
+	</update>
+
+	<!-- 개인별휴가정보 삭제 -->
+    <delete id="deleteEmpVac" parameterClass="HashMap">
+        DELETE FROM com_vac_info 
+        WHERE   emp_num     = #emp_num#                         
+        AND basic_year      = #basic_year#  
+    </delete> 
+
+
+ </sqlMap>

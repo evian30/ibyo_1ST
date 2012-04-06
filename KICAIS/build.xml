@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. -->
+<project basedir="." default="build" name="SGIS">
+    <property environment="env"/>
+    <property name="ECLIPSE_HOME" value="D:/app/MyEclipse-8.6"/>
+    <property name="junit.output.dir" value="junit"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.5"/>
+    <property name="source" value="1.5"/>
+    <path id="J2EE 1.4 Libraries.libraryclasspath">
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/com.genuitec.eclipse.j2eedt.core_8.6.1.me201010211225/data/libraryset/1.4/activation.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/com.genuitec.eclipse.j2eedt.core_8.6.1.me201010211225/data/libraryset/1.4/javax.servlet.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/com.genuitec.eclipse.j2eedt.core_8.6.1.me201010211225/data/libraryset/1.4/javax.servlet.jsp.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/com.genuitec.eclipse.j2eedt.core_8.6.1.me201010211225/data/libraryset/1.4/jboss-j2ee.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/com.genuitec.eclipse.j2eedt.core_8.6.1.me201010211225/data/libraryset/1.4/jboss-jaxrpc.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/com.genuitec.eclipse.j2eedt.core_8.6.1.me201010211225/data/libraryset/1.4/jboss-jsr77.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/com.genuitec.eclipse.j2eedt.core_8.6.1.me201010211225/data/libraryset/1.4/jboss-saaj.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/com.genuitec.eclipse.j2eedt.core_8.6.1.me201010211225/data/libraryset/1.4/mail.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/com.genuitec.eclipse.j2eedt.core_8.6.1.me201010211225/data/libraryset/1.4/namespace.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/com.genuitec.eclipse.j2eedt.core_8.6.1.me201010211225/data/libraryset/1.4/xml-apis.jar"/>
+    </path>
+    <path id="JUnit 4.libraryclasspath">
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/org.junit4_4.5.0.v20090824/junit.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/Common/plugins/org.hamcrest.core_1.1.0.v20090501071000.jar"/>
+    </path>
+    <path id="SGIS.classpath">
+        <pathelement location="WebRoot/WEB-INF/classes"/>
+        <pathelement location="WebRoot/WEB-INF/lib/activation.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/aspectjweaver.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/backport-util-concurrent-3.0.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/cglib-nodep-2.1_3.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/commons-beanutils-1.8.0.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/commons-collections.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/commons-configuration-1.6.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/commons-dbcp-1.2.1.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/commons-digester-1.8.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/commons-fileupload.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/commons-io-1.4.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/commons-lang.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/commons-logging-1.1.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/commons-pool.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/ibatis-2.3.0.677.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/ibatis-common-2.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/json-lib-2.3-jdk15.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/jstl.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/junit-3.8.2.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/log4j-1.2.15.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/mail.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/ojdbc14.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/retrotranslator-runtime-1.2.1.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/SGF.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/spring-beans.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/spring-context-support.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/spring-context.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/spring-core.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/spring-orm.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/spring-web.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/spring-webmvc.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/spring.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/standard.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/taglibs-datetime.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/taglibs-string.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/tiles-api-2.0.7-j4.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/tiles-core-2.0.7-j4.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/tiles-jsp-2.0.7-j4.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/xercesImpl.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/xml-apis.jar"/>
+        <path refid="J2EE 1.4 Libraries.libraryclasspath"/>
+        <path refid="JUnit 4.libraryclasspath"/>
+        <pathelement location="WebRoot/WEB-INF/lib/jackson-asl-0.9.3.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/log4sql.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/json-lib-2.2.2-jdk15.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/ezmorph-1.0.4.jar"/>
+        <pathelement location="WebRoot/WEB-INF/lib/json-lib-ext-spring-1.0.2.jar"/>
+    </path>
+    <path id="run.JsonUtil.bootclasspath">
+        <fileset dir="${java.home}/lib" includes="*.jar"/>
+        <fileset dir="${java.home}/lib/ext" includes="*.jar"/>
+        <path refid="J2EE 1.4 Libraries.libraryclasspath"/>
+    </path>
+    <path id="run.TestSampleBiz.bootclasspath">
+        <fileset dir="${java.home}/lib" includes="*.jar"/>
+        <fileset dir="${java.home}/lib/ext" includes="*.jar"/>
+        <path refid="J2EE 1.4 Libraries.libraryclasspath"/>
+    </path>
+    <target name="init">
+        <mkdir dir="WebRoot/WEB-INF/classes"/>
+        <copy includeemptydirs="false" todir="WebRoot/WEB-INF/classes">
+            <fileset dir="WebRoot/WEB-INF/src">
+                <exclude name="**/*.launch"/>
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+        <copy includeemptydirs="false" todir="WebRoot/WEB-INF/classes">
+            <fileset dir="config-local">
+                <exclude name="**/*.launch"/>
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="WebRoot/WEB-INF/classes"/>
+    </target>
+    <target depends="clean" name="cleanall"/>
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="build-subprojects"/>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="WebRoot/WEB-INF/classes" source="${source}" target="${target}">
+            <src path="WebRoot/WEB-INF/src"/>
+            <classpath refid="SGIS.classpath"/>
+        </javac>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="WebRoot/WEB-INF/classes" source="${source}" target="${target}">
+            <src path="config-local"/>
+            <classpath refid="SGIS.classpath"/>
+        </javac>
+    </target>
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    <target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+        <copy todir="${ant.library.dir}">
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </copy>
+        <unzip dest="${ant.library.dir}">
+            <patternset includes="jdtCompilerAdapter.jar"/>
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </unzip>
+    </target>
+    <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
+        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
+        <antcall target="build"/>
+    </target>
+    <target name="JsonUtil">
+        <java classname="com.sg.sgis.util.JsonUtil" failonerror="true" fork="yes">
+            <classpath refid="SGIS.classpath"/>
+            <bootclasspath>
+                <path refid="run.JsonUtil.bootclasspath"/>
+            </bootclasspath>
+        </java>
+    </target>
+    <target name="TestSampleBiz">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="test.com.sg.sgis.sample.TestSampleBiz" todir="${junit.output.dir}"/>
+            <classpath refid="SGIS.classpath"/>
+            <bootclasspath>
+                <path refid="run.TestSampleBiz.bootclasspath"/>
+            </bootclasspath>
+        </junit>
+    </target>
+    <target name="junitreport">
+        <junitreport todir="${junit.output.dir}">
+            <fileset dir="${junit.output.dir}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${junit.output.dir}"/>
+        </junitreport>
+    </target>
+</project>

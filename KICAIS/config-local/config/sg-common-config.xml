@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<configuration> 
+    <common>
+
+        <requestEncoding>utf-8</requestEncoding>
+
+		<ozReport>
+		http://61.72.247.236/oz
+		</ozReport>
+
+        <!-- service별 Application ROOT에 해당하는 경로를 설정 -->
+        <applicationRoot>
+         /work/sgis/tomcat6/webapps/ROOT/WEB-INF/WebRoot
+        </applicationRoot>
+
+		<site-info>
+            <self-url>sgis.signgate.com</self-url>
+        </site-info>
+        
+        <upload-info>
+            <repositoryPath>/work/sgis/upload_files</repositoryPath>
+            <totalMaxSize>20480000</totalMaxSize>
+            <fileMaxSize>10240000</fileMaxSize>
+            <fileMaxCnt>10</fileMaxCnt>
+            <rejectType>sg,jsp,vm,java,js,css,php,php3,ps,vbs,asp,html,aspx,class,exe,com</rejectType>
+        </upload-info>
+
+        <!-- 세션정보 관리 -->
+        <session>
+            <user>
+                <name>USER_SESSION</name>
+                <timeOut>36000</timeOut><!-- 초단위 설정. 0 일경우 Was 기본 설정을 따름  -->
+            </user>
+            <admin>
+                <name>ADMIN_SESSION</name>
+                <timeOut>36000</timeOut><!-- 초단위 설정. 3600 = 1시간, 0 일경우 Was 기본 설정을 따름 -->
+            </admin>
+        </session>
+
+        <msg>
+            <system-error>시스템 장애</system-error>
+            <download>
+                <error1>죄송합니다. 요청 인자가 올바르게 전달되지 않았습니다.</error1>
+                <error2>죄송합니다. 파일정보가 시스템에 존재하지 않습니다.</error2>
+                <error3>죄송합니다. 파일이 삭제되었거나 존재하지 않습니다.</error3>
+                <error4>죄송합니다. 요청을 처리하는 중 에러가 발생했습니다.</error4>
+            </download>
+            <save-success>저장 하였습니다.</save-success>
+            <save-fail>저장에 실패 하였습니다.</save-fail>
+        </msg>
+
+        <mail-info>
+            <smtp>
+                <host>61.72.247.150</host>
+                <port>25</port>
+                <auth>true</auth>
+                <user>webmaster</user>
+                <pwd>1111</pwd>
+                <debug>true</debug>
+            </smtp>
+            <mailTemplates>
+                <sample>/sample/samleTemplate.html</sample>
+            </mailTemplates>
+        </mail-info>
+
+        <!-- 각 레이어별 예외 및 DB 예외의 경우 코드 엘리먼트와 메세지 값을 설정 한다. -->
+        <exception>
+            <DB>
+            </DB>
+            <CONTROL>
+            </CONTROL>
+            <BIZ>
+            </BIZ>
+            <FILEUPLOAD>
+                <FU001>
+                                    업로드 할 수 없는 종류의 파일 입니다.
+                </FU001>
+                <FU002>
+                                    파일 저장 디렉토리 생성 실패.
+                </FU002>
+                <FU003>
+                                    업로드 파일 용량 초과 입니다.
+                </FU003>
+                <FU004>
+                                    업로드 파일 전체 용량 초과 입니다.
+                </FU004>
+            </FILEUPLOAD>
+            <MAIL>
+                <E001>
+                                    대상 템플릿 파일이 존재하지 않습니다.
+                </E001>
+            </MAIL>
+        </exception>
+
+        <batch-info>
+            <contextName>SG-applicationContext.xml</contextName>
+            <sleepTime>30000</sleepTime>
+            <retry-time>1</retry-time>
+            <batch-result>
+	            <success>001</success>
+	            <fail>002</fail>
+                <doing>003</doing>
+	        </batch-result>
+            <batch-cycle>
+                <month>001</month>
+                <day>002</day>
+                <hour>003</hour>
+                <minute>004</minute>
+            </batch-cycle>
+            <batch-option>
+                <sql>001</sql>
+                <procedure>002</procedure>
+            </batch-option>
+        </batch-info>
+    </common>
+</configuration>

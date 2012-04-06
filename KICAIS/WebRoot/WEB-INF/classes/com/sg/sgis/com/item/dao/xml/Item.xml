@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : Item.xml
+    Description : 품목정보관리
+-->
+<sqlMap namespace="Item">
+
+	<!-- 품목정보관리 목록조회 -->
+	<select id="selectItem" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT  'R' AS flag			   /*상태*/
+					         , ci.item_type_code	   /*품목구분코드*/
+					         , (SELECT com_code_name
+					              FROM com_code
+					             WHERE group_code = 'ITEM_TYPE_CODE'
+					               AND com_code = ci.item_type_code
+					           ) item_type
+							 , ci.item_code           /*품목코드*/    
+							 , ci.item_name           /*품목명*/      
+							 , ci.standard            /*규격*/        
+							 , ci.unit                /*단위*/        
+							 , ci.spec                /*제원*/        
+							 , ci.unit_price_01       /*단가1*/       
+							 , ci.unit_price_02       /*단가2*/       
+							 , ci.unit_price_03       /*단가3*/       
+							 , ci.unit_price_04       /*단가4*/       
+							 , ci.unit_price_05       /*단가5*/       
+							 , to_char(to_date(ci.release_date),'yyyy-mm-dd')
+							   AS release_date        /*출시일*/      
+							 , ci.item_version        /*버전*/        
+							 , ci.item_pattern_code   /*품목유형코드*/
+							 ,(SELECT com_code_name
+					              FROM com_code
+					             WHERE group_code = 'ITEM_PATTERN_CODE'
+					               AND com_code = ci.item_pattern_code
+					           ) item_pattern
+							 , ci.item_intro          /*품목소개*/    
+							 , ci.item_function       /*품목기능*/    
+							 , ci.final_mod_id        /*최종변경자ID*/
+							 , TO_CHAR(ci.final_mod_date, 'YYYY-MM-DD') AS final_mod_date      /*최종변경일시*/ 
+					      FROM com_item ci 	   	   /*품목관리*/
+					     WHERE 1 = 1
+						<isNotEmpty property="src_item_code">
+						   AND ci.item_code = #src_item_code#
+						</isNotEmpty> 
+						<isNotEmpty property="src_item_name">
+						   AND ci.item_name like '%'||#src_item_name#||'%'
+						</isNotEmpty> 
+						<isNotEmpty property="src_item_type_code">
+						   AND ci.item_type_code = #src_item_type_code#
+						</isNotEmpty> 
+						<isNotEmpty property="src_item_pattern_code">
+						   AND ci.item_pattern_code = #src_item_pattern_code#
+						</isNotEmpty> 
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#  
+	</select>
+	
+	<!-- 품목정보관리 목록조회 총건수 -->
+	<select id="selectItemCount" resultClass="int">
+	SELECT COUNT(item_code)	
+	  FROM com_item
+	 WHERE 1 = 1
+	<isNotEmpty property="src_item_code">
+	   AND item_code = #src_item_code#
+	</isNotEmpty> 
+	<isNotEmpty property="src_item_name">
+	   AND item_name like '%'||#src_item_name#||'%'
+	</isNotEmpty> 
+	<isNotEmpty property="src_item_type_code">
+	   AND item_type_code = #src_item_type_code#
+	</isNotEmpty> 
+	<isNotEmpty property="src_item_pattern_code">
+	   AND item_pattern_code = #src_item_pattern_code#
+	</isNotEmpty> 
+	</select>
+	
+	<!-- 품목정보관리 상세조회 -->
+	<select id="selectItembyPK" resultClass="HashMap">
+	<![CDATA[
+	SELECT item_type_code	   /*품목구분코드*/
+		 , item_code           /*품목코드*/    
+		 , item_name           /*품목명*/      
+		 , standard            /*규격*/        
+		 , unit                /*단위*/        
+		 , spec                /*제원*/        
+		 , unit_price_01       /*단가1*/       
+		 , unit_price_02       /*단가2*/       
+		 , unit_price_03       /*단가3*/       
+		 , unit_price_04       /*단가4*/       
+		 , unit_price_05       /*단가5*/       
+		 , release_date        /*출시일*/      
+		 , item_version        /*버전*/        
+		 , item_pattern_code   /*품목유형코드*/
+		 , item_intro          /*품목소개*/    
+		 , item_function       /*품목기능*/    
+		 , final_mod_id        /*최종변경자ID*/
+		 , TO_CHAR(final_mod_date, 'YYYY-MM-DD') AS final_mod_date      /*최종변경일시*/       
+	  FROM com_item 	   	   	/*품목관리*/
+	 WHERE item_code = #item_code#
+	]]>	 
+	</select>
+	
+	<!-- 품목 저장 -->
+	<insert id="insertItem" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO com_item ( item_code
+						 , item_type_code
+						 , item_name
+						 , standard
+						 , unit
+						 , spec
+						 , unit_price_01
+						 , unit_price_02
+						 , unit_price_03
+						 , unit_price_04
+						 , unit_price_05
+						 , release_date
+						 , item_version
+						 , item_pattern_code
+						 , item_intro
+						 , item_function
+						 , final_mod_id
+						 , final_mod_date
+						 )
+				  VALUES ( #item_code#         
+						 , #item_type_code#    
+						 , #item_name#         
+						 , #standard#          								
+						 , #unit#              							
+						 , #spec#              							
+						 , REPLACE(#unit_price_01#,',','')     							
+						 , REPLACE(#unit_price_02#,',','')     							
+						 , REPLACE(#unit_price_03#,',','')     							
+						 , REPLACE(#unit_price_04#,',','')     
+						 , REPLACE(#unit_price_05#,',','')     
+						 , #release_date#      
+						 , #item_version#      
+						 , #item_pattern_code# 
+						 , #item_intro#        
+						 , #item_function#     
+						 , #final_mod_id#      
+						 , SYSTIMESTAMP   
+						 )
+	]]>
+	</insert>
+	
+	<!-- 품목 수정 -->
+	<update id="updateItem" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE com_item 
+	   SET item_name          = #item_name#         
+		 , standard           = #standard#          
+		 , unit               = #unit#              
+		 , spec               = #spec#              
+		 , unit_price_01      = REPLACE(#unit_price_01#,',','')     
+		 , unit_price_02      = REPLACE(#unit_price_02#,',','')     
+		 , unit_price_03      = REPLACE(#unit_price_03#,',','')     
+		 , unit_price_04      = REPLACE(#unit_price_04#,',','')     
+		 , unit_price_05      = REPLACE(#unit_price_05#,',','')     
+		 , release_date       = #release_date#       
+		 , item_version       = #item_version#      
+		 , item_pattern_code  = #item_pattern_code# 
+	 	 , item_intro         = #item_intro#        
+		 , item_function      = #item_function#     
+		 , final_mod_id       = #final_mod_id#      
+		 , final_mod_date     = SYSTIMESTAMP
+	 WHERE item_code 		  = #item_code#
+	   AND item_type_code 	  = #item_type_code#		  
+	]]>
+	</update>
+
+	<!-- 품목코드 자동채번 -->
+	<select id="createItemCode" parameterClass="HashMap" resultClass="String">
+	SELECT #item_type_code#||LPAD(NVL(MAX(TO_NUMBER(SUBSTR(item_code,3,18))),0)+1,18,0)
+  	  FROM com_item
+<!-- 	 WHERE item_type_code = #item_type_code#-->
+	</select>
+	
+	<!-- 아이템(장비-제품이 아닌것) 조회(팝업) -->
+	<select id="selectItemEquip" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT  'R' AS flag			   /*상태*/
+					         , ci.item_type_code	   /*품목구분코드*/
+					         , (SELECT com_code_name
+					              FROM com_code
+					             WHERE group_code = 'ITEM_TYPE_CODE'
+					               AND com_code = ci.item_type_code
+					           ) item_type
+							 , ci.item_code           /*품목코드*/    
+							 , ci.item_name           /*품목명*/      
+							 , ci.standard            /*규격*/        
+							 , ci.unit                /*단위*/        
+							 , ci.spec                /*제원*/        
+							 , ci.unit_price_01       /*단가1*/       
+							 , ci.unit_price_02       /*단가2*/       
+							 , ci.unit_price_03       /*단가3*/       
+							 , ci.unit_price_04       /*단가4*/       
+							 , ci.unit_price_05       /*단가5*/       
+							 , to_char(to_date(ci.release_date),'yyyy-mm-dd')
+							   AS release_date        /*출시일*/      
+							 , ci.item_version        /*버전*/        
+							 , ci.item_pattern_code   /*품목유형코드*/
+							 ,(SELECT com_code_name
+					              FROM com_code
+					             WHERE group_code = 'ITEM_PATTERN_CODE'
+					               AND com_code = ci.item_pattern_code
+					           ) item_pattern
+							 , ci.item_intro          /*품목소개*/    
+							 , ci.item_function       /*품목기능*/    
+							 , ci.final_mod_id        /*최종변경자ID*/
+							 , TO_CHAR(ci.final_mod_date, 'YYYY-MM-DD') AS final_mod_date      /*최종변경일시*/ 
+					      FROM com_item ci 	   	   /*품목관리*/
+					     WHERE 
+					     ci.item_type_code != #src_item_type_code#
+						<isNotEmpty property="src_item_code">
+						   AND ci.item_code = #src_item_code#
+						</isNotEmpty> 
+						<isNotEmpty property="src_item_name">
+						   AND ci.item_name like '%'||#src_item_name#||'%'
+						</isNotEmpty> 
+						<isNotEmpty property="src_item_pattern_code">
+						   AND ci.item_pattern_code = #src_item_pattern_code#
+						</isNotEmpty> 
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#  
+	</select>
+	
+	<!-- 아이템(장비-제품이 아닌것) 조회(팝업) 총건수 -->
+	<select id="selectItemEquipCount" resultClass="int">
+	SELECT COUNT(item_code)	
+	  FROM com_item
+	 WHERE 
+		 item_type_code != #src_item_type_code#
+		<isNotEmpty property="src_item_code">
+		  AND item_code = #src_item_code#
+		</isNotEmpty> 
+		<isNotEmpty property="src_item_name">
+		   AND item_name like '%'||#src_item_name#||'%'
+		</isNotEmpty> 
+		<isNotEmpty property="src_item_pattern_code">
+		   AND item_pattern_code = #src_item_pattern_code#
+		</isNotEmpty> 	
+	</select>
+	
+ </sqlMap>

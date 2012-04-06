@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- 
+    각 항목은 기본적으로 Map 형식으로 로드된다(key|value 쌍) 
+    xml 타입의 경우 자식 노드가 복수로   존재할 경우 List 타입으로 사용이 가능하다.(getList();)
+    
+    주!  각 자식 설정 파일들은 동일한 디렉토리에 있을 경우에만 파일명으로 설정이 가능하며,
+        디렉토리가 다른 경우 해당 설정 파일이 있는 경로까지 입력해야 한다.
+ -->
+
+<configuration>
+
+    <!-- System.getProperties() 항목을 로드한다. -->
+    <system />
+
+    <!-- xml 기반의 설정파일을 로드한다. -->
+    <xml fileName="sg-common-config.xml" encoding="UTF-8" />
+    <xml fileName="sg-download-config.xml" encoding="UTF-8" />
+	<xml fileName="manage/sg-board-config.xml" encoding="UTF-8" />
+    <xml fileName="manage/sg-sample-config.xml" encoding="UTF-8" />
+</configuration>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : ItemSW.xml
+    Description : 품목정보관리_소프트웨어
+-->
+<sqlMap namespace="ItemSW">
+		
+	<!-- 품목정보관리_소프트웨어 목록조회 -->
+	<select id="selectItemSW" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+				  SELECT spec_sw_seq
+					   , item_code
+					   , item_type_code
+					   , spec_os
+					   , spec_sw
+					   , note
+					   , use_yn
+					   , final_mod_id
+					   , TO_CHAR(final_mod_date, 'YYYY-MM-DD') AS final_mod_date	
+					FROM com_item_spec_sw
+				   WHERE item_code = #item_code#
+					 AND item_type_code = #item_type_code#
+					 <isEmpty property="item_type_code">
+					 AND item_type_code = '999999'
+					 </isEmpty>
+				   ORDER BY TO_NUMBER(spec_sw_seq)  
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 
+	</select>
+	
+	<!-- 품목정보관리_소프트웨어 총건수 -->
+	<select id="selectItemSWCount" resultClass="int">
+	SELECT COUNT(spec_sw_seq)	
+	  FROM com_item_spec_sw
+	 WHERE item_code = #item_code#
+	   AND item_type_code = #item_type_code#
+	   <isEmpty property="item_type_code">
+	   AND item_type_code = '999999'
+	   </isEmpty>
+	</select>	 
+	
+	<!-- 품목정보관리_소프트웨어 저장 -->
+	<insert id="insertItemSW" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO COM_ITEM_SPEC_SW(
+								 spec_sw_seq 
+								,item_code     
+								,item_type_code
+								,spec_os       
+								,spec_sw       
+								,note          
+								,use_yn        
+								,final_mod_id  
+								,final_mod_date
+								)
+					VALUES
+							(
+						  		 (SELECT NVL(max(TO_NUMBER(spec_sw_seq)), 0) + 1  FROM COM_ITEM_SPEC_SW )
+								,#item_code#
+								,#item_type_code#
+								,#spec_os#
+								,#spec_sw#
+								,#note#
+								,#use_yn#
+								,#final_mod_id#
+						  		,SYSTIMESTAMP
+							)
+	]]>
+	</insert>
+	
+	<!-- 품목정보관리_소프트웨어 수정 -->
+	<update id="updateItemSW" parameterClass="HashMap">
+	<![CDATA[
+	UPDATE com_item_spec_sw 
+	   SET spec_os          = #spec_os#        
+		 , spec_sw          = #spec_sw#        
+		 , note             = #note#           
+		 , use_yn           = #use_yn#         
+		 , final_mod_id     = #final_mod_id#  
+		 , final_mod_date   = SYSTIMESTAMP
+     WHERE item_code		= #item_code#
+  	   AND item_type_code 	= #item_type_code#
+  	   AND spec_sw_seq  	= #spec_sw_seq# 	  
+	]]>
+	</update> 
+
+ </sqlMap>

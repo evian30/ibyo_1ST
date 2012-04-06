@@ -1,0 +1,77 @@
+@charset "utf-8";
+
+
+/* layout */
+#wrap {
+    width:1032px;
+	margin:15px 15px 0 15px; 
+    float:left;
+}
+/* top */
+#top {
+    width:100%;
+	float:left;
+}
+
+/* left */
+#left {
+    width:49%;
+	height:auto; 
+	margin:13px 2% 10px 0;
+	float:left; 
+}
+
+/* right */
+#right {
+    width:49%; 
+	height:auto;
+	margin:30px 0 10px 0;
+	float:left; 
+}
+
+/* mid */
+#mid_01 {
+    width:100%;
+	height:auto;
+	margin:30px 0 10px 0;
+	float:left;
+}
+#mid_02 {
+    width:100%;
+	height:auto;
+	margin:15px 0 10px 0;
+	float:left;
+}
+
+/* under */
+#under {
+    width:100%;
+	clear:both;
+}
+#under_01 {
+    width:33%;
+	float:left;
+}
+#under_02 {
+    width:39%;
+	float:left;
+}
+#under_03 {
+    width:26%;
+	float:left;
+}
+
+
+
+/* section */
+.section_01 {
+	width:100%;
+}
+.section_02 {
+	padding-top:10px;
+}
+.section_control {
+    width:100%;
+	clear:both;
+	padding-top:10px;
+}

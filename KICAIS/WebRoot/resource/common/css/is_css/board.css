@@ -1,0 +1,246 @@
+@charset "utf-8";
+
+
+/* bbs table */
+table.bbs_list {
+	width:100%;
+	border-collapse: collapse;
+	border-top:#9dbbed 1px solid;
+}
+table.bbs_list2 {
+	width:100%;
+	border-collapse: collapse;
+	border-top:#9dbbed 2px solid;
+	overflow-x:auto;
+	overflow-y:hidden;
+}
+
+table.bbs_list th {
+	height:26px;
+	font-family:dotum;
+	color:#4168a3;
+	background-color:#dfe8f6;
+}
+
+/*���̺� ����Ʈ ���� ������ bottom ����*/
+table.bbs_list_b th {
+	height:26px;
+	font-family:dotum;
+	color:#4168a3;
+	background-color:#dfe8f6;
+	border-bottom:#99bbe8 1px solid;
+}
+
+
+/* ��
+table.bbs_list th {
+	height:26px;
+	font-family:dotum;
+	color:#4168a3;
+	background-color:#dfe8f6;
+	border-bottom:#99bbe8 1px solid;
+}
+*/
+table.bbs_list2 th {
+	height:26px;
+	font-family:dotum;
+	color:#4168a3;
+	background-color:#dfe8f6;
+	border-bottom:#99bbe8 1px solid;
+}
+
+table.bbs_list th.whd_f{
+	border-left:#99bbe8 1px solid;
+	border-right:#99bbe8 1px solid;
+	text-align:left;
+	padding-left:10px;
+	background-image:url(/resource/images/is_images/whd_bg.jpg);
+}
+
+table.bbs_list th.first{
+	border-left:#99bbe8 1px solid;
+	text-align:left;
+	padding-left:17px;
+}
+
+table.bbs_list th.first_b{
+	border-left:#99bbe8 1px solid;
+	text-align:left;
+	padding-left:17px;
+	border-bottom:#99bbe8 1px solid;
+}
+table.bbs_list th.first_c{
+	border-left:#99bbe8 1px solid;
+	text-align:center;
+}
+table.bbs_list th.first_s{
+	border-left:#99bbe8 1px solid;
+	text-align:left;
+	padding-left:17px;
+	background-image:url(/resource/images/is_images/star.png);
+}
+
+table.bbs_list th.last{
+	border-right:#99bbe8 1px solid;
+	padding-left:17px;
+}
+
+table.bbs_list th.last_c{
+	border-right:#99bbe8 1px solid;
+	text-align:center;
+}
+
+table.bbs_list td.first{
+	text-align:left;
+	border-left:#99bbe8 1px solid;
+	padding-left:4px;
+}
+table.bbs_list td.last {
+	border-right:#99bbe8 1px solid;
+	text-align:left;
+	padding-left:4px;
+}
+table.bbs_list td.last_c {
+	border-right:#99bbe8 1px solid;
+	text-align:center;
+}
+
+table.bbs_list td {
+    height:26px; 
+	font-family:dotum;
+	text-align:center;
+	border-bottom:#99bbe8 1px solid;
+}
+table.bbs_list2 td {
+    height:26px; 
+	font-family:dotum;
+	text-align:center;
+	border-bottom:#99bbe8 1px solid;
+}
+table.bbs_list td.l {
+	text-align:left;
+	padding-left:4px;
+}
+table.bbs_list2 td.l {
+	text-align:left;
+	padding-left:4px;
+}
+.th{
+	font-color:#4367a3;
+}
+.td_t{
+    text-align:left;
+	padding-left:4px;
+}
+.td_t1{
+    text-align:left;
+	padding-left:17px;
+}
+/*���̺� ����Ʈ ���� ������ bottom ����*/
+.td_t1_b{
+    text-align:left;
+	padding-left:17px;
+	border-bottom:#99bbe8 1px solid;
+}
+.td_t1_s{
+    text-align:left;
+	padding-left:17px;
+	background-image:url(/resource/images/is_images/star.png);	
+}
+.td_t1_sc{
+    text-align:center;
+	background-image:url(/resource/images/is_images/star.png);	
+}
+
+/* left */
+.left title {  
+    text-decoration:none;
+	color:#4c4c4c; 
+	font-weight:bold; 
+	height:25px; 
+	line-height:25px;
+	letter-spacing:-1px;
+}
+
+/* search */
+.select {
+	width:126px;
+	height:18px;
+	font-size:12px;
+	border:1px solid #CFCFCF; 
+}
+.select_sm {
+    width:60px;
+	height:18px;
+	font-size:12px;
+	border:1px solid #CFCFCF; 
+}
+.select_l {
+	width:141px;
+	height:19px;
+	font-size:12px;
+	border:1px solid #CFCFCF; 
+}
+.search_input {
+	height:18px;
+	font-size:12px;
+	padding-top:2px;
+	color:#4f4f4f;
+	border:1px solid #CFCFCF; 
+}
+.search_input_d {
+	height:16px;
+	font-size:12px;
+	padding-top:2px;
+	color:#767676;
+	border:1px solid #CFCFCF; 
+	background:#e6e7e7;
+	width:140px;
+}
+.search_input_m {
+    height:25px;
+  	font-family:dotum;
+	font-size:12px;
+	color:#4f4f4f;
+	margin: 3px 0 3px 0;
+	border:1px solid #CFCFCF; 
+}
+.search_input2 {
+    border: 1px solid #CFCFCF;
+    color: #4F4F4F;
+    font-size: 12px;
+    height: 16px;
+    padding-top: 2px;
+    width: 140px;
+}
+
+.data_search {
+	position:relative;
+	margin: 10px 38% 0 37%;
+}
+.data_ti{
+    font-weight:bold; 
+	font-size:11px;
+	color:#36428b;
+}
+.data_num{
+	color:#4f4f4f;
+}
+.data_num_r{
+	color:#4f4f4f;
+	float:right;
+}
+
+/* paging */
+.data_page {
+	position:relative;
+	margin: 10px 0 0 0;
+}
+.page_count {
+	position:absolute;
+	left:10px;
+}
+.page_nav {
+	position:relative;
+	text-align:center;
+}

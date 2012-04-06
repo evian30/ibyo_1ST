@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : Dept.xml
+    Description : 부서정보관리
+-->
+<sqlMap namespace="Dept">
+
+	<!-- 부서정보관리 목록조회 -->
+	<select id="selectDept" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (	
+					SELECT 'R' flag			   /*조회상태*/
+					     , dept_code           /*부서코드*/    
+					     , dept_name           /*부서명*/      
+					     , ref_code            /*참조코드*/    
+					     , dept_level          /*부서레벨*/  
+					     , (
+					       SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'DEPT_LEVEL_CODE'
+					          AND C.com_code = TRIM(CD.dept_level)
+					       ) dept_level_name   /*부서레벨명*/   
+					     , high_dept_code      /*상위부서코드*/
+					     , (
+					       SELECT C.dept_name
+					         FROM com_dept C
+					        WHERE C.dept_code = CD.high_dept_code
+					       ) high_dept_name    /*상위부서*/  
+					     , use_yn              /*사용여부*/    
+					     , (
+					       SELECT C.com_code_name
+					         FROM com_code C
+					        WHERE C.group_code = 'YESNO_CODE'
+					          AND C.com_code = TRIM(use_yn)
+					       ) use_yn_name
+					     , final_mod_id        /*최종변경자ID*/
+					     , final_mod_date      /*최종변경일시*/
+					  FROM com_dept	CD		   /*부서관리*/
+					 WHERE 1 = 1
+					 <isNotEmpty property="src_dept_code">
+					   AND dept_code LIKE '%'||#src_dept_code#||'%'
+					 </isNotEmpty>
+					 <isNotEmpty property="src_dept_name">
+					   AND dept_name LIKE '%'||#src_dept_name#||'%'
+					 </isNotEmpty>
+					 <isNotEmpty property="src_dept_level">
+					   AND TRIM(dept_level) = #src_dept_level#
+					 </isNotEmpty>
+					 <isNotEmpty property="src_use_yn">
+					   AND use_yn = #src_use_yn#
+					 </isNotEmpty>	
+					 ORDER BY dept_code	  
+				   ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 
+	</select>		
+
+	<!-- 부서정보관리 목록 총갯수조회 -->
+	<select id="selectDeptCount" resultClass="Int">
+
+		SELECT COUNT(dept_code)     /*부서코드*/    
+		  FROM com_dept			   	/*부서관리*/
+		 WHERE 1 = 1
+		 <isNotEmpty property="src_dept_code">
+		   AND dept_code LIKE '%'||#src_dept_code#||'%'
+		 </isNotEmpty>
+		 <isNotEmpty property="src_dept_name">
+		   AND dept_name LIKE '%'||#src_dept_name#||'%'
+		 </isNotEmpty>
+		 <isNotEmpty property="src_dept_level">
+		   AND TRIM(dept_level) = #src_dept_level#
+		 </isNotEmpty>
+		 <isNotEmpty property="src_use_yn">
+		   AND use_yn = #src_use_yn#
+		 </isNotEmpty>	
+ 
+	</select>		
+	
+	<!-- 부서정보관리 상세조회 -->
+	<select id="selectDeptbyPK" resultClass="HashMap">
+	<![CDATA[
+		SELECT dept_code           /*부서코드*/    
+		     , dept_name           /*부서명*/      
+		     , ref_code            /*참조코드*/    
+		     , dept_level          /*부서레벨*/ 
+		     , (
+		       SELECT C.COM_CODE_NAME
+		         FROM com_code C
+		        WHERE C.group_code = 'DEPT_LEVEL_CODE'
+		          AND C.com_code = TRIM(dept_level)
+		       ) dept_level_name   /*부서레벨명*/   
+		     , high_dept_code      /*상위부서코드*/
+		     , use_yn              /*사용여부*/    
+		     , final_mod_id        /*최종변경자ID*/
+		     , final_mod_date      /*최종변경일시*/
+		  FROM com_dept			   /*부서관리*/
+		 WHERE dept_code = #dept_code#
+	]]>   		  
+	</select>
+	
+	<!-- 공통코드 조회 -->
+	<select id="selectComboCode" resultClass="HashMap" parameterClass="String">
+		SELECT com_code
+			 , com_code_name
+		  FROM com_code
+		 WHERE use_yn = 'Y'   
+		   AND com_code != '$$'             
+	 	   AND group_code = #group_code#
+		 ORDER BY sort_num
+	</select>
+
+	<!-- 공통코드 조회 -->
+	<select id="selectComboCodeEtc" resultClass="HashMap">
+		SELECT $valueColum$ com_code
+			 , $nameColum$ com_code_name
+		  FROM $tableName$
+		  <isEqual property="tableName" compareValue="COM_DEPT">
+		  <isNotEmpty property="etcValue"> 
+	 	 WHERE TRIM(DEPT_LEVEL) = TRIM(#etcValue#)
+	 	  </isNotEmpty>
+	 	  </isEqual> 
+		 ORDER BY $valueColum$
+	</select>
+	
+	<!-- 신규 부서 등록 -->
+	<insert id="insertNewDept" parameterClass="HashMap">
+		INSERT INTO COM_DEPT ( dept_code
+						     , dept_name
+						     , ref_code
+						     , dept_level
+						     , high_dept_code
+						     , use_yn
+						     , final_mod_id
+						     , final_mod_date
+						     ) 
+					  VALUES ( #dept_code#
+						     , #dept_name#
+						     , #ref_code#
+						     , #dept_level#
+						     , #high_dept_code#
+						     , #use_yn#
+						     , #final_mod_id#
+						     , systimestamp
+						     )
+	</insert>	
+	
+	<!-- 부서정보 수정	-->
+	<update id="updateNewDept" parameterClass="HashMap">
+	<![CDATA[
+	    UPDATE COM_DEPT					 		   /*부서관리*/
+		   SET dept_level     = #dept_level#       /*부서레벨*/
+			 , dept_name      = #dept_name#    	   /*부서명*/    
+			 , high_dept_code = #high_dept_code#   /*상위부서코드*/    
+			 , ref_code       = #ref_code#     	   /*참조코드*/    
+			 , use_yn         = #use_yn#     	   /*사용여부*/    
+			 , final_mod_id   = #final_mod_id#     /*최종변경자ID*/
+			 , final_mod_date = #final_mod_date#   /*최종변경일시*/      
+		 WHERE dept_code      = #dept_code#
+	]]>	 
+	</update>
+
+	<!-- 부서 팝업조회 -->
+	<select id="selectDeptPopList" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (	
+					SELECT dept_code           /*부서코드*/    
+					     , dept_name           /*부서명*/      
+					     , dept_level          /*부서레벨*/ 
+					     , (
+					        SELECT C.COM_CODE_NAME
+					          FROM com_code C
+					         WHERE C.group_code = 'DEPT_LEVEL_CODE'
+					           AND C.com_code = trim(dept_level)
+					       ) dept_level_name   /*부서레벨명*/   
+					  FROM com_dept			   /*부서관리*/
+					 WHERE 1 = 1
+					 <isNotEmpty property="search_div">
+					   AND $search_div$ LIKE '%'||#search_val#||'%'
+					 </isNotEmpty>
+					 <isNotEmpty property="search_level">
+					   AND dept_level &lt; #search_level#
+					 </isNotEmpty>
+					 ORDER BY dept_code  
+				   ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 
+	</select>
+	
+	<!-- 부서 팝업조회 총건수 -->
+	<select id="selectDeptPopListCnt" resultClass="Int">
+		SELECT COUNT(dept_code)    /*부서코드*/    
+		  FROM com_dept			   /*부서관리*/
+		 WHERE 1 = 1
+		 <isNotEmpty property="search_div">
+		   AND $search_div$ LIKE '%'||#search_val#||'%'
+		 </isNotEmpty>
+		 <isNotEmpty property="search_level">
+		   AND dept_level &lt; #search_level#
+		 </isNotEmpty>
+	</select>
+	
+ </sqlMap>

@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : Employee.xml
+    Description : 사원정보관리
+-->
+<sqlMap namespace="Employee">
+
+	<!--사진 파일 다운로드-->
+	<select id="downPhotoFile" resultClass="DownloadFileBean" >
+	SELECT emp_num as no              
+		 , photo_save_nm as viewFileName
+		 , photo_real_nm as saveFileName
+		 , photo_path as filePath
+	  FROM com_emp_info 	   
+	 WHERE emp_num = #emp_num# 
+    </select>
+
+	<!-- 사원정보관리 목록조회 -->
+	<select id="selectEmployee" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag			   	  /*조회상태*/			
+					     , CE.emp_num             /*사번*/        
+					     , CE.ssn                 /*주민등록번호*/
+					     , CE.kor_name            /*한글성명*/    
+					     , CE.eng_name            /*영어성명*/    
+					     , CE.chn_name            /*한자성명*/    
+					     , CE.dept_code           /*부서코드*/    
+					     , CE.postion_code        /*직위코드*/    
+					     , CE.duty_code           /*직책코드*/    
+					     , CE.mobile              /*휴대폰*/      
+					     , CE.tel_home            /*집전화번호*/  
+					     , CE.tel_office          /*사내전화번호*/
+					     , CE.email               /*E-MAIL*/      
+					     , CE.zipcode             /*우편번호*/    
+					     , CE.addr                /*주소*/        
+					     , CE.addr_detail         /*주소상세*/    
+					     , CE.photo_img		  	  /*사진이미지*/
+					     , CE.photo_path          /*사진파일경로*/
+					     , CE.use_yn              /*사용여부*/    
+					     , CE.final_mod_id        /*최종변경자ID*/
+					     , CE.final_mod_date      /*최종변경일시*/ 
+					     , CD.dept_name 		  /*부서명*/  
+					     
+					     , CE.ID
+					     , (
+					     	SELECT AD.ADMIN_PW
+					     	  FROM TB_ADMIN AD
+					     	 WHERE CE.emp_num = AD.sabun
+					       ) admin_pw
+					       
+					     , (
+					     	SELECT C1.COM_CODE_NAME
+					     	  FROM com_code C1
+					     	 WHERE C1.group_code = 'POSITION_CODE'
+					           AND C1.com_code = CE.postion_code
+					       ) postion_name			/*직위코드*/
+					     , (
+					     	SELECT C1.COM_CODE_NAME
+					     	  FROM com_code C1
+					     	 WHERE C1.group_code = 'DUTY_CODE'
+					           AND C1.com_code = CE.duty_code
+					       ) duty_name					/*직채코드*/
+					  FROM com_emp_info CE 	   	  		/*사원정보*/
+					  LEFT OUTER JOIN
+					       com_dept CD 			  		/*부서관리*/
+					    ON CE.dept_code = TRIM(CD.dept_code)
+					 WHERE 1 = 1 
+					 <isNotEmpty property="src_dept_name">
+					   AND CD.dept_name LIKE '%'||#src_dept_name#||'%'
+					 </isNotEmpty>
+					 <isNotEmpty property="src_kor_name">
+					   AND CE.kor_name LIKE '%'||#src_kor_name#||'%'
+					 </isNotEmpty>
+					 <isNotEmpty property="src_postion_code">
+					   AND CE.postion_code = #src_postion_code#
+					 </isNotEmpty>
+					 
+					 <isNotEmpty property="Lsrc_emp_num">
+					   AND CE.emp_num = #Lsrc_emp_num#
+					 </isNotEmpty>
+					 
+					 ORDER BY EMP_NUM
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 
+	</select>	
+	
+	<!-- 사원정보관리 목록 총갯수 -->
+	<select id="selectEmployeeCount" resultClass="Int">
+	SELECT COUNT(CE.emp_num)			/*사번*/
+	  FROM com_emp_info CE 	   	  		/*사원정보*/
+	  LEFT OUTER JOIN
+	       com_dept CD 			  		/*부서관리*/
+	    ON CE.dept_code = CD.dept_code
+	 WHERE 1 = 1 
+	 <isNotEmpty property="src_dept_name">
+	   AND CD.dept_name LIKE '%'||#src_dept_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_kor_name">
+	   AND CE.kor_name LIKE '%'||#src_kor_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_postion_code">
+	   AND CE.postion_code = #src_postion_code#
+	 </isNotEmpty>
+    </select> 	
+
+	<!-- 사원정보관리 상세조회 -->
+	<select id="selectEmployeebyPK" resultClass="HashMap">
+	<![CDATA[
+		SELECT emp_num             /*사번*/        
+		     , ssn                 /*주민등록번호*/
+		     , kor_name            /*한글성명*/    
+		     , eng_name            /*영어성명*/    
+		     , chn_name            /*한자성명*/    
+		     , dept_code           /*부서코드*/    
+		     , postion_code        /*직위코드*/    
+		     , duty_code           /*직책코드*/    
+		     , mobile              /*휴대폰*/      
+		     , tel_home            /*집전화번호*/  
+		     , tel_office          /*사내전화번호*/
+		     , email               /*E-MAIL*/      
+		     , zipcode             /*우편번호*/    
+		     , addr                /*주소*/        
+		     , addr_detail         /*주소상세*/    
+		     , photo_img		   /*사진이미지*/
+		     , photo_path          /*사진파일경로*/
+		     , use_yn              /*사용여부*/    
+		     , final_mod_id        /*최종변경자ID*/
+		     , final_mod_date      /*최종변경일시*/        
+		  FROM COM_EMP_INFO 	   /*사원정보*/
+		 WHERE emp_num = #emp_num#
+	]]>	 
+	</select>
+	
+	<!-- 사원정보관리 수정 -->
+	<update id="updateEmployee" parameterClass="HashMap">
+	    UPDATE COM_EMP_INFO						   		/*사원정보*/
+		   SET ssn            = #ssn1#||#ssn2# 	   		/*주민등록번호*/
+			 , kor_name       = #kor_name#     	   		/*한글성명*/    
+			 , eng_name       = #eng_name#     	   		/*영어성명*/    
+			 , chn_name       = #chn_name#     	   		/*한자성명*/    
+			 , dept_code      = #dept_code#    	   		/*부서코드*/    
+			 , postion_code   = #postion_code#     		/*직위코드*/    
+			 , duty_code      = #duty_code#   	  		/*직책코드*/    
+			 , mobile         = #mobile#     	   		/*휴대폰*/      
+			 , tel_home       = #tel_home#     	   		/*집전화번호*/  
+			 , tel_office     = #tel_office#       		/*사내전화번호*/
+			 , email          = #email#     	   		/*E-MAIL*/      
+			 , zipcode        = #zipcode1#||#zipcode1#  /*우편번호*/    
+		  	 , addr           = #addr#     		   		/*주소*/        
+			 , addr_detail    = #addr_detail#      		/*주소상세*/    
+			 , use_yn         = #use_yn#     	   		/*사용여부*/    
+			 , final_mod_id   = #final_mod_id#     		/*최종변경자ID*/
+			 , final_mod_date = SYSDATE		     		/*최종변경일시*/  
+			 <isNotEmpty property="photo_path">
+			 , photo_save_nm = #photo_save_nm#
+			 , photo_real_nm = #photo_real_nm#
+			 , photo_path = #photo_path#	
+			 </isNotEmpty>
+			 <isEqual property="del_chk" compareValue="yes">
+			 , photo_save_nm = ''
+			 , photo_real_nm = ''
+			 , photo_path = ''	
+			 </isEqual>
+			 ,id=#id#
+		 WHERE emp_num = #emp_num#
+	<![CDATA[]]>	 
+	</update>
+	
+	<!-- 사원정보관리 수정 -->
+	<insert id="saveEmployee" parameterClass="HashMap">
+	<![CDATA[
+	    INSERT INTO COM_EMP_INFO ( emp_num					/*사번*/
+								 , ssn            			/*주민등록번호*/   
+								 , kor_name       			/*한글성명*/       
+								 , eng_name       			/*영어성명*/       
+								 , chn_name       			/*한자성명*/       
+								 , dept_code      			/*부서코드*/       
+								 , postion_code     		/*직위코드*/      
+								 , duty_code      			/*직책코드*/       
+								 , mobile         			/*휴대폰*/         
+								 , tel_home       			/*집전화번호*/     
+								 , tel_office     			/*사내전화번호*/   
+								 , email          			/*E-MAIL*/         
+								 , zipcode        			/*우편번호*/       
+								 , addr           			/*주소*/           
+								 , addr_detail     			/*주소상세*/     
+								 
+								    
+								 , use_yn         			/*사용여부*/       
+								 , final_mod_id     		/*최종변경자ID*/  
+								 , final_mod_date   		/*최종변경일시*/ 
+								 
+								 , photo_save_nm
+			 					 , photo_real_nm
+			 					 , photo_path	
+			 		 
+	   					 		 )
+	   					  VALUES ( #emp_num#				/*사번*/
+								 , #ssn1#||#ssn2# 			/*주민등록번호*/   
+								 , #kor_name#     			/*한글성명*/         
+								 , #eng_name#     			/*영어성명*/         
+								 , #chn_name#     			/*한자성명*/         
+								 , #dept_code#     			/*부서코드*/       
+								 , #postion_code#   		/*직위코드*/        
+								 , #duty_code#     			/*직책코드*/       
+								 , #mobile#     			/*휴대폰*/           
+								 , #tel_home#     			/*집전화번호*/       
+								 , #tel_office#     		/*사내전화번호*/     
+								 , #email#     				/*E-MAIL*/         
+								 , #zipcode1#||#zipcode1#   /*우편번호*/       
+								 , #addr#     				/*주소*/             
+								 , #addr_detail#    		/*주소상세*/    
+								    
+								      
+								 , #use_yn#     			/*사용여부*/         
+								 , #final_mod_id#   		/*최종변경자ID*/    
+								 , SYSDATE			 		/*최종변경일시*/   
+								 
+								 , #photo_save_nm#
+			 					 , #photo_real_nm#
+			 					 , #photo_path#
+	   					  	     )		 
+	]]>	 
+	</insert>
+	
+	
+	
+	<select id="countAdmin" parameterClass="HashMap" resultClass="int">
+    	SELECT COUNT(admin_id) FROM TB_ADMIN
+		WHERE admin_id = #admin_id#     
+    </select>
+	
+	<insert id="insertADMIN" parameterClass="HashMap">
+      INSERT INTO TB_ADMIN	
+				(
+					admin_id,
+					admin_nm,
+					admin_pw,
+					admin_mail,
+					cor_nm,
+					cor_number,
+					cor_regnumber,
+					sabun,
+					dept,
+					tel,
+					reg_dt
+				)
+	 VALUES (
+	 					#emp_num#,
+						#kor_name#,
+						#passwd#,
+						#email#,
+						'KICA',
+						'',
+						'',
+						(SELECT emp_num FROM COM_EMP_INFO WHERE id = #emp_num#),
+						(SELECT dept_name FROM COM_DEPT WHERE dept_code = #dept_code#),
+						#tel_office#,
+						SYSDATE
+	 		)			
+    </insert>  
+      
+	<update id="updateADMIN" parameterClass="HashMap">
+	 	UPDATE TB_ADMIN SET      
+			admin_nm        = #kor_name#,
+			admin_pw        = #passwd#,
+			admin_mail      = #email#,  
+			sabun			= (SELECT emp_num FROM COM_EMP_INFO WHERE id = #id#),			
+			dept            = (SELECT dept_name FROM COM_DEPT WHERE dept_code = #dept_code#) ,         
+			tel             = #tel_office#		 
+		WHERE 	admin_id = #id#	 		
+	</update>
+	
+	<insert id="insertLoginInfo" parameterClass="HashMap">
+         INSERT INTO COM_LOGIN_HIS 
+         	(admin_id, groups, emp_num, login_date, login_ip)
+         VALUES (#admin_id#, #groups#, #emp_num#, sysdate, #login_ip#)
+    </insert>
+	
+		<!-- 사원정보팝업 목록조회 -->
+	<select id="selectEmployeePop" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (
+					SELECT 'R' flag			   	  /*조회상태*/			
+					     , CE.emp_num             /*사번*/        
+					     , CE.ssn                 /*주민등록번호*/
+					     , CE.kor_name            /*한글성명*/    
+					     , CE.eng_name            /*영어성명*/    
+					     , CE.chn_name            /*한자성명*/    
+					     , CE.dept_code           /*부서코드*/    
+					     , CE.postion_code        /*직위코드*/    
+					     , CE.duty_code           /*직책코드*/    
+					     , CE.mobile              /*휴대폰*/      
+					     , CE.tel_home            /*집전화번호*/  
+					     , CE.tel_office          /*사내전화번호*/
+					     , CE.email               /*E-MAIL*/      
+					     , CE.zipcode             /*우편번호*/    
+					     , CE.addr                /*주소*/        
+					     , CE.addr_detail         /*주소상세*/    
+					     , CE.photo_img		  	  /*사진이미지*/
+					     , CE.photo_path          /*사진파일경로*/
+					     , CE.use_yn              /*사용여부*/    
+					     , CE.final_mod_id        /*최종변경자ID*/
+					     , CE.final_mod_date      /*최종변경일시*/ 
+					     , CD.dept_name 		  /*부서명*/  
+					     
+					     , CE.ID
+					     , (
+					     	SELECT AD.ADMIN_PW
+					     	  FROM TB_ADMIN AD
+					     	 WHERE CE.emp_num = AD.sabun
+					       ) admin_pw
+					       
+					     , (
+					     	SELECT C1.COM_CODE_NAME
+					     	  FROM com_code C1
+					     	 WHERE C1.group_code = 'POSITION_CODE'
+					           AND C1.com_code = CE.postion_code
+					       ) postion_name			/*직위코드*/
+					     , (
+					     	SELECT C1.COM_CODE_NAME
+					     	  FROM com_code C1
+					     	 WHERE C1.group_code = 'DUTY_CODE'
+					           AND C1.com_code = CE.duty_code
+					       ) duty_name					/*직채코드*/
+					  FROM com_emp_info CE 	   	  		/*사원정보*/
+					  LEFT OUTER JOIN
+					       com_dept CD 			  		/*부서관리*/
+					    ON CE.dept_code = TRIM(CD.dept_code)
+					 WHERE 1 = 1 
+					 <isNotEmpty property="src_dept_name">
+					   AND CD.dept_name LIKE '%'||#src_dept_name#||'%'
+					 </isNotEmpty>
+					 <isNotEmpty property="src_kor_name">
+					   AND CE.kor_name LIKE '%'||#src_kor_name#||'%'
+					 </isNotEmpty>
+					 <isNotEmpty property="src_dept_code">
+					 	<isNotEqual property="src_dept_code" compareValue="null">
+					   		AND CD.dept_code = #src_dept_code#
+					   	</isNotEqual>
+					 </isNotEmpty>
+					 AND CE.use_yn = 'Y'
+					 ORDER BY  TO_NUMBER(CE.postion_code), TO_NUMBER(CE.duty_code), TO_NUMBER(CE.emp_num) DESC
+				  ) A
+	       )
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit# 
+	</select>	
+	
+	<!-- 사원정보팝업 목록 총갯수 -->
+	<select id="selectEmployeePopCount" resultClass="Int">
+	SELECT COUNT(CE.emp_num)			/*사번*/
+	  FROM com_emp_info CE 	   	  		/*사원정보*/
+	  LEFT OUTER JOIN
+	       com_dept CD 			  		/*부서관리*/
+	    ON CE.dept_code = CD.dept_code
+	 WHERE 1 = 1 
+	 <isNotEmpty property="src_dept_name">
+	   AND CD.dept_name LIKE '%'||#src_dept_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_kor_name">
+	   AND CE.kor_name LIKE '%'||#src_kor_name#||'%'
+	 </isNotEmpty>
+	 <isNotEmpty property="src_dept_code">
+	 	<isNotEqual property="src_dept_code" compareValue="null">
+	   		AND CD.dept_code = #src_dept_code#
+	   	</isNotEqual>
+	 </isNotEmpty>
+	   AND CE.use_yn = 'Y'
+    </select> 	
+ </sqlMap>

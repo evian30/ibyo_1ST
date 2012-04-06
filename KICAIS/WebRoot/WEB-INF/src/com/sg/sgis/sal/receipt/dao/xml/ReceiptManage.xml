@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+	Class Name  : ReceiptManage.xml
+    Description : 수금관리
+-->
+<sqlMap namespace="ReceiptManage">
+
+	<!-- 수금상세정보  -->
+	<select id="selectReceiptManageList" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (    	   
+		    	   SELECT 'R' flag 
+			    	    , sr.receipt_id													/*수금ID*/
+						, to_char(to_date(sr.receipt_date),'YYYY-MM-DD') receipt_date	/*수금일자*/        
+						, sr.pjt_id                										/*프로젝트ID*/      
+						, (SELECT pjt_name 
+						     FROM pjt_info
+						    WHERE pjt_id = sr.pjt_id 
+						  ) pjt_name
+						, sr.sal_id                									/*매출ID*/
+						, (SELECT sal_name 
+						     FROM sal_info
+						    WHERE sal_id = sr.sal_id 
+						  ) sal_name          
+						, sr.receipt_dept_code     									/*수금담당부서코드*/
+						, (SELECT dept_name 
+						     FROM com_dept
+						    WHERE dept_code = sr.receipt_dept_code 
+						  ) receipt_dept_name
+						, sr.receipt_emp_num       									/*수금담당자번호*/  
+						, (SELECT kor_name 
+						     FROM com_emp_info
+						    WHERE emp_num = sr.receipt_emp_num 
+						  ) receipt_emp_name
+						, sr.custom_code           									/*거래처코드*/      
+						, sr.tax_id                									/*세금계산서ID*/    
+						, sr.receipt_type_code     									/*수금구분코드*/    
+						, sr.receipt_amt           									/*수금금액*/        
+						, to_char(to_date(sr.slip_date),'YYYY-MM-DD') slip_date  	/*전표일자*/        
+						, sr.slip_num              									/*전표번호*/        
+						, sr.note                  									/*비고*/            
+						, sr.final_mod_id			    							/*최종변경자ID*/    
+						, TO_CHAR(sr.final_mod_date,'YYYY-MM-DD') final_mod_date	/*최종변경일시*/    
+		    	   FROM sal_receipt sr
+		    	  WHERE sr.pjt_id = #pjt_id#
+		    	    AND sr.sal_id = #sal_id#
+		    	    AND sr.tax_id = #tax_id#
+		    	  ORDER BY sr.reg_date DESC, sr.final_mod_date DESC  
+				  ) A
+	       )
+	 <isNotNull property="start">      
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	 </isNotNull>  
+	</select>
+	
+	<!-- 수금상세정보  총건수-->
+	<select id="selectReceiptManageListCount" resultClass="int">
+	SELECT COUNT(sr.receipt_id)					/*수금ID*/    
+  	  FROM sal_receipt sr
+  	 WHERE sr.pjt_id = #pjt_id#
+  	   AND sr.sal_id = #sal_id#
+  	   AND sr.tax_id = #tax_id#
+	</select>
+	
+	<!-- 프로젝트별 수금정보  -->
+	<select id="selectReceiptProjectList" resultClass="HashMap">
+	SELECT	* 
+	  FROM (
+    	   SELECT ROWNUM rnum
+    	        , A.* 
+    	     FROM (    	   
+		    	    SELECT 'R' flag
+		    	         , si.pjt_id 
+					     , si.sal_id
+					     , CASE WHEN si.sal_type_code = '20' 
+						        THEN (SELECT est_name                                                                       
+								        FROM est_info ei                                                                     
+								       WHERE ei.est_id = si.est_id	
+								         AND ei.est_version = si.est_version				                                                 
+						  		     )
+							    ELSE (SELECT pjt_name 
+							            FROM pjt_info pi
+								       WHERE pi.pjt_id = si.pjt_id					
+								     )
+						   END pjt_name
+					     , (
+		    	           SELECT sal_name
+		    	             FROM sal_info
+		    	            WHERE sal_id = si.sal_id
+		    	           ) sal_name
+					     , si.tax_id
+					     , si.custom_code   
+					     , (
+					        SELECT custom_name
+					          FROM com_custom
+					         WHERE custom_code = si.custom_code
+					       ) custom_name
+					     , (
+					        SELECT substr(biz_num,0,3)            
+							       ||'-'||substr(biz_num,4,2)
+							       ||'-'||substr(biz_num,6,5)
+					          FROM com_custom
+					         WHERE custom_code = si.custom_code
+					       ) biz_num
+					     , si.sup_price
+					     , si.tax_amt
+					     , si.sum_amt
+					     , NVL(sr.receipt_amt,0) receipt_amt
+					     , (si.sum_amt - NVL(sr.receipt_amt,0)) amount
+					  FROM (
+					        SELECT si.pjt_id 
+					             , si.sal_id
+                                 , si.est_id     
+                                 , si.sal_type_code 
+                                 , si.est_version
+					             , ti.tax_id
+					             , si.custom_code    
+					             , MAX(NVL(ti.sup_price,0)) sup_price
+					             , MAX(NVL(ti.tax_amt,0)) tax_amt
+					             , SUM(NVL(ti.sup_price,0) + NVL(ti.tax_amt,0)) sum_amt
+					          FROM sal_info si       
+					          LEFT OUTER JOIN
+					               tax_info ti
+					            ON si.sal_id = ti.pur_sal_id
+                             WHERE si.sal_type_code = '20'     
+					         GROUP BY si.pjt_id ,si.sal_id ,ti.tax_id ,si.custom_code ,si.est_id ,si.sal_type_code ,si.est_version
+                             UNION ALL
+                            SELECT si.pjt_id 
+					             , si.sal_id 
+                                 , si.est_id     
+                                 , si.sal_type_code
+                                 , si.est_version
+					             , ti.tax_id
+					             , si.custom_code    
+					             , ti.sup_price
+					             , ti.tax_amt
+					             , ti.sum_amt
+					          FROM sal_info si       
+					          LEFT OUTER JOIN
+					               (
+                                    SELECT ti.tax_id
+                                         , ti.pur_sal_id      
+                                         , tii.sup_price
+                                         , tii.tax_amt                                              
+                                         , tii.sum_amt
+                                      FROM tax_info ti
+                                      LEFT OUTER JOIN
+                                           (
+                                            SELECT tii.tax_id
+                                                 , SUM(NVL(tii.amt,0)) sup_price
+                                                 , SUM(NVL(tii.tax,0)) tax_amt    
+                                                 , SUM(NVL(tii.amt,0)) + SUM(NVL(tii.tax,0)) sum_amt
+                                              FROM  tax_item_info tii    
+                                             GROUP BY tii.tax_id
+                                            ) tii
+                                      ON ti.tax_id = tii.tax_id  
+                                   ) ti
+					            ON si.sal_id = ti.pur_sal_id
+                             WHERE si.sal_type_code = '10'    
+					       ) si
+					  LEFT OUTER JOIN
+					       (
+					       SELECT sr.pjt_id
+					            , sr.sal_id
+					            , sr.tax_id
+					            , SUM(NVL(sr.receipt_amt,0)) receipt_amt  
+					         FROM (
+							       SELECT sr.pjt_id
+							            , sr.sal_id
+							            , sr.tax_id     
+							            , sr.receipt_amt
+							         FROM sal_receipt sr
+							        WHERE 1=1
+							         <isNotEmpty property="src_receipt_date_start">
+									  AND sr.receipt_date  >= #src_receipt_date_start#
+									</isNotEmpty>
+									<isNotEmpty property="src_receipt_date_end">
+									  AND sr.receipt_date  &lt;= #src_receipt_date_end#
+									</isNotEmpty>  
+							       ) sr
+							GROUP BY sr.pjt_id, sr.sal_id, sr.tax_id
+					       ) sr
+					    ON si.pjt_id = sr.pjt_id
+					   AND si.sal_id = sr.sal_id
+					   AND si.tax_id = sr.tax_id     
+					 ORDER BY si.pjt_id desc ,si.tax_id    
+				  ) A
+		    WHERE A.tax_id is not null
+			<isNotEmpty property="src_custom_code">
+			  AND A.custom_code like '%'||#src_custom_code#||'%'
+			</isNotEmpty>		
+			<isNotEmpty property="src_custom_name">
+			  AND A.custom_name like '%'||#src_custom_name#||'%'
+			</isNotEmpty>  
+			<isNotEmpty property="src_pjt_id">
+			  AND A.pjt_id like '%'||#src_pjt_id#||'%'
+			</isNotEmpty>
+			<isNotEmpty property="src_pjt_name">
+			  AND A.pjt_name like '%'||#src_pjt_name#||'%'
+			</isNotEmpty>		
+	       )
+	 <isNotNull property="start">      
+	 WHERE rnum <![CDATA[>]]>  #start# 
+	   AND rnum <![CDATA[<=]]> #limit#
+	 </isNotNull>    
+	</select>
+	
+	<!-- 프로젝트별 수금정보  총건수-->
+	<select id="selectReceiptProjectListCount" resultClass="int">
+	SELECT COUNT(A.pjt_id)
+	  FROM (    	   
+    	    SELECT si.pjt_id 
+    	    	 , (
+    	           SELECT pjt_name
+    	             FROM pjt_info
+    	            WHERE pjt_id = si.pjt_id
+    	           ) pjt_name
+			     , si.sal_id 
+			     , si.tax_id
+			     , si.custom_code   
+			     , (
+			        SELECT custom_name
+			          FROM com_custom
+			         WHERE custom_code = si.custom_code
+			       ) custom_name
+			     , (
+			        SELECT biz_num
+			          FROM com_custom
+			         WHERE custom_code = si.custom_code
+			       ) biz_num
+			     , si.sup_price
+			     , si.tax_amt
+			     , si.sum_amt
+			     , NVL(sr.receipt_amt,0) receipt_amt
+			     , (si.sum_amt - NVL(sr.receipt_amt,0)) amount
+			  FROM (
+			        SELECT si.pjt_id 
+			             , si.sal_id 
+			             , ti.tax_id
+			             , si.custom_code    
+			             , MAX(NVL(ti.sup_price,0)) sup_price
+			             , MAX(NVL(ti.tax_amt,0)) tax_amt
+			             , SUM(NVL(ti.sup_price,0) + NVL(ti.tax_amt,0)) sum_amt
+			          FROM sal_info si       
+			          LEFT OUTER JOIN
+			               tax_info ti
+			            ON si.sal_id = ti.pur_sal_id     
+			         GROUP BY si.pjt_id ,si.sal_id ,ti.tax_id , si.custom_code  
+			       ) si
+			  LEFT OUTER JOIN
+			       (
+			       SELECT sr.pjt_id
+					            , sr.sal_id
+					            , sr.tax_id
+					            , SUM(NVL(sr.receipt_amt,0)) receipt_amt  
+					         FROM (
+							       SELECT sr.pjt_id
+							            , sr.sal_id
+							            , sr.tax_id     
+							            , sr.receipt_amt
+							         FROM sal_receipt sr
+							        WHERE 1=1
+							         <isNotEmpty property="src_receipt_date_start">
+									  AND sr.receipt_date  >= #src_receipt_date_start#
+									</isNotEmpty>
+									<isNotEmpty property="src_receipt_date_end">
+									  AND sr.receipt_date  &lt;= #src_receipt_date_end#
+									</isNotEmpty>  
+							       ) sr
+							GROUP BY sr.pjt_id, sr.sal_id, sr.tax_id
+			       ) sr
+			    ON si.pjt_id = sr.pjt_id
+			   AND si.sal_id = sr.sal_id
+			   AND si.tax_id = sr.tax_id     
+			 ORDER BY si.pjt_id desc ,si.tax_id    
+		   ) A
+     WHERE A.tax_id is not null
+	 <isNotEmpty property="src_custom_code">
+	   AND A.custom_code like '%'||#src_custom_code#||'%'
+	 </isNotEmpty>		
+	 <isNotEmpty property="src_custom_name">
+	   AND A.custom_name like '%'||#src_custom_name#||'%'
+	 </isNotEmpty>  
+	 <isNotEmpty property="src_pjt_id">
+	   AND A.pjt_id like '%'||#src_pjt_id#||'%'
+	 </isNotEmpty>	
+	 <isNotEmpty property="src_pjt_name">
+	   AND A.pjt_name like '%'||#src_pjt_name#||'%'
+	 </isNotEmpty>
+	</select>
+	
+	<!-- 수금상세정보 입력 -->
+	<insert id="insertReceiptManage" parameterClass="HashMap">
+	<![CDATA[
+	INSERT INTO sal_receipt ( receipt_id					/*수금ID*/
+							, receipt_date          		/*수금일자*/        
+							, pjt_id                		/*프로젝트ID*/      
+							, sal_id                		/*매출ID*/          
+							, receipt_dept_code     		/*수금담당부서코드*/
+							, receipt_emp_num       		/*수금담당자번호*/  
+							, custom_code           		/*거래처코드*/      
+							, tax_id                		/*세금계산서ID*/    
+							, receipt_type_code     		/*수금구분코드*/    
+							, receipt_amt           		/*수금금액*/        
+							, slip_date             		/*전표일자*/        
+							, slip_num              		/*전표번호*/        
+							, note                  		/*비고*/            
+							, final_mod_id          		/*최종변경자ID*/    
+							, final_mod_date        		/*최종변경일시*/    
+							, reg_date						/*최초등록일*/
+							, reg_id						/*최초등록자*/
+						    )
+				     VALUES ( #receipt_id#					/*수금ID*/
+							, #receipt_date#          		/*수금일자*/        
+							, #pjt_id#                		/*프로젝트ID*/      
+							, #sal_id#                		/*매출ID*/          
+							, #receipt_dept_code#     		/*수금담당부서코드*/
+							, #receipt_emp_num#       		/*수금담당자번호*/  
+							, #custom_code#           		/*거래처코드*/      
+							, #tax_id#                		/*세금계산서ID*/    
+							, #receipt_type_code#     		/*수금구분코드*/    
+							, #receipt_amt#           		/*수금금액*/        
+							, #slip_date#             		/*전표일자*/        
+							, #slip_num#              		/*전표번호*/        
+							, #note#                  		/*비고*/            
+							, #final_mod_id#          		/*최종변경자ID*/    
+							, SYSDATE 	    		   		/*최종변경일시*/    
+							, SYSDATE						/*최초등록일*/
+							, #final_mod_id#				/*최초등록자*/
+				            )		    	
+	]]>
+	</insert>
+	
+	<!-- 수금상세정보 수정 -->
+	<update id="updateReceiptManage" parameterClass="HashMap">
+	UPDATE sal_receipt
+	   SET receipt_date      = #receipt_date#          		/*수금일자*/        
+		 , pjt_id            = #pjt_id#                		/*프로젝트ID*/      
+		 , sal_id            = #sal_id#                		/*매출ID*/          
+		 , receipt_dept_code = #receipt_dept_code#     		/*수금담당부서코드*/
+		 , receipt_emp_num   = #receipt_emp_num#       		/*수금담당자번호*/  
+		 , custom_code       = #custom_code#           		/*거래처코드*/      
+		 , tax_id            = #tax_id#                		/*세금계산서ID*/    
+		 , receipt_type_code = #receipt_type_code#     		/*수금구분코드*/    
+		 , receipt_amt       = #receipt_amt#           		/*수금금액*/        
+		 , slip_date         = #slip_date#             		/*전표일자*/        
+		 , slip_num          = #slip_num#              		/*전표번호*/        
+		 , note              = #note#                  		/*비고*/            
+		 , final_mod_id      = #final_mod_id#          		/*최종변경자ID*/    
+		 , final_mod_date    = SYSDATE	 	       			/*최종변경일시*/    
+	 WHERE receipt_id 		 = #receipt_id#					/*수금ID*/ 
+	</update>
+	
+	<!-- 세금계산서 정보 조회 -->
+	<select id="selectReceiptInfo" resultClass="HashMap">
+		SELECT
+			ti.TAX_ID
+			,ti.PUR_SAL_TYPE_CODE
+			,ti.ERP_TAX_NO
+			,ti.PUR_SAL_ID
+			,ti.TAX_INFO_SEQ
+			,ti.SUP_BIZ_NUM
+			,ti.SUP_BIZ_NAME
+			,ti.SUP_BIZ_CEO
+			,ti.SUP_BIZ_ADDR
+			,ti.SUP_BIZ_CONDITION
+			,ti.SUP_BIZ_ITEM
+			,ti.CUSTOM_CODE
+			,ti.DEM_BIZ_NUM
+			,ti.DEM_BIZ_NAME
+			,ti.DEM_BIZ_CEO
+			,ti.DEM_BIZ_ADDR
+			,ti.DEM_BIZ_CONDITION
+			,ti.DEM_BIZ_ITEM
+			,ti.PREPARE_DATE
+			,ti.SUP_PRICE
+			,ti.TAX_AMT
+			,ti.NOTE
+			,ti.REC_DEM_TYPE_CODE
+			,ti.TAX_TYPE_CODE
+			,ti.TAX_STATUS_CODE
+			,ti.SENDER_EMAIL
+			,ti.RECIEVER_EMAIL
+			,ti.PREPARE_RESON_TYPE_CODE
+			,ti.ETAX_NO
+			,ti.BEFORE_ETAX_NO
+			,oi.PJT_ID
+			,(SELECT pjt_name FROM pjt_info WHERE pjt_id = oi.pjt_id ) AS PJT_NAME
+		FROM ord_info oi ,
+			  tax_info ti
+		WHERE oi.ORD_ID = ti.PUR_SAL_ID
+		AND    ti.PREPARE_DATE BETWEEN NVL(#src_prepare_date_from#, '20000101') AND NVL(#src_prepare_date_to#, '20000101')
+		<isNotEmpty property="src_pjt_id">
+		AND    oi.PJT_ID = #src_pjt_id#
+		</isNotEmpty> 
+		<isNotEmpty property="src_customer_code">
+		AND    ti.CUSTOM_CODE = #src_customer_code#
+		</isNotEmpty>
+	</select>
+	
+	<!-- 세금계산서 정보 카운트  -->
+	<select id="selectReceiptInfoCount" resultClass="int">
+		SELECT
+			COUNT(*)
+		FROM ord_info oi ,
+			  tax_info ti
+		WHERE oi.ORD_ID = ti.PUR_SAL_ID
+		AND    ti.PREPARE_DATE BETWEEN NVL(#src_prepare_date_from#, '20000101') AND NVL(#src_prepare_date_to#, '20000101')
+		<isNotEmpty property="src_pjt_id">
+		AND    oi.PJT_ID = #src_pjt_id#
+		</isNotEmpty> 
+		<isNotEmpty property="src_customer_code">
+		AND    ti.CUSTOM_CODE = #src_customer_code#
+		</isNotEmpty>
+	</select>
+	
+	
+	<!-- 세금계산서 품목 정보 조회 -->
+	<select id="selectReceiptItemInfo" resultClass="HashMap">
+		SELECT 
+			TAX_ID ,
+		  	TAX_INFO_SEQ ,
+		  	ITEM_CODE ,
+			ITEM_NAME ,
+			STANDARD ,
+			UNIT ,
+			CNT ,
+			UNIT_PRICE ,
+			AMT ,
+			TAX ,
+			NOTE ,
+			FINAL_MOD_ID ,
+			FINAL_MOD_DATE ,
+			REG_DATE ,
+			REG_ID
+		FROM tax_item_info
+		WHERE
+			1=1
+		<isNotEmpty property="tax_id">
+			AND    TAX_ID = #tax_id#
+		</isNotEmpty>
+	</select>
+	
+	<!-- 세금계산서 정보 카운트  -->
+	<select id="selectReceiptItemInfoCount" resultClass="int">
+		SELECT
+			COUNT(*)
+		FROM 
+			TAX_ITEM_INFO
+		WHERE
+			1=1
+		<isNotEmpty property="tax_id">
+			AND    TAX_ID = #tax_id#
+		</isNotEmpty>
+	</select>
+</sqlMap>

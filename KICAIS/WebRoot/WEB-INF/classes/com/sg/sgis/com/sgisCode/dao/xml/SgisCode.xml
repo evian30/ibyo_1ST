@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="SgisCode">
+	 
+	<select id="selectCodeCount" resultClass="Int">
+      SELECT  
+            COUNT(COM_CODE)
+       FROM COM_CODE      
+       WHERE COM_CODE != '$$'
+       <isNotEmpty property="src_com_code" prepend="AND">
+                COM_CODE  like  '%'||#src_com_code#||'%'   
+       </isNotEmpty>  
+       <isNotEmpty property="src_group_code" prepend="AND">
+                GROUP_CODE  like  '%'||#src_group_code#||'%'  
+       </isNotEmpty> 
+    </select> 
+	  
+	<select id="selectCode" resultClass="HashMap">
+         	 
+ 						SELECT * FROM 
+					 	(
+					    	SELECT ROWNUM rnum, A.* FROM
+					        	(
+					            
+					            			SELECT 'R' FLAG   
+					                              , COM_CODE
+					                              , GROUP_CODE
+					                              , REF_VAL_01
+					                              , REF_NAME_01
+					                              , REF_VAL_02
+					                              , REF_NAME_02
+					                              , REF_VAL_03
+					                              , REF_NAME_03
+					                              , REF_VAL_04
+					                              , REF_NAME_04
+					                              , REF_VAL_05
+					                              , REF_NAME_05
+					                              , SYSTEM_CODE_YN
+					                              , USE_YN
+					                              , COM_CODE_NAME
+					                              , (select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID 
+					                              ,  TO_CHAR(FINAL_MOD_DATE, 'YYYY-MM-DD') AS FINAL_MOD_DATE
+					                              , SORT_NUM                                              
+					               FROM COM_CODE A 
+					               WHERE COM_CODE != '$$'
+					               <isNotEmpty property="src_com_code" prepend="AND">
+					                  COM_CODE  like  '%'||#src_com_code#||'%'   
+					               </isNotEmpty>  
+					               <isNotEmpty property="src_group_code" prepend="AND">
+					                  GROUP_CODE  like  '%'||#src_group_code#||'%'  
+					               </isNotEmpty>
+					               <isNotEmpty property="src_use_yn" prepend="AND">
+					                  USE_YN  =#src_use_yn#  
+					               </isNotEmpty>    
+					               ORDER BY  GROUP_CODE ASC, SORT_NUM ASC, COM_CODE ASC        
+					            ) A
+					    	
+					    )
+					 WHERE 	rnum <![CDATA[>]]> #start# 
+					   AND  rnum <![CDATA[<=]]>  #limit#
+         					
+         					
+    </select>
+    
+    <insert id="insertCode" parameterClass="HashMap">
+        INSERT INTO COM_CODE 
+           (COM_CODE                        ,
+                        GROUP_CODE          ,
+                        REF_VAL_01          ,
+                        REF_NAME_01         ,
+                        REF_VAL_02          ,
+                        REF_NAME_02         ,
+                        REF_VAL_03          ,
+                        REF_NAME_03         ,
+                        REF_VAL_04          ,
+                        REF_NAME_04         ,
+                        REF_VAL_05          ,
+                        REF_NAME_05         ,
+                        SYSTEM_CODE_YN      ,
+                        USE_YN              ,
+                        COM_CODE_NAME       ,
+                        FINAL_MOD_ID        ,
+                        FINAL_MOD_DATE      ,
+                        SORT_NUM) 
+          VALUES
+           (#com_code#          ,       
+            #group_code#        ,
+            #ref_val_01#        ,
+            #ref_name_01#       ,
+            #ref_val_02#        ,
+            #ref_name_02#       ,
+            #ref_val_03#        ,
+            #ref_name_03#       ,
+            #ref_val_04#        ,
+            #ref_name_04#       ,
+            #ref_val_05#        ,
+            #ref_name_05#       ,
+            #system_code_yn#    ,
+            #use_yn#            ,
+            #com_code_name#     ,
+            #final_mod_id#      ,
+            SYSTIMESTAMP        ,
+            #sort_num#  )   
+    </insert>
+    
+    <update id="updateCode" parameterClass="HashMap"> 
+       
+    UPDATE COM_CODE SET 
+                                REF_VAL_01        =      #ref_val_01#        ,                  
+                                REF_NAME_01       =      #ref_name_01#       ,
+                                REF_VAL_02        =      #ref_val_02#        ,
+                                REF_NAME_02       =      #ref_name_02#       ,
+                                REF_VAL_03        =      #ref_val_03#        ,
+                                REF_NAME_03       =      #ref_name_03#       ,
+                                REF_VAL_04        =      #ref_val_04#        ,
+                                REF_NAME_04       =      #ref_name_04#       ,
+                                REF_VAL_05        =      #ref_val_05#        ,
+                                REF_NAME_05       =      #ref_name_05#       ,
+                                SYSTEM_CODE_YN    =      #system_code_yn#    ,
+                                USE_YN            =      #use_yn#            ,
+                                COM_CODE_NAME     =      #com_code_name#     ,
+                                FINAL_MOD_ID      =      #final_mod_id#      ,
+                                FINAL_MOD_DATE    =      SYSTIMESTAMP        ,
+                                SORT_NUM          =      #sort_num#       
+                                             
+        WHERE   COM_CODE        = #com_code#                         
+            AND GROUP_CODE      = #group_code#    
+    </update>
+    
+    <delete id="deleteCode" parameterClass="HashMap">
+        DELETE FROM COM_CODE 
+        WHERE   COM_CODE        = #com_code#                         
+            AND GROUP_CODE      = #group_code#    
+    </delete> 
+	  
+	  
+	<!-- 공통코드 조회 -->
+    <select id="selectComboCode" resultClass="HashMap" parameterClass="String">
+    <![CDATA[
+        SELECT 
+                          COM_CODE
+                        , GROUP_CODE
+                        , REF_VAL_01
+                        , REF_NAME_01
+                        , REF_VAL_02
+                        , REF_NAME_02
+                        , REF_VAL_03
+                        , REF_NAME_03
+                        , REF_VAL_04
+                        , REF_NAME_04
+                        , REF_VAL_05
+                        , REF_NAME_05
+                        , SYSTEM_CODE_YN
+                        , USE_YN
+                        , COM_CODE_NAME
+                        , (select admin_nm from tb_admin where admin_id=A.FINAL_MOD_ID) as FINAL_MOD_ID 
+                        , FINAL_MOD_DATE
+                        , SORT_NUM
+          FROM COM_CODE A
+         WHERE USE_YN = 'Y'   
+           AND COM_CODE != '$$'             
+           AND GROUP_CODE = #group_code#
+         ORDER BY TO_NUMBER(SORT_NUM)
+    ]]>           
+    </select>
+    
+    <!-- 공통코드 조회 2 (jclee) -->
+    <select id="selectComboCode2" resultClass="HashMap" parameterClass="HashMap">
+    <![CDATA[
+        WITH COM_CODE_W AS
+		(SELECT GROUP_CODE
+		      , COM_CODE
+		      , COM_CODE_NAME
+		      , REF_VAL_01
+		      , REF_NAME_01
+		      , REF_VAL_02
+		      , REF_NAME_02
+		      , REF_VAL_03
+		      , REF_NAME_03
+		      , REF_VAL_04
+		      , REF_NAME_04
+		      , REF_VAL_05
+		      , REF_NAME_05
+		 FROM   COM_CODE
+		 WHERE  COM_CODE <> '$$' 
+		 AND    GROUP_CODE = #group_code#
+		 )
+		SELECT A.COM_CODE
+		    , MAX(A.COM_NAME) COM_NAME
+		FROM ( 
+		 SELECT COM_CODE       COM_CODE
+		      , COM_CODE_NAME  COM_NAME
+		 FROM   COM_CODE_W
+		 WHERE  '0'=#level#
+		 UNION ALL
+		 SELECT COM_CODE       COM_CODE
+		      , REF_VAL_01     COM_NAME
+		 FROM   COM_CODE_W
+		 WHERE  '1'=#level#
+		 UNION ALL
+		 SELECT COM_CODE      COM_CODE
+		      , REF_VAL_02    COM_NAME
+		 FROM   COM_CODE_W
+		 WHERE  '2'=#level#
+		 UNION ALL
+		 SELECT COM_CODE      COM_CODE
+		      , REF_VAL_03    COM_NAME
+		 FROM   COM_CODE_W
+		 WHERE '3'=#level#
+		 UNION ALL
+		 SELECT COM_CODE      COM_CODE
+		      , REF_VAL_04    COM_NAME
+		 FROM   COM_CODE_W
+		 WHERE  '4'=#level#
+		 UNION ALL
+		  SELECT COM_CODE     COM_CODE
+		      , REF_VAL_05    COM_NAME
+		 FROM   COM_CODE_W
+		 WHERE '5'=#level#
+		) A
+		GROUP BY A.COM_CODE 
+    ]]>           
+    </select>
+    
+	  
+	 
+ </sqlMap>
